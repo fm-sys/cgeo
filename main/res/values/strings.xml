@@ -2039,10 +2039,27 @@
     <string name="no">No</string>
     <string name="show_all">Show all</string>
 
+    <!-- routing modes -->
     <string name="routingmode_straight">Straight</string>
     <string name="routingmode_walk">Walk</string>
     <string name="routingmode_bike">Bike</string>
     <string name="routingmode_car">Car</string>
+
+    <!-- turn instructions -->
+    <string name="routinginstruction_TU">please u-turn</string>
+    <string name="routinginstruction_TSHL">turn sharp left</string>
+    <string name="routinginstruction_TL">turn left</string>
+    <string name="routinginstruction_TSLL">turn slightly left</string>
+    <string name="routinginstruction_KL">keep left</string>
+    <string name="routinginstruction_C">go straight ahead</string>
+    <string name="routinginstruction_KR">keep right</string>
+    <string name="routinginstruction_TSLR">turn slightly right</string>
+    <string name="routinginstruction_TR">turn right</string>
+    <string name="routinginstruction_TSHR">turn sharp right</string>
+    <string name="routinginstruction_RNDB">at the roundabout take exit %d</string>
+    <string name="routinginstruction_wrapper_turn_in_distance">In %1$s, %2$s</string>
+    <string name="routinginstruction_wrapper_turn_now">Now %s</string>
+    <string name="routinginstruction_wrapper_combine_two_turninstructions">%s, then %s</string>
 
     <!-- view settings -->
     <string name="view_settings">View settings</string>

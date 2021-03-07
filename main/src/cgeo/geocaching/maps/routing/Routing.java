@@ -109,12 +109,16 @@ public final class Routing {
      * In some cases (e.g., destination is too close or too far, path could not be found),
      * a straight line will be returned.
      *
+     * This should only be used for navigation routing from device coordinates to a specific target,
+     * as voice output etc. is handled in here as well.
+     * For all other purposes, use {@link Routing#getTrackNoCaching(Geopoint, Geopoint)} instead!
+     *
      * @param start the starting point
      * @param destination the destination point
      * @return a track with at least two points including the start and destination points
      */
     @NonNull
-    public static Geopoint[] getTrack(final Geopoint start, final Geopoint destination) {
+    public static Geopoint[] getRoutingNavigationTrack(final Geopoint start, final Geopoint destination) {
         if (brouter == null || Settings.getRoutingMode() == RoutingMode.STRAIGHT) {
             return defaultTrack(start, destination);
         }
@@ -200,13 +204,20 @@ public final class Routing {
         params.putDoubleArray("lons", new double[]{start.getLongitude(), dest.getLongitude()});
         params.putString("v", Settings.getRoutingMode().parameterValue);
 
+        //TODO experimental testing only - see https://github.com/cgeo/cgeo/issues/8630#issuecomment-791668904 for discussion
+        params.putString("turnInstructionFormat", "locus"); // "turnInstructionFormat" --> String selecting the format for turn-instructions values: osmand, locus
+        //TODO check what turnInstructionMode does --> turnInstructionMode  = 1  # 0=none, 1=auto-choose, 2=locus-style, 3=osmand-style, 4=comment-style, 5=gpsies-style, 6=orux-style
+
         final String gpx = brouter.getTrackFromParams(params);
+
+        //TODO remove for production
+        Log.w("brouter return value: " + gpx);
 
         if (gpx == null) {
             Log.i("brouter returned no data");
             return null;
         }
-        
+
         if (!gpx.startsWith("<?xml")) {
             Log.w("brouter returned an error message: " + gpx);
             return null;

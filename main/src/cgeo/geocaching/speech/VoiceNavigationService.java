@@ -1,0 +1,212 @@
+package cgeo.geocaching.speech;
+
+import cgeo.geocaching.Intents;
+import cgeo.geocaching.R;
+import cgeo.geocaching.activity.ActivityMixin;
+import cgeo.geocaching.location.Geopoint;
+import cgeo.geocaching.sensors.GeoData;
+import cgeo.geocaching.sensors.GeoDirHandler;
+import cgeo.geocaching.settings.Settings;
+import cgeo.geocaching.utils.Log;
+
+import android.app.Activity;
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
+import android.speech.tts.TextToSpeech;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * Routing Processor service for speaking turn instructions.
+ *
+ * TODO:
+ *  This is NOT a fully working background service (although the class is called like that)!
+ *  While that would be a pretty nice feature, that would require quite some refactoring what it is not worth at the moment.
+ *  Routing is currently in "Alpha State" and more like a prove of concept.
+ *  If routing turns out to produce valuable results, then this refactoring might be necessary.
+ */
+public class VoiceNavigationService extends Service implements TextToSpeech.OnInitListener {
+
+    private static final int SPEECH_MINPAUSE_SECONDS = 5;
+
+    @Nullable
+    private static Activity startingActivity;
+    private static final Object startingActivityLock = new Object();
+    /**
+     * Text to speech API of Android
+     */
+    private TextToSpeech tts;
+    /**
+     * TTS has been initialized and we can speak.
+     */
+    private boolean initialized = false;
+    protected float direction;
+    protected Geopoint position;
+
+    private final GeoDirHandler geoDirHandler = new GeoDirHandler() {
+
+        @Override
+        public void updateGeoDir(@NonNull final GeoData newGeo, final float newDirection) {
+            // We might receive a location update before the target has been set. In this case, do nothing.
+            if (target == null) {
+                return;
+            }
+
+            position = newGeo.getCoords();
+            direction = newDirection;
+            // avoid any calculation, if the delay since the last output is not long enough
+            final long now = System.currentTimeMillis();
+            if (now - lastSpeechTime <= SPEECH_MINPAUSE_SECONDS * 1000) {
+                return;
+            }
+
+            // to speak, we want distance to geopoint to have changed by a given amount
+            final float distance = position.distanceTo(target);
+            if (Math.abs(lastSpeechDistance - distance) < getDeltaForDistance(distance)) {
+                return;
+            }
+
+            final String text = TextFactory.getText(position, target, direction);
+            if (StringUtils.isNotEmpty(text)) {
+                lastSpeechTime = System.currentTimeMillis();
+                lastSpeechDistance = distance;
+                speak(text);
+            }
+        }
+    };
+    /**
+     * remember when we talked the last time
+     */
+    private long lastSpeechTime = 0;
+    private float lastSpeechDistance = 0.0f;
+    private Geopoint target;
+    private final CompositeDisposable initDisposable = new CompositeDisposable();
+
+    @Override
+    public IBinder onBind(final Intent intent) {
+        return null;
+    }
+
+    /**
+     * Return distance required to be moved based on overall distance.<br>
+     *
+     * @param distance
+     *            in km
+     * @return delta in km
+     */
+    private static float getDeltaForDistance(final float distance) {
+        if (distance > 1.0) {
+            return 0.2f;
+        }
+        if (distance > 0.05) {
+            return distance / 5.0f;
+        }
+        return 0f;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        tts = new TextToSpeech(this, this);
+    }
+
+    @Override
+    public void onDestroy() {
+        initDisposable.clear();
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onInit(final int status) {
+        // The text to speech system takes some time to initialize.
+        if (status != TextToSpeech.SUCCESS) {
+            Log.e("Text to speech cannot be initialized.");
+            return;
+        }
+
+        final int switchLocale = tts.setLanguage(Settings.getApplicationLocale());
+
+        if (switchLocale == TextToSpeech.LANG_MISSING_DATA) {
+            synchronized (startingActivityLock) {
+                if (startingActivity != null) {
+                    startingActivity.startActivity(new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA));
+                }
+            }
+            return;
+        }
+        if (switchLocale == TextToSpeech.LANG_NOT_SUPPORTED) {
+            Log.e("Current language not supported by text to speech.");
+            synchronized (startingActivityLock) {
+                if (startingActivity != null) {
+                    ActivityMixin.showToast(startingActivity, R.string.err_tts_lang_not_supported);
+                }
+            }
+            return;
+        }
+
+        initialized = true;
+
+        synchronized (startingActivityLock) {
+            final Activity startingActivityChecked = startingActivity;
+            if (startingActivityChecked != null) {
+                initDisposable.add(geoDirHandler.start(GeoDirHandler.UPDATE_GEODIR));
+                ActivityMixin.showShortToast(startingActivity, startingActivityChecked.getString(R.string.tts_started));
+            }
+        }
+    }
+
+    @Override
+    public int onStartCommand(final Intent intent, final int flags, final int startId) {
+        if (intent != null) {
+            target = intent.getParcelableExtra(Intents.EXTRA_COORDS);
+        }
+        return START_NOT_STICKY; // service can be stopped by system, if under memory pressure
+    }
+
+    private void speak(final String text) {
+        if (!initialized) {
+            return;
+        }
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, null);
+    }
+
+    public static void startService(final Activity activity, final Geopoint dstCoords) {
+        synchronized (startingActivityLock) {
+            startingActivity = activity;
+        }
+        final Intent talkingService = new Intent(activity, SpeechService.class);
+        talkingService.putExtra(Intents.EXTRA_COORDS, dstCoords);
+        activity.startService(talkingService);
+    }
+
+    public static void stopService(final Activity activity) {
+        synchronized (startingActivityLock) {
+            if (activity.stopService(new Intent(activity, SpeechService.class))) {
+                ActivityMixin.showShortToast(activity, activity.getString(R.string.tts_stopped));
+            }
+            startingActivity = null;
+        }
+    }
+
+    public static void toggleService(final Activity activity, final Geopoint dstCoords) {
+        if (isRunning()) {
+            stopService(activity);
+        } else {
+            startService(activity, dstCoords);
+        }
+    }
+
+    public static boolean isRunning() {
+        return startingActivity != null;
+    }
+
+}

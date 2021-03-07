@@ -1,4 +1,4 @@
 /**
- * Voice navigation in the compass.
+ * Voice navigation for compass and map routing.
  */
 package cgeo.geocaching.speech;

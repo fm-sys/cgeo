@@ -7,6 +7,7 @@ import cgeo.geocaching.location.IConversion;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.utils.AngleUtils;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.PluralsRes;
 import androidx.annotation.StringRes;
 
@@ -28,8 +29,21 @@ public class TextFactory {
         // utility class
     }
 
+    /**
+     * Creates the output to be read by TTS for compass directions.
+     */
     public static String getText(final Geopoint position, final Geopoint target, final float direction) {
         if (position == null || target == null) {
+            return null;
+        }
+        return getDirection(position, target, direction) + ". " + getDistance(position, target);
+    }
+
+    /**
+     * Creates the output to be read by TTS for routing turn instructions.
+     */
+    public static String getText(final Geopoint position, final RoutingTurnPoint routingPoint, final @Nullable RoutingTurnPoint secondRoutingPoint) {
+        if (position == null || routingPoint == null) {
             return null;
         }
         return getDirection(position, target, direction) + ". " + getDistance(position, target);
