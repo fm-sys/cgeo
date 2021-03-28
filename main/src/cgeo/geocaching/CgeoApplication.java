@@ -8,6 +8,8 @@ import cgeo.geocaching.utils.OOMDumpingUncaughtExceptionHandler;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -22,6 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public class CgeoApplication extends Application {
+    public static final String NOTIFICATION_CHANNEL_ID = "download_receiver";
 
     private static CgeoApplication instance;
 
@@ -50,6 +53,8 @@ public class CgeoApplication extends Application {
         showOverflowMenu();
 
         initApplicationLocale();
+
+        createNotificationChannel();
 
         // ensure initialization of lists
         DataStore.getLists();
@@ -118,4 +123,16 @@ public class CgeoApplication extends Application {
         resources.updateConfiguration(config, resources.getDisplayMetrics());
     }
 
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            final NotificationChannel serviceChannel = new NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                // TODO: 28.03.2021 string resource
+                "Foreground Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+            );
+            final NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(serviceChannel);
+        }
+    }
 }

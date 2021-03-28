@@ -1,7 +1,7 @@
 package cgeo.geocaching;
 
 import cgeo.geocaching.activity.AbstractActivity;
-import cgeo.geocaching.downloader.ReceiveMapFileActivity;
+import cgeo.geocaching.downloader.ReceiveMapFileService;
 import cgeo.geocaching.files.FileType;
 import cgeo.geocaching.files.FileTypeDetector;
 import cgeo.geocaching.ui.dialog.Dialogs;
@@ -33,7 +33,7 @@ public class HandleLocalFilesActivity extends AbstractActivity {
                 finished = true;
                 break;
             case MAP:
-                continueWith(ReceiveMapFileActivity.class, intent);
+                continueWithService(ReceiveMapFileService.class, intent);
                 finished = true;
                 break;
             default:
@@ -48,6 +48,13 @@ public class HandleLocalFilesActivity extends AbstractActivity {
         final Intent forwarder = new Intent(intent);
         forwarder.setClass(this, clazz);
         startActivity(forwarder);
+        finish();
+    }
+
+    private void continueWithService(@SuppressWarnings("rawtypes") final Class clazz, final Intent intent) {
+        final Intent forwarder = new Intent(intent);
+        forwarder.setClass(this, clazz);
+        startService(forwarder);
         finish();
     }
 
