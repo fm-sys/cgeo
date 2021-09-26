@@ -4,7 +4,6 @@
     android:id="@+id/logtrackable_activity_viewroot"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="?background_color"
     android:orientation="vertical"
     android:padding="4dip"
     tools:context=".log.LogTrackableActivity" >
@@ -22,7 +21,7 @@
 
             <Button
                 android:id="@+id/type"
-                style="@style/button_full"
+                style="@style/button_full_spinner"
                 android:layout_width="0dip"
                 android:layout_weight="1"
                 tools:text="type"/>
@@ -50,43 +49,46 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/locationFrame"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal" >
 
-            <AutoCompleteTextView
-                android:id="@+id/geocode"
-                style="@style/edittext"
-                android:hint="@string/cache_geocode"
-                android:layout_marginLeft="10dip"
-                android:layout_weight="1"
-                android:layout_width="0dip"
-                android:layout_height="wrap_content"
-                android:inputType="textCapCharacters" />
+            <com.google.android.material.textfield.TextInputLayout style="@style/textinput_autocompletetextview">
+                <AutoCompleteTextView
+                    android:id="@+id/geocode"
+                    style="@style/textinput_embedded"
+                    android:hint="@string/cache_geocode"
+                    android:inputType="textCapCharacters" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <Button
                 android:id="@+id/coordinates"
                 style="@style/button_full"
-                android:hint="@string/cache_coordinates"
-                android:layout_width="0dip"
-                android:layout_weight="1" />
+                android:hint="@string/cache_coordinates" />
         </LinearLayout>
 
-        <EditText
-            android:id="@+id/tracking"
-            style="@style/edittext_full"
-            android:hint="@string/trackable_code"
-            android:importantForAutofill="no"
-            android:inputType="textCapCharacters" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/trackingFrame"
+            style="@style/textinput_edittext_singleline">
+            <EditText
+                android:id="@+id/tracking"
+                style="@style/textinput_embedded"
+                android:hint="@string/trackable_code"
+                android:importantForAutofill="no"
+                android:inputType="textCapCharacters" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/log"
-            style="@style/edittext_full"
-            android:hint="@string/log_new_log_text"
-            android:autofillHints="@string/log_new_log_text"
-            android:inputType="textMultiLine|textCapSentences"
-            android:lines="5"
-            android:maxLength="4000" />
+        <com.google.android.material.textfield.TextInputLayout style="@style/textinput_edittext">
+            <EditText
+                android:id="@+id/log"
+                style="@style/textinput_embedded"
+                android:hint="@string/log_new_log_text"
+                android:autofillHints="@string/log_new_log_text"
+                android:inputType="textMultiLine|textCapSentences"
+                android:lines="5"
+                android:maxLength="4000" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <LinearLayout
             android:id="@+id/tweet_box"
@@ -106,7 +108,7 @@
                 android:layout_gravity="left"
                 android:gravity="center"
                 android:padding="2sp"
-                android:text="@string/visit_tweet"                />
+                android:text="@string/visit_tweet" />
 
         </LinearLayout>
     </LinearLayout>

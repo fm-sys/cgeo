@@ -2,7 +2,7 @@ package cgeo.geocaching.maps.routing;
 
 import cgeo.geocaching.CacheDetailActivity;
 import cgeo.geocaching.R;
-import cgeo.geocaching.activity.AbstractActivity;
+import cgeo.geocaching.activity.AbstractActionBarActivity;
 import cgeo.geocaching.enumerations.CacheListType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.location.GeopointFormatter;
@@ -10,22 +10,21 @@ import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.IWaypoint;
 import cgeo.geocaching.models.RouteItem;
 import cgeo.geocaching.models.Waypoint;
-import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.ui.TextParam;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.Formatter;
 import cgeo.geocaching.utils.MapMarkerUtils;
 import static cgeo.geocaching.location.GeopointFormatter.Format.LAT_LON_DECMINUTE;
 
 import android.annotation.SuppressLint;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,13 +33,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
+import com.google.android.material.button.MaterialButton;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 import com.mobeta.android.dslv.SimpleFloatViewManager;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public class RouteSortActivity extends AbstractActivity {
+public class RouteSortActivity extends AbstractActionBarActivity {
 
     private ArrayAdapter<RouteItem> routeItemAdapter;
     private ArrayList<RouteItem> routeItems;
@@ -76,8 +77,6 @@ public class RouteSortActivity extends AbstractActivity {
                 View v = convertView;
                 if (null == convertView) {
                     v = getLayoutInflater().inflate(R.layout.twotexts_button_image_item, parent, false);
-                    ((ImageButton) v.findViewById(R.id.button_left)).setImageResource(R.drawable.ic_menu_delete);
-                    ((ImageView) v.findViewById(R.id.img_right)).setImageResource(Settings.isLightSkin() ? R.drawable.ic_menu_reorder_black : R.drawable.ic_menu_reorder);
                 }
 
                 final RouteItem routeItem = routeItems.get(position);
@@ -87,7 +86,7 @@ public class RouteSortActivity extends AbstractActivity {
                 final TextView title = v.findViewById(R.id.title);
                 final TextView detail = v.findViewById(R.id.detail);
                 if (null == data && cacheOrWaypointType) {
-                    title.setText(routeItem.getGeocode());
+                    title.setText(routeItem.getShortGeocode());
                     detail.setText(R.string.route_item_not_yet_loaded);
                 } else {
                     title.setText(null == data ? "" : data.getName());
@@ -109,17 +108,21 @@ public class RouteSortActivity extends AbstractActivity {
                             title.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
                             break;
                         default:
-                            throw new IllegalStateException("unknow RouteItemType in RouteSortActivity");
+                            throw new IllegalStateException("unknown RouteItemType in RouteSortActivity");
                     }
                     title.setOnClickListener(v1 -> CacheDetailActivity.startActivity(listView.getContext(), data.getGeocode(), data.getName()));
                     detail.setOnClickListener(v1 -> CacheDetailActivity.startActivity(listView.getContext(), data.getGeocode(), data.getName()));
+                    title.setOnLongClickListener(v1 -> setAsStart(position));
+                    detail.setOnLongClickListener(v1 -> setAsStart(position));
                 }
 
-                final View buttonDelete = v.findViewById(R.id.button_left);
+                final MaterialButton buttonDelete = v.findViewById(R.id.button_left);
+                buttonDelete.setIconResource(R.drawable.ic_menu_delete);
                 buttonDelete.setVisibility(View.VISIBLE);
                 buttonDelete.setOnClickListener(vUp -> delete(position));
 
                 final ImageView imgReorder = v.findViewById(R.id.img_right);
+                imgReorder.setImageResource(R.drawable.ic_menu_reorder);
                 imgReorder.setVisibility(View.VISIBLE);
                 imgReorder.setOnTouchListener(controller);
 
@@ -139,40 +142,79 @@ public class RouteSortActivity extends AbstractActivity {
         listView.setOnTouchListener(controller);
         listView.setDragEnabled(true);
 
-        if (Settings.isLightSkin()) {
         final SimpleFloatViewManager simpleFloatViewManager = new SimpleFloatViewManager(listView);
-        simpleFloatViewManager.setBackgroundColor(Color.GRAY);
+        simpleFloatViewManager.setBackgroundColor(getResources().getColor(R.color.colorBackgroundSelected));
         listView.setFloatViewManager(simpleFloatViewManager);
-        }
-
     }
 
-    private boolean delete(final int position) {
+    private void delete(final int position) {
         routeItems.remove(position);
         routeItemAdapter.notifyDataSetChanged();
         changed = true;
-        invalidateOptionsMenu();
+    }
+
+    private void invertOrder() {
+        Collections.reverse(routeItems);
+        routeItemAdapter.notifyDataSetChanged();
+        changed = true;
+    }
+
+    private boolean setAsStart(final int position) {
+        if (position < 1 || position >= routeItems.size()) {
+            return false;
+        }
+        SimpleDialog.ofContext(this).setTitle(TextParam.id(R.string.individual_route_set_as_start_title)).setMessage(TextParam.id(R.string.individual_route_set_as_start_message)).confirm((d, v) -> {
+            final ArrayList<RouteItem> newRouteItems = new ArrayList<>();
+            for (int i = position; i < routeItems.size(); i++) {
+                newRouteItems.add(routeItems.get(i));
+            }
+            for (int i = 0; i < position; i++) {
+                newRouteItems.add(routeItems.get(i));
+            }
+            routeItems = newRouteItems;
+            routeItemAdapter.notifyDataSetChanged();
+            changed = true;
+        });
         return true;
     }
 
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
-        getMenuInflater().inflate(R.menu.route_sort, menu);
-        menu.findItem(R.id.save_sorted_route).setVisible(changed);
+        getMenuInflater().inflate(R.menu.menu_ok_cancel, menu);
+        menu.findItem(R.id.menu_invert_order).setVisible(true);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
-        if (item.getItemId() == R.id.save_sorted_route) {
+        final int itemId = item.getItemId();
+        if (itemId == R.id.menu_item_save) {
             AndroidRxUtils.andThenOnUi(Schedulers.io(), () -> DataStore.saveIndividualRoute(routeItems), () -> {
                 changed = false;
                 invalidateOptionsMenu();
                 Toast.makeText(this, R.string.sorted_route_saved, Toast.LENGTH_SHORT).show();
+                finish();
             });
+            return true;
+        } else if (itemId == R.id.menu_item_cancel) {
+            finish();
+            return true;
+        } else if (itemId == R.id.menu_invert_order) {
+            invertOrder();
+            return true;
+        } else if (itemId == android.R.id.home) {
+            onBackPressed();
             return true;
         }
         return false;
     }
 
+    @Override
+    public void onBackPressed() {
+        if (changed) {
+            SimpleDialog.of(this).setTitle(R.string.confirm_unsaved_changes_title).setMessage(R.string.confirm_discard_changes).confirm((dialog, which) -> finish());
+        } else {
+            finish();
+        }
+    }
 }

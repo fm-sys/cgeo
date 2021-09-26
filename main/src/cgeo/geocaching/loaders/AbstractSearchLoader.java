@@ -4,6 +4,7 @@ import cgeo.geocaching.CacheListActivity;
 import cgeo.geocaching.R;
 import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.connector.IConnector;
+import cgeo.geocaching.filters.core.IGeocacheFilter;
 import cgeo.geocaching.utils.Log;
 
 import android.app.Activity;
@@ -28,6 +29,7 @@ public abstract class AbstractSearchLoader extends AsyncTaskLoader<SearchResult>
         KEYWORD,
         ADDRESS,
         FINDER,
+        SEARCH_FILTER,
         OWNER,
         MAP,
         NEXT_PAGE;
@@ -130,5 +132,9 @@ public abstract class AbstractSearchLoader extends AsyncTaskLoader<SearchResult>
 
     public void setAfterLoadAction(final CacheListActivity.AfterLoadAction afterLoadAction) {
         this.afterLoadAction = afterLoadAction;
+    }
+
+    public IGeocacheFilter getAdditionalFilterParameter() {
+        return null;
     }
 }

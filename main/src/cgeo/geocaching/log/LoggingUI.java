@@ -5,15 +5,16 @@ import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.ui.AbstractUIFactory;
+import cgeo.geocaching.ui.dialog.Dialogs;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public final class LoggingUI extends AbstractUIFactory {
             String text = logType.getL10n();
 
             if (isActive) {
-                text += " ✔";
+                text += " ✓";
             }
 
             return text;
@@ -93,7 +94,7 @@ public final class LoggingUI extends AbstractUIFactory {
         }
         list.add(new LogTypeEntry(null, SpecialLogType.LOG_CACHE, false));
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        final AlertDialog.Builder builder = Dialogs.newBuilder(activity);
         builder.setTitle(R.string.cache_menu_visit_offline);
 
         final ArrayAdapter<LogTypeEntry> adapter = new ArrayAdapter<>(activity, android.R.layout.select_dialog_item, list);
@@ -140,11 +141,8 @@ public final class LoggingUI extends AbstractUIFactory {
         if (cache == null) {
             return;
         }
-        final MenuItem itemLog = menu.findItem(R.id.menu_log_visit);
-        itemLog.setVisible(cache.supportsLogging() && !Settings.getLogOffline());
-
-        final MenuItem itemOffline = menu.findItem(R.id.menu_log_visit_offline);
-        itemOffline.setVisible(cache.supportsLogging() && Settings.getLogOffline());
+        menu.findItem(R.id.menu_log_visit).setVisible(cache.supportsLogging() && !Settings.getLogOffline());
+        menu.findItem(R.id.menu_log_visit_offline).setVisible(cache.supportsLogging() && Settings.getLogOffline());
     }
 
     public static void addMenuItems(final Activity activity, final Menu menu, final Geocache cache) {

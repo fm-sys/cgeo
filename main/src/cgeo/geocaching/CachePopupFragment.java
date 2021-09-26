@@ -2,7 +2,9 @@ package cgeo.geocaching;
 
 import cgeo.geocaching.activity.Progress;
 import cgeo.geocaching.apps.navi.NavigationAppFactory;
+import cgeo.geocaching.databinding.PopupBinding;
 import cgeo.geocaching.enumerations.CacheListType;
+import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.network.Network;
@@ -13,6 +15,7 @@ import cgeo.geocaching.ui.CacheDetailsCreator;
 import cgeo.geocaching.ui.WeakReferenceHandler;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.DisposableHandler;
+import cgeo.geocaching.utils.EmojiUtils;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.MapMarkerUtils;
 import cgeo.geocaching.utils.TextUtils;
@@ -24,10 +27,10 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -36,10 +39,10 @@ import java.util.Collections;
 import java.util.Set;
 
 import io.reactivex.rxjava3.schedulers.Schedulers;
-import org.apache.commons.lang3.StringUtils;
 
 public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotification {
     private final Progress progress = new Progress();
+    private PopupBinding binding;
 
     public static DialogFragment newInstance(final String geocode) {
 
@@ -103,7 +106,8 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
 
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
-        final View v = inflater.inflate(R.layout.popup, container, false);
+        binding = PopupBinding.inflate(getLayoutInflater(), container, false);
+        final View v = binding.getRoot();
         initCustomActionBar(v);
         return v;
     }
@@ -117,26 +121,31 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
                 proximityNotification.setTextNotifications(getContext());
             }
 
-            if (StringUtils.isNotBlank(cache.getName())) {
-                setTitle(TextUtils.coloredCacheText(cache, cache.getName()));
-            } else {
-                setTitle(geocode);
-            }
+            final Toolbar toolbar = binding.toolbar.toolbar;
+            toolbar.setTitle(geocode);
+            toolbar.setLogo(MapMarkerUtils.getCacheMarker(getResources(), cache, CacheListType.MAP).getDrawable());
+            toolbar.setLongClickable(true);
+            toolbar.setOnLongClickListener(v -> {
+                if (cache.isOffline()) {
+                    EmojiUtils.selectEmojiPopup(CachePopupFragment.this.requireContext(), cache.getAssignedEmoji(), cache.getType().markerId, newCacheIcon -> {
+                        cache.setAssignedEmoji(newCacheIcon);
+                        toolbar.setLogo(MapMarkerUtils.getCacheMarker(getResources(), cache, CacheListType.MAP).getDrawable());
+                        DataStore.saveCache(cache, LoadFlags.SAVE_ALL);
+                    });
+                    return true;
+                }
+                return false;
+            });
 
-            final View view = getView();
-            assert view != null;
-            final TextView titleView = view.findViewById(R.id.actionbar_title);
-            titleView.setCompoundDrawablesWithIntrinsicBounds(MapMarkerUtils.getCacheMarker(getResources(), cache, CacheListType.MAP).getDrawable(), null, null, null);
+            binding.title.setText(TextUtils.coloredCacheText(cache, cache.getName()));
+            details = new CacheDetailsCreator(getActivity(), binding.detailsList);
 
-            final LinearLayout layout = view.findViewById(R.id.details_list);
-            details = new CacheDetailsCreator(getActivity(), layout);
-
-            addCacheDetails();
+            addCacheDetails(false);
 
             // offline use
-            CacheDetailActivity.updateOfflineBox(view, cache, res, new RefreshCacheClickListener(), new DropCacheClickListener(), new StoreCacheClickListener(), new ShowHintClickListener(view), null, new StoreCacheClickListener());
+            CacheDetailActivity.updateOfflineBox(binding.getRoot(), cache, res, new RefreshCacheClickListener(), new DropCacheClickListener(), new StoreCacheClickListener(), new ShowHintClickListener(binding), null, new StoreCacheClickListener());
 
-            CacheDetailActivity.updateCacheLists(view, cache, res);
+            CacheDetailActivity.updateCacheLists(binding.getRoot(), cache, res);
 
         } catch (final Exception e) {
             Log.e("CachePopupFragment.init", e);
@@ -208,7 +217,7 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
                 DataStore.saveLists(Collections.singletonList(cache), listIds);
                 CacheDetailActivity.updateOfflineBox(getView(), cache, res,
                         new RefreshCacheClickListener(), new DropCacheClickListener(),
-                        new StoreCacheClickListener(), new ShowHintClickListener(getView()), null, new StoreCacheClickListener());
+                        new StoreCacheClickListener(), new ShowHintClickListener(binding), null, new StoreCacheClickListener());
                 CacheDetailActivity.updateCacheLists(getView(), cache, res);
             } else {
                 final StoreCacheHandler storeCacheHandler = new StoreCacheHandler(CachePopupFragment.this, R.string.cache_dialog_offline_save_message);
@@ -220,7 +229,7 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
                     if (view != null) {
                         CacheDetailActivity.updateOfflineBox(view, cache, res,
                                 new RefreshCacheClickListener(), new DropCacheClickListener(),
-                                new StoreCacheClickListener(), new ShowHintClickListener(view), null, new StoreCacheClickListener());
+                                new StoreCacheClickListener(), new ShowHintClickListener(binding), null, new StoreCacheClickListener());
                         CacheDetailActivity.updateCacheLists(view, cache, res);
                     }
                 });
@@ -262,16 +271,16 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
     }
 
     private static class ShowHintClickListener implements View.OnClickListener {
-        private final View anchorView;
+        private final PopupBinding binding;
 
-        ShowHintClickListener (final View view) {
-            anchorView = view;
+        ShowHintClickListener (final PopupBinding binding) {
+            this.binding = binding;
         }
 
         @Override
         public void onClick(final View view) {
-            final TextView offlineHintText = (TextView) anchorView.findViewById(R.id.offline_hint_text);
-            final View offlineHintSeparator = anchorView.findViewById(R.id.offline_hint_separator);
+            final TextView offlineHintText = binding.offlineHintText;
+            final View offlineHintSeparator = binding.offlineHintSeparator;
             if (offlineHintText.getVisibility() == View.VISIBLE) {
                 offlineHintText.setVisibility(View.GONE);
                 offlineHintSeparator.setVisibility(View.GONE);
@@ -282,22 +291,25 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
         }
     }
 
-    @Override
-    public void navigateTo() {
-        NavigationAppFactory.startDefaultNavigationApplication(1, getActivity(), cache);
-    }
 
     @Override
     public void showNavigationMenu() {
         NavigationAppFactory.showNavigationMenu(getActivity(), cache, null, null, true, true);
     }
 
+    /**
+     * Tries to navigate to the {@link Geocache} of this activity.
+     */
+    @Override
+    public void startDefaultNavigation() {
+        NavigationAppFactory.startDefaultNavigationApplication(1, getActivity(), cache);
+    }
 
     /**
      * Tries to navigate to the {@link Geocache} of this activity.
      */
     @Override
-    protected void startDefaultNavigation2() {
+    public void startDefaultNavigation2() {
         if (cache == null || cache.getCoords() == null) {
             showToast(res.getString(R.string.cache_coordinates_no));
             return;

@@ -8,9 +8,11 @@ import cgeo.geocaching.connector.ILoggingManager;
 import cgeo.geocaching.connector.UserInfo;
 import cgeo.geocaching.connector.UserInfo.UserInfoStatus;
 import cgeo.geocaching.connector.capability.IFavoriteCapability;
+import cgeo.geocaching.connector.capability.IIgnoreCapability;
 import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.connector.capability.IOAuthCapability;
 import cgeo.geocaching.connector.capability.ISearchByCenter;
+import cgeo.geocaching.connector.capability.ISearchByFilter;
 import cgeo.geocaching.connector.capability.ISearchByGeocode;
 import cgeo.geocaching.connector.capability.ISearchByKeyword;
 import cgeo.geocaching.connector.capability.ISearchByOwner;
@@ -20,6 +22,8 @@ import cgeo.geocaching.connector.capability.PersonalNoteCapability;
 import cgeo.geocaching.connector.capability.WatchListCapability;
 import cgeo.geocaching.connector.oc.OCApiConnector.OAuthLevel;
 import cgeo.geocaching.enumerations.StatusCode;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilterType;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.log.LogCacheActivity;
@@ -37,11 +41,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
-public class SuConnector extends AbstractConnector implements ISearchByCenter, ISearchByGeocode, ISearchByViewPort, ILogin, IOAuthCapability, WatchListCapability, PersonalNoteCapability, ISearchByKeyword, ISearchByOwner, IFavoriteCapability, IVotingCapability {
+public class SuConnector extends AbstractConnector implements ISearchByCenter, ISearchByGeocode, ISearchByViewPort, ILogin, IOAuthCapability, WatchListCapability, PersonalNoteCapability, ISearchByKeyword, ISearchByOwner, ISearchByFilter, IFavoriteCapability, IVotingCapability, IIgnoreCapability {
 
     private static final CharSequence PREFIX_MULTISTEP_VIRTUAL = "MV";
     private static final CharSequence PREFIX_TRADITIONAL = "TR";
@@ -147,7 +153,7 @@ public class SuConnector extends AbstractConnector implements ISearchByCenter, I
 
     @Override
     public String getCacheLogUrl(@NonNull final Geocache cache, @NonNull final LogEntry logEntry) {
-        if (!StringUtils.isBlank(logEntry.serviceLogId)) {
+        if (StringUtils.isNotBlank(logEntry.serviceLogId)) {
             return getCacheUrl(cache) + "#p" + logEntry.serviceLogId;
         }
         return null;
@@ -168,6 +174,12 @@ public class SuConnector extends AbstractConnector implements ISearchByCenter, I
     @Override
     public boolean canHandle(@NonNull final String geocode) {
         return StringUtils.startsWithAny(StringUtils.upperCase(geocode), PREFIX_GENERAL, PREFIX_TRADITIONAL, PREFIX_MULTISTEP_VIRTUAL, PREFIX_VIRTUAL, PREFIX_MULTISTEP, PREFIX_EVENT, PREFIX_CONTEST, PREFIX_MYSTERY, PREFIX_MYSTERY_VIRTUAL) && isNumericId(SuConnector.geocodeToId(geocode));
+    }
+
+    @NotNull
+    @Override
+    public String[] getGeocodeSqlLikeExpressions() {
+        return new String[]{PREFIX_GENERAL + "%", PREFIX_TRADITIONAL + "%", PREFIX_MULTISTEP_VIRTUAL + "%", PREFIX_VIRTUAL + "%", PREFIX_MULTISTEP + "%", PREFIX_EVENT + "%", PREFIX_CONTEST + "%", PREFIX_MYSTERY + "%", PREFIX_MYSTERY_VIRTUAL + "%"};
     }
 
     @Override
@@ -249,6 +261,27 @@ public class SuConnector extends AbstractConnector implements ISearchByCenter, I
             return new SearchResult(StatusCode.UNKNOWN_ERROR);
         }
 
+    }
+
+    @NonNull
+    @Override
+    public EnumSet<GeocacheFilterType> getFilterCapabilities() {
+        return EnumSet.of(GeocacheFilterType.DISTANCE, GeocacheFilterType.ORIGIN, GeocacheFilterType.NAME, GeocacheFilterType.OWNER);
+    }
+
+    @Override
+    @NonNull
+    public SearchResult searchByFilter(@NonNull final GeocacheFilter filter) {
+        try {
+            return new SearchResult(SuApi.searchByFilter(filter, this));
+        } catch (final SuApi.NotAuthorizedException e) {
+            return new SearchResult(StatusCode.NOT_LOGGED_IN);
+        } catch (final SuApi.ConnectionErrorException e) {
+            return new SearchResult(StatusCode.CONNECTION_FAILED_SU);
+        } catch (final Exception e) {
+            Log.e("SuConnector.searchByFilter failed: ", e);
+            return new SearchResult(StatusCode.UNKNOWN_ERROR);
+        }
     }
 
     @Override
@@ -460,6 +493,29 @@ public class SuConnector extends AbstractConnector implements ISearchByCenter, I
     private static class Holder {
         @NonNull
         private static final SuConnector INSTANCE = new SuConnector();
+    }
+
+    @Override
+    public boolean canIgnoreCache(@NonNull final Geocache cache) {
+        return true;
+    }
+
+    @Override
+    public boolean addToIgnorelist(@NonNull final Geocache cache) {
+        SuApi.setIgnoreState(cache, true);
+        return true;
+    }
+    
+    
+    @Override
+    public boolean canRemoveFromIgnoreCache(@NonNull final Geocache cache) {
+        return true;
+    }
+
+    @Override
+    public boolean removeFromIgnorelist(@NonNull final Geocache cache) {
+        SuApi.setIgnoreState(cache, false);
+        return true;
     }
 
 }

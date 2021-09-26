@@ -1,13 +1,11 @@
 package cgeo.geocaching.maps.mapsforge.v6.caches;
 
-import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.maps.MapUtils;
 import cgeo.geocaching.maps.mapsforge.v6.MapHandlers;
 import cgeo.geocaching.maps.mapsforge.v6.NewMap;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Waypoint;
-import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 
 import java.util.ArrayList;
@@ -30,25 +28,20 @@ public class WaypointsOverlay extends AbstractCachesOverlay {
         syncLayers(removeCodes, newCodes);
     }
 
-    private Set<Waypoint> filterWaypoints(final Collection<String> baseGeoCodes, final boolean showStored, final boolean checkOwnership) {
+    private Set<Waypoint> filterWaypoints(final Collection<String> baseGeoCodes, final boolean showStored) {
         final Set<Waypoint> waypoints = new HashSet<>();
 
         final Set<Geocache> baseCaches = DataStore.loadCaches(baseGeoCodes, LoadFlags.LOAD_WAYPOINTS);
 
         for (final Geocache cache : baseCaches) {
             final Set<Waypoint> filteredWaypoints = new HashSet<>(cache.getWaypoints());
-            MapUtils.filter(filteredWaypoints, checkOwnership);
+            MapUtils.filter(filteredWaypoints, getFilterContext());
             waypoints.addAll(filteredWaypoints);
         }
 
         if (showStored) {
-            final boolean excludeMine = Settings.isExcludeMyCaches();
-            final boolean excludeDisabled = Settings.isExcludeDisabledCaches();
-            final boolean excludeArchived = Settings.isExcludeArchivedCaches();
-            final CacheType type = Settings.getCacheType();
-
-            final Set<Waypoint> waypointsInViewport = DataStore.loadWaypoints(getViewport(), excludeMine, excludeDisabled, excludeArchived, type);
-            MapUtils.filter(waypointsInViewport, checkOwnership);
+            final Set<Waypoint> waypointsInViewport = DataStore.loadWaypoints(getViewport());
+            MapUtils.filter(waypointsInViewport, getFilterContext());
             waypoints.addAll(waypointsInViewport);
         }
 
@@ -58,7 +51,7 @@ public class WaypointsOverlay extends AbstractCachesOverlay {
     protected void showWaypoints(final Collection<String> baseGeoCodes, final boolean showStored, final boolean checkOwnership, final boolean forceCompactIconMode) {
         final Collection<String> removeCodes = getGeocodes();
         final Collection<String> newCodes = new HashSet<>();
-        final Set<Waypoint> waypoints = filterWaypoints(baseGeoCodes, showStored, checkOwnership);
+        final Set<Waypoint> waypoints = filterWaypoints(baseGeoCodes, showStored);
 
         for (final Waypoint waypoint : waypoints) {
             if (waypoint == null || waypoint.getCoords() == null || !waypoint.getCoords().isValid()) {
@@ -78,7 +71,7 @@ public class WaypointsOverlay extends AbstractCachesOverlay {
 
     /**
      * get waypoint IDs for geocodes and invalidate them
-     * @param geocodes
+     * @param geocodes the codes
      */
     public void invalidateWaypoints(final Collection<String> geocodes) {
         final Set<Geocache> baseCaches = DataStore.loadCaches(geocodes, LoadFlags.LOAD_WAYPOINTS);

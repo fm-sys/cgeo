@@ -9,6 +9,7 @@ import cgeo.geocaching.log.LogEntry;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Trackable;
 import cgeo.geocaching.models.Waypoint;
+import cgeo.geocaching.models.WaypointUserNoteCombiner;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.utils.Log;
@@ -158,6 +159,7 @@ public final class GpxSerializer {
             gpx.endTag(NS_GROUNDSPEAK, "cache");
 
             writeGsakExtensions(cache);
+            writeCGeoExtensions(cache);
 
             gpx.endTag(NS_GPX, "wpt");
 
@@ -172,8 +174,35 @@ public final class GpxSerializer {
 
     private void writeGsakExtensions(@NonNull final Geocache cache) throws IOException {
         gpx.startTag(NS_GSAK, "wptExtension");
-        XmlUtils.multipleTexts(gpx, NS_GSAK, "Watch", gpxBoolean(cache.isOnWatchlist()), "IsPremium", gpxBoolean(cache.isPremiumMembersOnly()), "FavPoints", Integer.toString(cache.getFavoritePoints()), "GcNote", StringUtils.trimToEmpty(cache.getPersonalNote()));
+        XmlUtils.multipleTexts(gpx, NS_GSAK, "Watch", gpxBoolean(cache.isOnWatchlist()), "IsPremium", gpxBoolean(cache.isPremiumMembersOnly()), "FavPoints", Integer.toString(cache.getFavoritePoints()),
+            "GcNote", StringUtils.trimToEmpty(cache.getPersonalNote()));
+
+        if (Settings.getIncludeFoundStatus()) {
+            final long visited = cache.getVisitedDate();
+            if (cache.isFound()) {
+                if (0 != visited) {
+                    gpx.startTag(NS_GSAK, "UserFound");
+                    gpx.text(dateFormatZ.format(new Date(visited)));
+                    gpx.endTag(NS_GSAK, "UserFound");
+                }
+            } else if (cache.isDNF()) {
+                gpx.startTag(NS_GSAK, "DNF");
+                gpx.text(gpxBoolean(cache.isDNF()));
+                gpx.endTag(NS_GSAK, "DNF");
+                if (0 != visited) {
+                    gpx.startTag(NS_GSAK, "DNFDate");
+                    gpx.text(dateFormatZ.format(new Date(visited)));
+                    gpx.endTag(NS_GSAK, "DNFDate");
+                }
+            }
+        }
         gpx.endTag(NS_GSAK, "wptExtension");
+    }
+
+    private void writeCGeoExtensions(@NonNull final Geocache cache) throws IOException {
+        gpx.startTag(NS_CGEO, "cacheExtension");
+        XmlUtils.simpleText(gpx, NS_CGEO, "assignedEmoji", String.valueOf(cache.getAssignedEmoji()));
+        gpx.endTag(NS_CGEO, "cacheExtension");
     }
 
     private void writeGsakExtensions(@NonNull final Waypoint waypoint) throws IOException {
@@ -273,7 +302,8 @@ public final class GpxSerializer {
 
         final String waypointTypeGpx = wp.getWaypointType().gpx;
         // combine note and user note with SEPARATOR "\n--\n"
-        final String waypointNote = wp.getCombinedNoteAndUserNote();
+        final WaypointUserNoteCombiner wpCombiner = new  WaypointUserNoteCombiner(wp);
+        final String waypointNote = wpCombiner.getCombinedNoteAndUserNote();
         XmlUtils.multipleTexts(gpx, NS_GPX, "name", wp.getGpxId(), "cmt", waypointNote, "desc", wp.getName(), "sym", waypointTypeGpx, "type", "Waypoint|" + waypointTypeGpx);
 
         // add parent reference the GSAK-way

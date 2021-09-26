@@ -17,6 +17,7 @@
         android:hint="@string/init_signature"
         android:autofillHints="@string/init_signature"/>
 
+    <!-- @todo needs to get default button styling applied (button_full) as soon as preferences are migrated to PreferenceFragments etc. -->
     <Button
         android:id="@+id/signature_templates"
         android:layout_width="wrap_content"
@@ -30,6 +31,6 @@
         android:layout_height="wrap_content"
         android:paddingBottom="8dp"
         android:text="@string/init_template_help"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
+        android:textSize="@dimen/textSize_detailsSecondary" />
 
 </LinearLayout>

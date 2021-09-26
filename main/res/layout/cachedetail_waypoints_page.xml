@@ -3,17 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:cacheColorHint="?background_color"
     android:clickable="true"
     android:clipToPadding="false"
-    android:divider="?background_color"
     android:fastScrollEnabled="false"
     android:focusable="false"
     android:footerDividersEnabled="false"
     android:headerDividersEnabled="false"
-    android:listSelector="?background_color"
     android:nestedScrollingEnabled="true"
     android:scrollbarStyle="outsideOverlay"
+    android:paddingRight="@dimen/paddingRight_fastscroll"
     tools:context=".CacheDetailActivity$WaypointsViewCreator">
 
 </ListView>

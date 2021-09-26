@@ -1,15 +1,17 @@
 package cgeo.geocaching;
 
 import cgeo.geocaching.activity.AbstractActivity;
-import cgeo.geocaching.downloader.ReceiveMapFileActivity;
+import cgeo.geocaching.downloader.ReceiveDownloadService;
 import cgeo.geocaching.files.FileType;
 import cgeo.geocaching.files.FileTypeDetector;
-import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+
+import androidx.core.content.ContextCompat;
 
 public class HandleLocalFilesActivity extends AbstractActivity {
 
@@ -33,14 +35,14 @@ public class HandleLocalFilesActivity extends AbstractActivity {
                 finished = true;
                 break;
             case MAP:
-                continueWith(ReceiveMapFileActivity.class, intent);
+                continueWithForegroundService(ReceiveDownloadService.class, intent);
                 finished = true;
                 break;
             default:
                 break;
         }
         if (!finished) {
-            Dialogs.message(this, R.string.localfile_title, R.string.localfile_cannot_handle, (dialog, button) -> finish());
+            SimpleDialog.of(this).setTitle(R.string.localfile_title).setMessage(R.string.localfile_cannot_handle).show((dialog, button) -> finish());
         }
     }
 
@@ -48,6 +50,13 @@ public class HandleLocalFilesActivity extends AbstractActivity {
         final Intent forwarder = new Intent(intent);
         forwarder.setClass(this, clazz);
         startActivity(forwarder);
+        finish();
+    }
+
+    private void continueWithForegroundService(@SuppressWarnings("rawtypes") final Class clazz, final Intent intent) {
+        final Intent forwarder = new Intent(intent);
+        forwarder.setClass(this, clazz);
+        ContextCompat.startForegroundService(this, intent);
         finish();
     }
 

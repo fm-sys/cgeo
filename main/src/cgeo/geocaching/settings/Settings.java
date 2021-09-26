@@ -3,11 +3,13 @@ package cgeo.geocaching.settings;
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
 import cgeo.geocaching.apps.navi.NavigationAppFactory.NavigationAppsEnum;
+import cgeo.geocaching.brouter.BRouterConstants;
 import cgeo.geocaching.connector.capability.ICredentials;
 import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.connector.gc.GCConstants;
 import cgeo.geocaching.connector.gc.GCMemberState;
-import cgeo.geocaching.enumerations.CacheType;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.ProximityNotification;
@@ -21,7 +23,7 @@ import cgeo.geocaching.maps.interfaces.MapProvider;
 import cgeo.geocaching.maps.interfaces.MapSource;
 import cgeo.geocaching.maps.routing.Routing;
 import cgeo.geocaching.maps.routing.RoutingMode;
-import cgeo.geocaching.models.OfflineMap;
+import cgeo.geocaching.models.Download;
 import cgeo.geocaching.network.HtmlImage;
 import cgeo.geocaching.playservices.GooglePlayServices;
 import cgeo.geocaching.sensors.DirectionData;
@@ -32,29 +34,34 @@ import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.storage.LocalStorage;
 import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.storage.PersistableUri;
+import cgeo.geocaching.ui.notifications.Notifications;
 import cgeo.geocaching.utils.CryptUtils;
-import cgeo.geocaching.utils.EnvironmentUtils;
 import cgeo.geocaching.utils.FileUtils;
 import cgeo.geocaching.utils.Log;
-import static cgeo.geocaching.maps.MapProviderFactory.MAP_LANGUAGE_DEFAULT;
+import static cgeo.geocaching.maps.MapProviderFactory.MAP_LANGUAGE_DEFAULT_ID;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -79,6 +86,8 @@ public class Settings {
     public static final int COMPACTICON_OFF = 0;
     public static final int COMPACTICON_ON = 1;
     public static final int COMPACTICON_AUTO = 2;
+
+    public static final int DAYS_TO_SECONDS = 24 * 60 * 60;
 
     private static final int MAP_SOURCE_DEFAULT = GoogleMapProvider.GOOGLE_MAP_ID.hashCode();
 
@@ -108,6 +117,50 @@ public class Settings {
         }
     }
 
+    /**
+     * Possible values of the Dark Mode Setting.
+     * <p>
+     * The Dark Mode Setting can be stored in {@link android.content.SharedPreferences} as String by using {@link DarkModeSetting#getPreferenceValue(Context)} and received via {@link DarkModeSetting#valueOf(String)}.
+     * <p>
+     * Additionally, the equivalent {@link AppCompatDelegate}-Mode can be received via {@link #getModeId()}.
+     *
+     * @see AppCompatDelegate#MODE_NIGHT_YES
+     * @see AppCompatDelegate#MODE_NIGHT_NO
+     * @see AppCompatDelegate#MODE_NIGHT_FOLLOW_SYSTEM
+     */
+    public enum DarkModeSetting {
+
+        /**
+         * Always use light mode.
+         */
+        LIGHT(AppCompatDelegate.MODE_NIGHT_NO, R.string.pref_value_theme_light),
+        /**
+         * Always use dark mode.
+         */
+        DARK(AppCompatDelegate.MODE_NIGHT_YES, R.string.pref_value_theme_dark),
+        /**
+         * Follow the global system setting for dark mode.
+         */
+        SYSTEM_DEFAULT(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM, R.string.pref_value_theme_system_default);
+
+        private final int modeId;
+        private final @StringRes
+        int preferenceValue;
+
+        DarkModeSetting(final int modeId, final @StringRes int preferenceValue) {
+            this.modeId = modeId;
+            this.preferenceValue = preferenceValue;
+        }
+
+        public int getModeId() {
+            return modeId;
+        }
+
+        public String getPreferenceValue(final @NonNull Context context) {
+            return context.getString(preferenceValue);
+        }
+    }
+
     //NO_APPLICATION_MODE will be true if Settings is used in context of local unit tests
     private static final boolean NO_APPLICATION_MODE = CgeoApplication.getInstance() == null;
 
@@ -133,8 +186,12 @@ public class Settings {
         return getInt(R.string.pref_settingsversion, 0);
     }
 
+    public static void setActualVersion(final int newVersion) {
+        putInt(R.string.pref_settingsversion, newVersion);
+    }
+
     public static int getExpectedVersion() {
-        return 5;
+        return 8;
     }
 
     private static void migrateSettings() {
@@ -180,9 +237,8 @@ public class Settings {
             e.putInt(getKey(R.string.pref_lastmapzoom), prefsV0.getInt(getKey(R.string.pref_lastmapzoom), 14));
             e.putBoolean(getKey(R.string.pref_livelist), prefsV0.getInt(getKey(R.string.pref_livelist), 1) != 0);
             e.putBoolean(getKey(R.string.pref_units_imperial), prefsV0.getInt(getKey(R.string.pref_units_imperial), 1) != 1);
-            e.putBoolean(getKey(R.string.pref_skin), prefsV0.getInt(getKey(R.string.pref_skin), 0) != 0);
+            e.putBoolean(getKey(R.string.old_pref_skin), prefsV0.getInt(getKey(R.string.old_pref_skin), 0) != 0);
             e.putInt(getKey(R.string.pref_lastusedlist), prefsV0.getInt(getKey(R.string.pref_lastusedlist), StoredList.STANDARD_LIST_ID));
-            e.putString(getKey(R.string.pref_cachetype), prefsV0.getString(getKey(R.string.pref_cachetype), CacheType.ALL.id));
             e.putString(getKey(R.string.pref_twitter_token_secret), prefsV0.getString(getKey(R.string.pref_twitter_token_secret), null));
             e.putString(getKey(R.string.pref_twitter_token_public), prefsV0.getString(getKey(R.string.pref_twitter_token_public), null));
             e.putInt(getKey(R.string.pref_version), prefsV0.getInt(getKey(R.string.pref_version), 0));
@@ -193,8 +249,6 @@ public class Settings {
             e.putBoolean(getKey(R.string.pref_trackautovisit), prefsV0.getBoolean(getKey(R.string.pref_trackautovisit), false));
             e.putBoolean(getKey(R.string.pref_sigautoinsert), prefsV0.getBoolean(getKey(R.string.pref_sigautoinsert), false));
             e.putBoolean(getKey(R.string.pref_logimages), prefsV0.getBoolean(getKey(R.string.pref_logimages), false));
-            e.putBoolean(getKey(R.string.pref_excludedisabled), prefsV0.getInt(getKey(R.string.pref_excludedisabled), 0) != 0);
-            e.putBoolean(getKey(R.string.pref_excludemine), prefsV0.getInt(getKey(R.string.pref_excludemine), 0) != 0);
             e.putString(getKey(R.string.pref_mapfile), prefsV0.getString(getKey(R.string.pref_mapfile), null));
             e.putString(getKey(R.string.pref_signature), prefsV0.getString(getKey(R.string.pref_signature), null));
             e.putString(getKey(R.string.pref_pass_vote), prefsV0.getString(getKey(R.string.pref_pass_vote), null));
@@ -298,9 +352,37 @@ public class Settings {
 
         if (currentVersion < 5) {
             // non-used version which spilled into the nightlies. Just mark as migrated
-            final Editor e = sharedPrefs.edit();
-            e.putInt(getKey(R.string.pref_settingsversion), 5);
-            e.apply();
+            setActualVersion(5);
+        }
+
+        // the whole range of version numbers from 6 until 8 was "used" in different parts
+        // of migration of global exclude settings due to different bugs.
+        // Since this spilled into nightlies and beta, they can't be reused.
+        if (currentVersion < 8) {
+            //migrate global own/found/disable/archived/offlinelog to LIVE filter
+            final Map<GeocacheFilter.QuickFilter, Boolean> legacyGlobalSettings = new HashMap<>();
+            //see #11311: in some cases, the "exclude found" might not exist yet on user's devices
+            final boolean legacyExcludeMine = getBooleanDirect("excludemine", false);
+            final boolean legacyExcludeFound = hasKeyDirect("excludefound") ? getBooleanDirect("excludefound", false) : legacyExcludeMine;
+
+            legacyGlobalSettings.put(GeocacheFilter.QuickFilter.OWNED, !legacyExcludeMine);
+            legacyGlobalSettings.put(GeocacheFilter.QuickFilter.FOUND, !legacyExcludeFound);
+            legacyGlobalSettings.put(GeocacheFilter.QuickFilter.DISABLED, !getBooleanDirect("excludedisabled", false));
+            legacyGlobalSettings.put(GeocacheFilter.QuickFilter.ARCHIVED, !getBooleanDirect("excludearchived", false));
+
+            final GeocacheFilterContext liveFilterContext = new GeocacheFilterContext(GeocacheFilterContext.FilterType.LIVE);
+            GeocacheFilter liveFilter = liveFilterContext.get();
+
+            if (!liveFilter.hasSameQuickFilter(legacyGlobalSettings)) {
+                if (!liveFilter.canSetQuickFilterLossless()) {
+                    //settings can't be merged -> remove old filter
+                    liveFilter = GeocacheFilter.createEmpty();
+                }
+                liveFilter.setQuickFilterLossless(legacyGlobalSettings);
+                liveFilterContext.set(liveFilter);
+            }
+
+            setActualVersion(8);
         }
     }
 
@@ -314,6 +396,10 @@ public class Settings {
 
     protected static String getString(final int prefKeyId, final String defaultValue) {
         return getStringDirect(getKey(prefKeyId), defaultValue);
+    }
+
+    private static boolean hasKeyDirect(final String prefKey) {
+        return sharedPrefs != null && sharedPrefs.contains(prefKey);
     }
 
     private static String getStringDirect(final String prefKey, final String defaultValue) {
@@ -348,8 +434,13 @@ public class Settings {
     }
 
     private static boolean getBoolean(final int prefKeyId, final boolean defaultValue) {
-        return sharedPrefs == null ? defaultValue : sharedPrefs.getBoolean(getKey(prefKeyId), defaultValue);
+        return getBooleanDirect(getKey(prefKeyId), defaultValue);
     }
+
+    private static boolean getBooleanDirect(final String prefKey, final boolean defaultValue) {
+        return sharedPrefs == null ? defaultValue : sharedPrefs.getBoolean(prefKey, defaultValue);
+    }
+
 
     private static float getFloat(final int prefKeyId, final float defaultValue) {
         return sharedPrefs == null ? defaultValue : sharedPrefs.getFloat(getKey(prefKeyId), defaultValue);
@@ -490,12 +581,24 @@ public class Settings {
         return getBoolean(R.string.pref_connectorECActive, false);
     }
 
+    public static boolean isALConnectorActive() {
+        return getBoolean(R.string.pref_connectorALActive, true);
+    }
+
     public static boolean isSUConnectorActive() {
         return getBoolean(R.string.pref_connectorSUActive, false);
     }
 
     public static boolean isGCPremiumMember() {
         return getGCMemberStatus().isPremium();
+    }
+
+    public static boolean isALCAdvanced() {
+        return getBoolean(R.string.pref_alc_advanced, false);
+    }
+
+    public static String getALCLauncher() {
+        return getString(R.string.pref_alc_launcher, "");
     }
 
     public static GCMemberState getGCMemberStatus() {
@@ -562,18 +665,6 @@ public class Settings {
 
     public static boolean useLowPowerMode() {
         return getBoolean(R.string.pref_lowpowermode, false);
-    }
-
-    /**
-     * @param cacheType
-     *            The cache type used for future filtering
-     */
-    public static void setCacheType(final CacheType cacheType) {
-        if (cacheType == null) {
-            remove(R.string.pref_cachetype);
-        } else {
-            putString(R.string.pref_cachetype, cacheType.id);
-        }
     }
 
     public static int getLastDisplayedList() {
@@ -683,18 +774,6 @@ public class Settings {
 
     public static boolean isShowAddress() {
         return getBoolean(R.string.pref_showaddress, true);
-    }
-
-    public static boolean isExcludeMyCaches() {
-        return getBoolean(R.string.pref_excludemine, false);
-    }
-
-    public static boolean isExcludeDisabledCaches() {
-        return getBoolean(R.string.pref_excludedisabled, false);
-    }
-
-    public static boolean isExcludeArchivedCaches() {
-        return getBoolean(R.string.pref_excludearchived, isExcludeDisabledCaches());
     }
 
     public static boolean isExcludeWpOriginal() {
@@ -837,8 +916,12 @@ public class Settings {
         return getInt(prefKeyId, getKeyInt(defaultValueKeyId));
     }
 
+    public static boolean hasOSMMultiThreading() {
+        return getBoolean(R.string.pref_map_osm_multithreaded, false);
+    }
+
     public static int getMapOsmThreads() {
-        return getBoolean(R.string.pref_map_osm_multithreaded, true) ? Math.max(1, getInt(R.string.pref_map_osm_threads, Math.min(Runtime.getRuntime().availableProcessors() + 1, 4))) : 1;
+        return hasOSMMultiThreading() ? Math.max(1, getInt(R.string.pref_map_osm_threads, Math.min(Runtime.getRuntime().availableProcessors() + 1, 4))) : 1;
     }
 
     public static int getCompactIconMode() {
@@ -957,12 +1040,19 @@ public class Settings {
         }
     }
 
-    public static void setMapLanguage(final int languageId) {
-        putInt(R.string.pref_maplanguage, languageId);
+    public static void setMapLanguage(@Nullable final String language) {
+        putString(R.string.pref_mapLanguage, StringUtils.isBlank(language) ? "" : language);
     }
 
-    public static int getMapLanguage() {
-        return getInt(R.string.pref_maplanguage, MAP_LANGUAGE_DEFAULT);
+    @Nullable
+    public static String getMapLanguage() {
+        final String language = getString(R.string.pref_mapLanguage, null);
+        return StringUtils.isBlank(language) ? null : language;
+    }
+
+    public static int getMapLanguageId() {
+        final String language = getMapLanguage();
+        return StringUtils.isBlank(language) ? MAP_LANGUAGE_DEFAULT_ID : language.hashCode();
     }
 
     public static void setMapDownloaderSource(final int source) {
@@ -970,7 +1060,30 @@ public class Settings {
     }
 
     public static int getMapDownloaderSource() {
-        return getInt(R.string.pref_mapdownloader_source, OfflineMap.OfflineMapType.MAP_DOWNLOAD_TYPE_MAPSFORGE.id);
+        return getInt(R.string.pref_mapdownloader_source, Download.DownloadType.DOWNLOADTYPE_MAP_MAPSFORGE.id);
+    }
+
+    public static boolean isMapAutoDownloads() {
+        return getBoolean(R.string.pref_mapAutoDownloads, false);
+    }
+
+    public static boolean mapAutoDownloadsNeedUpdate() {
+        final long lastCheck = getLong(R.string.pref_mapAutoDownloadsLastCheck, 0);
+        if (lastCheck == 0) {
+            setMapAutoDownloadsLastCheck(false);
+            return false;
+        }
+        final long now = System.currentTimeMillis() / 1000;
+        final int interval = getMapAutoDownloadsInterval();
+        return (lastCheck + (interval * DAYS_TO_SECONDS)) <= now;
+    }
+
+    private static int getMapAutoDownloadsInterval() {
+        return getInt(R.string.pref_mapAutoDownloadsInterval, 30);
+    }
+
+    public static void setMapAutoDownloadsLastCheck(final boolean delay) {
+        putLong(R.string.pref_mapAutoDownloadsLastCheck, calculateNewTimestamp(delay, getMapAutoDownloadsInterval()));
     }
 
     public static void setPqShowDownloadableOnly(final boolean showDownloadableOnly) {
@@ -979,6 +1092,14 @@ public class Settings {
 
     public static boolean getPqShowDownloadableOnly() {
         return getBoolean(R.string.pref_pqShowDownloadableOnly, false);
+    }
+
+    public static void setBookmarklistsShowNewOnly(final boolean showNewOnly) {
+        putBoolean(R.string.pref_bookmarklistsShowNewOnly, showNewOnly);
+    }
+
+    public static boolean getBookmarklistsShowNewOnly() {
+        return getBoolean(R.string.pref_bookmarklistsShowNewOnly, false);
     }
 
     public static void setAnyCoordinates(final Geopoint coords) {
@@ -1017,16 +1138,40 @@ public class Settings {
     }
 
 
-    public static boolean isLightSkin() {
-        return getBoolean(R.string.pref_skin, false);
+    public static void setAppThemeAutomatically(final @NonNull Context context) {
+        setAppTheme(getAppTheme(context));
     }
 
-    public static boolean isTransparentBackground() {
-        return getBoolean(R.string.pref_transparentBackground, EnvironmentUtils.defaultBackgroundTransparent());
+    public static void setAppTheme(final DarkModeSetting setting) {
+        AppCompatDelegate.setDefaultNightMode(setting.getModeId());
     }
 
-    public static void setIsTransparentBackground(final boolean value) {
-        putBoolean(R.string.pref_transparentBackground, value);
+    private static DarkModeSetting getAppTheme(final @NonNull Context context) {
+        return DarkModeSetting.valueOf(getString(R.string.pref_theme_setting, isLightSkin() ?
+                DarkModeSetting.LIGHT.getPreferenceValue(context) : DarkModeSetting.DARK.getPreferenceValue(context)));
+    }
+
+    private static boolean isDarkThemeActive(final @NonNull Context context, final DarkModeSetting setting) {
+        if (setting == DarkModeSetting.SYSTEM_DEFAULT) {
+            return isDarkThemeActive(context);
+        } else {
+            return setting == DarkModeSetting.DARK;
+        }
+    }
+
+    private static boolean isDarkThemeActive(final @NonNull Context context) {
+        final int uiMode = context.getResources().getConfiguration().uiMode;
+        return (uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    public static boolean isLightSkin(final @NonNull Context context) {
+        return !isDarkThemeActive(context, getAppTheme(context));
+    }
+
+    /* use only for migration purposes */
+    @Deprecated
+    private static boolean isLightSkin() {
+        return getBoolean(R.string.old_pref_skin, false);
     }
 
     @NonNull
@@ -1052,15 +1197,6 @@ public class Settings {
     }
 
     /**
-     * @return The cache type used for filtering or ALL if no filter is active.
-     *         Returns never null
-     */
-    @NonNull
-    public static CacheType getCacheType() {
-        return CacheType.getById(getString(R.string.pref_cachetype, CacheType.ALL.id));
-    }
-
-    /**
      * The threshold for the showing of child waypoints
      */
     public static int getWayPointsThreshold() {
@@ -1076,6 +1212,56 @@ public class Settings {
 
     public static boolean isBrouterShowBothDistances() {
         return getBoolean(R.string.pref_brouterShowBothDistances, false);
+    }
+
+    public static boolean isBrouterAutoTileDownloads() {
+        return getBoolean(R.string.pref_brouterAutoTileDownloads, false);
+    }
+
+    public static void setBrouterAutoTileDownloads(final boolean value) {
+        putBoolean(R.string.pref_brouterAutoTileDownloads, value);
+    }
+
+    public static boolean brouterAutoTileDownloadsNeedUpdate() {
+        final long lastCheck = getLong(R.string.pref_brouterAutoTileDownloadsLastCheck, 0);
+        if (lastCheck == 0) {
+            setBrouterAutoTileDownloadsLastCheck(false);
+            return false;
+        }
+        final long now = System.currentTimeMillis() / 1000;
+        final int interval = getBrouterAutoTileDownloadsInterval();
+        return (lastCheck + (interval * DAYS_TO_SECONDS)) <= now;
+    }
+
+    private static int getBrouterAutoTileDownloadsInterval() {
+        return getInt(R.string.pref_brouterAutoTileDownloadsInterval, 30);
+    }
+
+    public static void setBrouterAutoTileDownloadsLastCheck(final boolean delay) {
+        putLong(R.string.pref_brouterAutoTileDownloadsLastCheck, calculateNewTimestamp(delay, getBrouterAutoTileDownloadsInterval()));
+    }
+
+    public static String getRoutingProfile() {
+        return getRoutingProfile(Settings.getRoutingMode());
+    }
+
+    public static String getRoutingProfile(final RoutingMode mode) {
+        if (mode.equals(RoutingMode.CAR)) {
+            return getString(R.string.pref_brouterProfileCar, BRouterConstants.BROUTER_PROFILE_CAR_DEFAULT);
+        } else if (mode.equals(RoutingMode.BIKE)) {
+            return getString(R.string.pref_brouterProfileBike, BRouterConstants.BROUTER_PROFILE_BIKE_DEFAULT);
+        } else if (mode.equals(RoutingMode.WALK)) {
+            return getString(R.string.pref_brouterProfileWalk, BRouterConstants.BROUTER_PROFILE_WALK_DEFAULT);
+        } else {
+            return null;
+        }
+    }
+
+    // calculate new "last checked" timestamp - either "now" or "now - interval + delay [3 days at most]
+    // used for update checks for maps & route tiles downloaders
+    private static long calculateNewTimestamp(final boolean delay, final int interval) {
+        // if delay requested: delay by regular interval, but by three days at most
+        return (System.currentTimeMillis() / 1000) - (delay && (interval > 3) ? (interval - 3) * DAYS_TO_SECONDS : 0);
     }
 
     public static boolean isBigSmileysEnabled() {
@@ -1112,6 +1298,14 @@ public class Settings {
         return getBoolean(R.string.pref_longTapOnMapActivated, true);
     }
 
+    public static boolean getCreateUDCuseGivenList() {
+        return getBoolean(R.string.pref_createUDCuseGivenList, false);
+    }
+
+    public static void setCreateUDCuseGivenList(final boolean createUDCuseGivenList) {
+        putBoolean(R.string.pref_createUDCuseGivenList, createUDCuseGivenList);
+    }
+
     public static boolean isUseTwitter() {
         return getBoolean(R.string.pref_twitter, false);
     }
@@ -1121,8 +1315,8 @@ public class Settings {
     }
 
     public static boolean isTwitterLoginValid() {
-        return !StringUtils.isBlank(getTokenPublic())
-                && !StringUtils.isBlank(getTokenSecret());
+        return StringUtils.isNotBlank(getTokenPublic())
+                && StringUtils.isNotBlank(getTokenSecret());
     }
 
     public static String getTokenPublic() {
@@ -1354,18 +1548,6 @@ public class Settings {
 
     public static int getSupersizeDistance() {
         return getInt(R.string.pref_supersizeDistance, 0);
-    }
-
-    public static void setExcludeMine(final boolean exclude) {
-        putBoolean(R.string.pref_excludemine, exclude);
-    }
-
-    public static void setExcludeDisabled(final boolean exclude) {
-        putBoolean(R.string.pref_excludedisabled, exclude);
-    }
-
-    public static void setExcludeArchived(final boolean exclude) {
-        putBoolean(R.string.pref_excludearchived, exclude);
     }
 
     public static void setExcludeWpOriginal(final boolean exclude) {
@@ -1688,6 +1870,12 @@ public class Settings {
         return getBoolean(R.string.pref_customtabs_as_browser, false);
     }
 
+    public static int getUniqueNotificationId() {
+        final int id = getInt(R.string.pref_next_unique_notification_id, Notifications.UNIQUE_ID_RANGE_START);
+        putInt(R.string.pref_next_unique_notification_id, id + 1);
+        return id;
+    }
+
     public static int getLocalStorageVersion() {
         return getInt(R.string.pref_localstorage_version, 0);
     }
@@ -1695,4 +1883,39 @@ public class Settings {
     public static void setLocalStorageVersion(final int newVersion) {
         putInt(R.string.pref_localstorage_version, newVersion);
     }
+
+    /** Should SOLELY be called by class {@link cgeo.geocaching.filters.core.GeocacheFilter}! */
+    public static String getCacheFilterConfig(final String type) {
+        return getStringDirect(getKey(R.string.pref_cache_filter_config) + "." + type, null);
+    }
+
+    /** Should SOLELY be called by class {@link cgeo.geocaching.filters.core.GeocacheFilter}! */
+    public static void setCacheFilterConfig(final String type, final String config) {
+        putStringDirect(getKey(R.string.pref_cache_filter_config) + "." + type, config);
+    }
+
+    public static int getListInitialLoadLimit() {
+        return getInt(R.string.pref_list_initial_load_limit, getKeyInt(R.integer.list_load_limit_default));
+    }
+
+    /** return a list of preference keys containing sensitive data */
+    public static HashSet<String> getSensitivePreferenceKeys(final Context context) {
+        final HashSet<String> sensitiveKeys = new HashSet<>();
+        Collections.addAll(sensitiveKeys,
+            context.getString(R.string.pref_username), context.getString(R.string.pref_password),
+            context.getString(R.string.pref_ecusername), context.getString(R.string.pref_ecpassword),
+            context.getString(R.string.pref_user_vote), context.getString(R.string.pref_pass_vote),
+            context.getString(R.string.pref_twitter), context.getString(R.string.pref_temp_twitter_token_secret), context.getString(R.string.pref_temp_twitter_token_public), context.getString(R.string.pref_twitter_token_secret), context.getString(R.string.pref_twitter_token_public),
+            context.getString(R.string.pref_ocde_tokensecret), context.getString(R.string.pref_ocde_tokenpublic), context.getString(R.string.pref_temp_ocde_token_secret), context.getString(R.string.pref_temp_ocde_token_public),
+            context.getString(R.string.pref_ocpl_tokensecret), context.getString(R.string.pref_ocpl_tokenpublic), context.getString(R.string.pref_temp_ocpl_token_secret), context.getString(R.string.pref_temp_ocpl_token_public),
+            context.getString(R.string.pref_ocnl_tokensecret), context.getString(R.string.pref_ocnl_tokenpublic), context.getString(R.string.pref_temp_ocnl_token_secret), context.getString(R.string.pref_temp_ocnl_token_public),
+            context.getString(R.string.pref_ocus_tokensecret), context.getString(R.string.pref_ocus_tokenpublic), context.getString(R.string.pref_temp_ocus_token_secret), context.getString(R.string.pref_temp_ocus_token_public),
+            context.getString(R.string.pref_ocro_tokensecret), context.getString(R.string.pref_ocro_tokenpublic), context.getString(R.string.pref_temp_ocro_token_secret), context.getString(R.string.pref_temp_ocro_token_public),
+            context.getString(R.string.pref_ocuk2_tokensecret), context.getString(R.string.pref_ocuk2_tokenpublic), context.getString(R.string.pref_temp_ocuk2_token_secret), context.getString(R.string.pref_temp_ocuk2_token_public),
+            context.getString(R.string.pref_su_tokensecret), context.getString(R.string.pref_su_tokenpublic), context.getString(R.string.pref_temp_su_token_secret), context.getString(R.string.pref_temp_su_token_public),
+            context.getString(R.string.pref_fakekey_geokrety_authorization)
+        );
+        return sensitiveKeys;
+    }
+
 }

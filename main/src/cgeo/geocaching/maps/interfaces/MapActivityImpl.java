@@ -1,24 +1,26 @@
 package cgeo.geocaching.maps.interfaces;
 
+import cgeo.geocaching.activity.FilteredActivity;
 import cgeo.geocaching.utils.IndividualRouteUtils;
 import cgeo.geocaching.utils.TrackUtils;
 
-import android.app.Activity;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 /**
  * Defines the common functions of the provider-specific
  * MapActivity implementations.
  */
-public interface MapActivityImpl {
+public interface MapActivityImpl extends FilteredActivity {
 
     Resources getResources();
 
-    Activity getActivity();
+    AppCompatActivity getActivity();
 
     void superOnCreate(Bundle savedInstanceState);
 

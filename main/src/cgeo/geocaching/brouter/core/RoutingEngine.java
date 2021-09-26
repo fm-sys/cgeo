@@ -7,23 +7,20 @@ import cgeo.geocaching.brouter.mapaccess.OsmLinkHolder;
 import cgeo.geocaching.brouter.mapaccess.OsmNode;
 import cgeo.geocaching.brouter.mapaccess.OsmNodePairSet;
 import cgeo.geocaching.brouter.util.SortedHeap;
+import cgeo.geocaching.utils.Log;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RoutingEngine extends Thread {
     public double airDistanceCostFactor;
     public SearchBoundary boundary;
-    public boolean quite = false;
     protected List<OsmNodeNamed> waypoints = null;
     protected List<MatchedWaypoint> matchedWaypoints;
     protected OsmTrack foundTrack = new OsmTrack();
     protected String errorMessage = null;
-    protected String segmentDir;
     protected RoutingContext routingContext;
     private NodesCache nodesCache;
     private final SortedHeap<OsmPath> openSet = new SortedHeap<OsmPath>();
@@ -33,12 +30,7 @@ public class RoutingEngine extends Thread {
     private static final int MAXNODES_ISLAND_CHECK = 500;
     private final OsmNodePairSet islandNodePairs = new OsmNodePairSet(MAXNODES_ISLAND_CHECK);
     private OsmTrack foundRawTrack = null;
-    private int alternativeIndex = 0;
     private volatile boolean terminated;
-    private final String outfileBase;
-    private final String logfileBase;
-    private final boolean infoLogEnabled;
-    private Writer infoLogWriter;
     private OsmTrack guideTrack;
     private OsmPathElement matchPath;
     private long startTime;
@@ -46,38 +38,19 @@ public class RoutingEngine extends Thread {
 
     private final boolean directWeaving = !Boolean.getBoolean("disableDirectWeaving");
 
-    public RoutingEngine(final String outfileBase, final String logfileBase, final String segmentDir,
-                         final List<OsmNodeNamed> waypoints, final RoutingContext rc) {
-        this.segmentDir = segmentDir;
-        this.outfileBase = outfileBase;
-        this.logfileBase = logfileBase;
+    public RoutingEngine(final List<OsmNodeNamed> waypoints, final RoutingContext rc) {
         this.waypoints = waypoints;
-        this.infoLogEnabled = outfileBase != null;
         this.routingContext = rc;
 
-        final boolean cachedProfile = ProfileCache.parseProfile(rc);
-        if (hasInfo()) {
-            logInfo("parsed profile " + rc.profileFilename + " cached=" + cachedProfile);
-        }
+        ProfileCache.parseProfile(rc);
     }
 
     private boolean hasInfo() {
-        return infoLogEnabled || infoLogWriter != null;
+        return Log.isEnabled(Log.LogLevel.INFO);
     }
 
     private void logInfo(final String s) {
-        if (infoLogEnabled) {
-            System.out.println(s);
-        }
-        if (infoLogWriter != null) {
-            try {
-                infoLogWriter.write(s);
-                infoLogWriter.write('\n');
-                infoLogWriter.flush();
-            } catch (IOException io) {
-                infoLogWriter = null;
-            }
-        }
+        Log.i(s);
     }
 
     private void logThrowable(final Throwable t) {
@@ -115,34 +88,13 @@ public class RoutingEngine extends Thread {
 
                 messageList.add(track.message);
                 track.messageList = messageList;
-                if (outfileBase != null) {
-                    final String filename = outfileBase + i + ".gpx";
-                    OsmTrack oldTrack = new OsmTrack();
-                    oldTrack.readGpx(filename);
-                    if (track.equalsTrack(oldTrack)) {
-                        continue;
+                if (i == routingContext.getAlternativeIdx(0, 3)) {
+                    if ("CSV".equals(System.getProperty("reportFormat"))) {
+                        track.dumpMessages(null, routingContext);
                     }
-                    oldTrack = null;
-                    track.writeGpx(filename);
                     foundTrack = track;
-                    alternativeIndex = i;
                 } else {
-                    if (i == routingContext.getAlternativeIdx(0, 3)) {
-                        if ("CSV".equals(System.getProperty("reportFormat"))) {
-                            track.dumpMessages(null, routingContext);
-                        } else {
-                            if (!quite) {
-                                System.out.println(track.formatAsGpx());
-                            }
-                        }
-                        foundTrack = track;
-                    } else {
-                        continue;
-                    }
-                }
-                if (logfileBase != null) {
-                    final String logfilename = logfileBase + i + ".csv";
-                    track.dumpMessages(logfilename, routingContext);
+                    continue;
                 }
                 break;
             }
@@ -173,15 +125,6 @@ public class RoutingEngine extends Thread {
             }
             openSet.clear();
             finished = true; // this signals termination to outside
-
-            if (infoLogWriter != null) {
-                try {
-                    infoLogWriter.close();
-                } catch (Exception e) {
-                }
-                infoLogWriter = null;
-            }
-
         }
     }
 
@@ -190,43 +133,6 @@ public class RoutingEngine extends Thread {
         logInfo("Error (linksProcessed=" + linksProcessed + " open paths: " + openSet.getSize() + "): " + errorMessage);
     }
 
-
-    public void doSearch() {
-        try {
-            final MatchedWaypoint seedPoint = new MatchedWaypoint();
-            seedPoint.waypoint = waypoints.get(0);
-            final List<MatchedWaypoint> listOne = new ArrayList<MatchedWaypoint>();
-            listOne.add(seedPoint);
-            matchWaypointsToNodes(listOne);
-
-            findTrack("seededSearch", seedPoint, null, null, null, false);
-        } catch (IllegalArgumentException e) {
-            logException(e);
-        } catch (Exception e) {
-            logException(e);
-            logThrowable(e);
-        } catch (Error e) {
-            cleanOnOOM();
-            logException(e);
-            logThrowable(e);
-        } finally {
-            ProfileCache.releaseProfile(routingContext);
-            if (nodesCache != null) {
-                nodesCache.close();
-                nodesCache = null;
-            }
-            openSet.clear();
-            finished = true; // this signals termination to outside
-
-            if (infoLogWriter != null) {
-                try {
-                    infoLogWriter.close();
-                } catch (Exception e) {
-                }
-                infoLogWriter = null;
-            }
-        }
-    }
 
     public void cleanOnOOM() {
         terminate();
@@ -444,7 +350,7 @@ public class RoutingEngine extends Thread {
         }
         final long maxmem = routingContext.memoryclass * 1024L * 1024L; // in MB
 
-        nodesCache = new NodesCache(segmentDir, routingContext.expctxWay, maxmem, nodesCache, detailed);
+        nodesCache = new NodesCache(routingContext.expctxWay, maxmem, nodesCache, detailed);
         islandNodePairs.clearTempPairs();
     }
 

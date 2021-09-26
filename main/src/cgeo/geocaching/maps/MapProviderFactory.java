@@ -2,6 +2,7 @@ package cgeo.geocaching.maps;
 
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
+import cgeo.geocaching.databinding.LocSwitchActionBinding;
 import cgeo.geocaching.maps.google.v2.GoogleMapProvider;
 import cgeo.geocaching.maps.interfaces.MapProvider;
 import cgeo.geocaching.maps.interfaces.MapSource;
@@ -10,9 +11,11 @@ import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.utils.Log;
 
 import android.app.Activity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
+import android.widget.CheckBox;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,7 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class MapProviderFactory {
 
-    public static final int MAP_LANGUAGE_DEFAULT = 432198765;
+    public static final int MAP_LANGUAGE_DEFAULT_ID = 432198765;
 
     //use a linkedhashmap to keep track of insertion order (c:geo uses this to control menu order of map sources)
     private static final HashMap<String, MapSource> mapSources = new LinkedHashMap<>();
@@ -88,6 +91,15 @@ public class MapProviderFactory {
         parentMenu.add(R.id.menu_group_map_sources, R.id.menu_download_offlinemap, mapSources.size(), '<' + activity.getString(R.string.downloadmap_title) + '>');
     }
 
+    public static CheckBox createLocSwitchMenuItem(final Activity activity, final Menu menu) {
+        final MenuItem item = menu.findItem(R.id.menu_toggle_mypos);
+        final LocSwitchActionBinding binding = LocSwitchActionBinding.inflate(LayoutInflater.from(activity));
+        binding.getRoot().setOnClickListener(v -> binding.locSwitch.performClick());
+        item.setActionView(binding.getRoot());
+
+        return binding.locSwitch;
+    }
+
     @Nullable
     public static MapSource getMapSource(final String stringId) {
         return mapSources.get(stringId);
@@ -131,9 +143,9 @@ public class MapProviderFactory {
     public static void addMapViewLanguageMenuItems(final Menu menu) {
         final MenuItem parentMenu = menu.findItem(R.id.menu_select_language);
         if (languages != null) {
-            final int currentLanguage = Settings.getMapLanguage();
+            final int currentLanguage = Settings.getMapLanguageId();
             final SubMenu subMenu = parentMenu.getSubMenu();
-            subMenu.add(R.id.menu_group_map_languages, MAP_LANGUAGE_DEFAULT, 0, R.string.switch_default).setCheckable(true).setChecked(MAP_LANGUAGE_DEFAULT == currentLanguage);
+            subMenu.add(R.id.menu_group_map_languages, MAP_LANGUAGE_DEFAULT_ID, 0, R.string.switch_default).setCheckable(true).setChecked(MAP_LANGUAGE_DEFAULT_ID == currentLanguage);
             for (int i = 0; i < languages.length; i++) {
                 final int languageId = languages[i].hashCode();
                 subMenu.add(R.id.menu_group_map_languages, languageId, i, languages[i]).setCheckable(true).setChecked(languageId == currentLanguage);

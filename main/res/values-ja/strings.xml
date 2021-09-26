@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
+    <string name="mtrl_picker_confirm" tools:override="true">OK</string>
     <!-- basics -->
     <string name="cache">キャッシュ</string>
     <string name="detail">詳細</string>
@@ -31,8 +34,32 @@
     <string name="gps">GPSアドベンチャー迷路展示</string>
     <string name="block">ジオキャッシング本部(HQ)ブロック・パーティー</string>
     <string name="locationless">ロケーションレス(リバース)キャッシュ</string>
+    <string name="advlab">アドベンチャー・ラボ・キャッシュ</string>
     <string name="userdefined">ユーザー定義キャッシュ</string>
     <string name="unknown">不明なタイプ</string>
+    <string name="all_types_short">すべて</string>
+    <string name="traditional_short">トラディショナル</string>
+    <string name="multi_short">マルチ</string>
+    <string name="mystery_short">ミステリー</string>
+    <string name="letterbox_short">レターボックス</string>
+    <string name="event_short">イベント</string>
+    <string name="mega_short">メガ</string>
+    <string name="giga_short">ギガ</string>
+    <string name="earth_short">アース</string>
+    <string name="cito_short">CITO</string>
+    <string name="webcam_short">ウェブカム</string>
+    <string name="virtual_short">バーチャル</string>
+    <string name="wherigo_short">Wherigo</string>
+    <string name="communceleb_short">コミュニティ</string>
+    <string name="ape_short">APE</string>
+    <string name="gchq_short">GC HQ</string>
+    <string name="gchqceleb_short">GC HQ セル</string>
+    <string name="gps_short">GPS展示</string>
+    <string name="block_short">GC HQ ブロック</string>
+    <string name="locationless_short">ロケーションレス</string>
+    <string name="advlab_short">アドラボ</string>
+    <string name="userdefined_short">ユーザー定義</string>
+    <string name="unknown_short">不明</string>
     <!-- cache sizes -->
     <string name="cache_size_micro">マイクロ</string>
     <string name="cache_size_small">スモール</string>
@@ -152,9 +179,13 @@
     <string name="log_problem_archive_label">要アーカイブ</string>
     <string name="log_problem_archive_text">このジオキャッシャーがキャッシュがアーカイブされるべきと報告しました。コミュニティのボランティアレビューアーに通知されました</string>
     <string name="log_image_scale_option_noscaling">実サイズ</string>
-    <string name="log_image_info">%1$d x %2$d px, %3$s\n縮小/圧縮:\n%4$d x %5$d px, ~%6$s</string>
+    <string name="log_image_info2">%1$s\n%2$d x %3$d px\n~%4$s</string>
+    <string name="log_image_info_scaled">拡大縮小済み</string>
+    <string name="log_image_info_notscaled">元の解像度</string>
     <string name="log_image_titleprefix">画像</string>
+    <string name="datetime_nodateset_display">未設定</string>
     <!-- translation -->
+    <string name="translate">翻訳</string>
     <string name="translate_to_sys_lang">%sに翻訳</string>
     <string name="translate_to_english">英語に翻訳</string>
     <string name="translate_length_warning">文章が長すぎるので翻訳できないかもしれません</string>
@@ -164,6 +195,7 @@
     <string name="err_captcha">CAPTCHAの入力が必要です。<a href="https://www.cgeo.org/faq#login-failed">よくある質問(英語)</a>をご確認ください</string>
     <string name="err_server">Geocaching.comに接続できません。サーバが停止中かインターネットに未接続かもしれません</string>
     <string name="err_server_ec">Extremcaching.comに接続できません。サーバが停止中かインターネットに未接続かもしれません</string>
+    <string name="err_server_lc">labs.geocaching.comに接続できません。サーバが停止中かインターネットに未接続かもしれません</string>
     <string name="err_server_su">Geocaching.suに接続できません。サーバが停止中かインターネットに未接続かもしれません</string>
     <string name="err_server_gk">GeoKrety.orgに接続できません。サーバが停止中かインターネットに未接続かもしれません</string>
     <string name="err_login">ログイン情報が保存されていません</string>
@@ -204,7 +236,7 @@
     <string name="err_tb_display">トラッカブルを表示することができません。本当にトラッカブルですか?</string>
     <string name="err_tb_details_open">トラッカブルの詳細を開くことができません</string>
     <string name="err_tb_not_loggable">このトラッカブルにはログを書くことができません</string>
-    <string name="err_tb_find">トラッカブルが見つかりません</string>
+    <string name="err_tb_not_found">トラッカブル「%s」が見つかりません。</string>
     <string name="err_tb_find_that">トラッカブルが見つかりません</string>
     <string name="err_waypoint_cache_unknown">ウェイポイントを追加するキャッシュが見つかりません</string>
     <string name="err_waypoint_add_failed">ウェイポイントを追加することができませんでした</string>
@@ -242,8 +274,10 @@
     <string name="warn_no_pocket_query_found">オンラインでポケット・クエリが見つかりませんでした</string>
     <string name="warn_invalid_character">入力は文字または数字にする必要があります</string>
     <string name="warn_notloggedin_title">オフラインモード</string>
+    <string name="warn_notloggedin_short">ログインしていません。地図にはローカルに保存されたキャッシュのみが表示されます。詳細はここをタップしてください。</string>
     <string name="warn_notloggedin_long">(まだ)ログインしていません。地図にはデバイスに保存されたキャッシュのみが表示されオンライン機能は動作しません。\n\nネットワーク接続がないか、サーバーに問題があるか、ジオキャッシングサービスを(再)設定する必要があります。\n\n今すぐサービスの設定をしますか?</string>
     <string name="err_read_pocket_query_list">ポケット・クエリのリストの読み取りエラー</string>
+    <string name="err_read_bookmark_list">ブックマークリストの読み取りエラー</string>
     <string name="info_log_posted">ログを投稿しました</string>
     <string name="info_log_saved">ログを保存しました</string>
     <string name="info_log_post_failed">ログの投稿に失敗しました</string>
@@ -260,6 +294,7 @@
     <string name="err_trackable_log_not_anonymous">c:geoから%1$sに匿名でログは投稿できません。設定を開き%2$sからアカウント情報を入力しますか?</string>
     <string name="err_trackable_no_preference_activity">申し訳ありませんが、適切な設定画面が見つかりませんでした</string>
     <string name="confirm_unsaved_changes_title">変更が保存されていません</string>
+    <string name="confirm_discard_changes">保存せずに終了しますか?</string>
     <string name="confirm_discard_wp_changes">ウェイポイントの変更を破棄しますか?</string>
     <string name="err_request_popup_info">キャッシュポップアップ情報の取得に失敗しました</string>
     <string name="warn_log_load_additional_data">ログの追加データ(トラッカブル/お気に入りポイント)を読み込めませんでした</string>
@@ -285,11 +320,16 @@
     <string name="menu_helpers">ユーティリティアプリ</string>
     <string name="menu_settings">設定</string>
     <string name="menu_backup">バックアップ/復元</string>
+    <string name="menu_update">更新</string>
+    <string name="menu_update_routingdata">ルート検索データ</string>
+    <string name="menu_update_mapdata">地図データ</string>
     <string name="menu_history">履歴</string>
     <string name="menu_filter">フィルタ</string>
     <string name="menu_scan_geo">QRコードスキャン</string>
-    <string name="menu_pocket_queries">ポケット・クエリ</string>
+    <string name="menu_lists_pocket_queries">ポケット・クエリ</string>
+    <string name="menu_lists_bookmarklists">ブックマークリスト</string>
     <string name="menu_scan_description">QRコード化したGCコードをスキャンするためのアプリがインストールされていません。Google Playストアからインストールしますか?</string>
+    <string name="menu_invert_order">逆順</string>
     <!-- main screen -->
     <string name="live_map_button">地図</string>
     <string name="caches_nearby_button">近く</string>
@@ -303,6 +343,8 @@
     <string name="caches_more_caches_no">キャッシュは以上です</string>
     <string name="caches_more_caches_loading">キャッシュ情報を読み込み中…</string>
     <string name="caches_more_caches_currently">現在</string>
+    <string name="caches_more_caches_next_x">次の%1$dキャッシュを読み込む</string>
+    <string name="caches_more_caches_remaining">残りのキャッシュを読み込む(%1$d/%2$d)</string>
     <string name="caches_downloading">キャッシュ情報をダウンロード中…\n残り時間: </string>
     <string name="caches_eta_ltm">1分以内</string>
     <plurals name="caches_eta_mins">
@@ -316,6 +358,7 @@
     <string name="caches_on_map">地図で表示</string>
     <string name="caches_sort">並び替え</string>
     <string name="caches_sort_distance">距離</string>
+    <string name="caches_sort_distance_target">目的地までの距離</string>
     <string name="caches_sort_difficulty">難易度</string>
     <string name="caches_sort_terrain">地形</string>
     <string name="caches_sort_size">サイズ</string>
@@ -336,8 +379,8 @@
     <string name="caches_select_mode_exit">選択モードを終わる</string>
     <string name="caches_select_invert">選択を反転</string>
     <string name="caches_nearby">現在地の近く</string>
-    <string name="caches_remove_all">すべての項目を削除</string>
-    <string name="caches_remove_selected">選択した項目を削除</string>
+    <string name="caches_remove_all">リストからすべて削除</string>
+    <string name="caches_remove_selected">リストから選択したものを削除</string>
     <string name="caches_remove_all_completely">デバイスからすべてのキャッシュを削除</string>
     <string name="caches_remove_selected_completely">デバイスから選択したキャッシュを削除</string>
     <string name="caches_delete_events">過去のイベントを削除</string>
@@ -353,36 +396,17 @@
     <string name="caches_copy_selected">選択内容のコピー</string>
     <string name="caches_copy_all">すべてコピー</string>
     <string name="caches_map_locus_export">Locusにエクスポート</string>
-    <string name="caches_filter">フィルタ</string>
+    <string name="caches_filter_menuitem">フィルタ</string>
     <string name="caches_filter_title">フィルタ</string>
-    <string name="caches_filter_size">サイズ</string>
-    <string name="caches_filter_type">タイプ</string>
-    <string name="caches_filter_track">トラッカブルあり</string>
-    <string name="caches_filter_clear">フィルタをクリア</string>
-    <string name="caches_filter_modified">座標の更新あり</string>
-    <string name="caches_filter_offline_log">オフラインログあり</string>
-    <string name="caches_filter_origin">出典</string>
-    <string name="caches_filter_distance">距離</string>
-    <string name="caches_filter_personal_note">パーソナルノートあり</string>
-    <string name="caches_filter_popularity">お気に入り</string>
-    <string name="caches_filter_popularity_ratio">お気に入り [%]</string>
-    <string name="caches_filter_personal_data">個人データ</string>
-    <string name="caches_filter_rating">評価あり</string>
-    <string name="caches_filter_own_rating">評価済み</string>
-    <string name="caches_filter_multi_listing">複数のWebサイトで登録</string>
-    <string name="caches_filter_own_waypoint">ユーザー定義ウェイポイントあり</string>
-    <string name="caches_filter_missing_gcvote">未評価の発見したキャッシュ</string>
-    <string name="caches_filter_lists">リストに保存</string>
-    <string name="caches_filter_empty">(未定義)</string>
     <string name="caches_removing_from_history">履歴から削除中…</string>
     <string name="caches_clear_offlinelogs">すべてのオフラインログを削除</string>
     <string name="caches_clear_offlinelogs_message">オフラインログを削除しますか?</string>
     <string name="caches_clear_offlinelogs_progress">すべてのオフラインログを削除中</string>
     <string name="caches_set_cache_icon">キャッシュアイコン設定</string>
     <string name="caches_reset_cache_icons_title">キャッシュアイコンのリセット</string>
-    <string name="caches_reset_cache_icons">選択したすべてのキャッシュアイコンをデフォルトに戻しますか?</string>
     <string name="caches_make_list_unique">重複キャッシュを削除</string>
     <string name="caches_set_listmarker">リストマーカーを設定</string>
+    <string name="caches_askdeletion">空の時に削除確認する</string>
     <string name="select_icon">アイコンの選択</string>
     <string name="onetime_missing_unicode_info">お使いのAndroidバージョンは、アイコンの自動検出をサポートしていません。一部の文字が欠落している可能性があります</string>
     <!-- caches lists -->
@@ -400,11 +424,128 @@
     <string name="list_dialog_create_err">新しいリストを作成することができませんでした</string>
     <string name="list_dialog_remove_title">リスト削除</string>
     <string name="list_dialog_remove_description">このキャッシュリストを削除しますか? このリストに含まれるキャッシュは「保存済み」リストに移動します</string>
-    <string name="list_dialog_remove_nowempty">リストは空です。現在のリストを削除しますか?</string>
+    <string name="list_dialog_remove_nowempty">このリストは空です。リストを削除しますか?</string>
+    <string name="list_dialog_do_not_ask_me_again">このリストには次回から確認しない</string>
     <string name="list_dialog_remove">削除</string>
     <string name="list_dialog_rename_title">リスト名の変更</string>
     <string name="list_dialog_rename">変更</string>
     <string name="list_not_available">リストが利用できません。保存済みのリストへ移動します</string>
+    <!-- caches lists filter -->
+    <string name="cache_filter_mode_advanced">詳細</string>
+    <string name="cache_filter_mode_basic_change_confirm_loss_title">基本フィルタへ切り替え</string>
+    <string name="cache_filter_mode_basic_change_confirm_loss_message">基本フィルタにすると、フィルタ設定の一部またはすべてが失われます。変更しますか?</string>
+    <string name="cache_filter_add_button">フィルタ条件を追加</string>
+    <string name="cache_filter_option_and_or">ANDの代わりにORを使用</string>
+    <string name="cache_filter_option_inverse">除外フィルタ</string>
+    <string name="cache_filter_option_include_inconclusive">不確定な一致を含める</string>
+    <string name="cache_filter_option_include_inconclusive_info">フィルタに使用することができないキャッシュ情報が必要なとき、結果にキャッシュを含めるかどうかを指定します。</string>
+    <string name="cache_filter_hint_on_empty_filter_list">フィルタがありません。上の「フィルタ条件を追加」をタップして追加してください</string>
+    <string name="cache_filter_name">キャッシュ名</string>
+    <string name="cache_filter_type">キャッシュタイプ</string>
+    <string name="cache_filter_size">サイズ</string>
+    <string name="cache_filter_personalnote">パーソナルノート</string>
+    <string name="cache_filter_description">キャッシュの説明</string>
+    <string name="cache_filter_offlinelog">オフラインログ</string>
+    <string name="cache_filter_owner">キャッシュオーナー</string>
+    <string name="cache_filter_difficulty">難易度</string>
+    <string name="cache_filter_terrain">地形</string>
+    <string name="cache_filter_difficulty_terrain">難易度/地形</string>
+    <string name="cache_filter_rating">評価</string>
+    <string name="cache_filter_status">状態</string>
+    <string name="cache_filter_attributes">キャッシュ属性</string>
+    <string name="cache_filter_favorites">お気に入り</string>
+    <string name="cache_filter_distance">距離</string>
+    <string name="cache_filter_hidden">設置日</string>
+    <string name="cache_filter_logs_count">ログ数</string>
+    <string name="cache_filter_last_found">発見日</string>
+    <string name="cache_filter_log_entry">ログ内容</string>
+    <string name="cache_filter_location">所在地</string>
+    <string name="cache_filter_stored_lists">保存済みリスト</string>
+    <string name="cache_filter_origin">公開元</string>
+    <string name="cache_filter_stored_since">詳細の更新日時</string>
+    <string name="cache_filtergroup_basic">基本</string>
+    <string name="cache_filtergroup_details">詳細</string>
+    <string name="cache_filtergroup_userspecific">ユーザー固有</string>
+    <string name="cache_filter_contexttype_live_title">オンラインフィルタ</string>
+    <string name="cache_filter_contexttype_offline_title">オフラインフィルタ</string>
+    <string name="cache_filter_contexttype_transient_title">フィルタ</string>
+    <string name="cache_filter_include">含む</string>
+    <string name="cache_filter_exclude">除く</string>
+    <string name="cache_filter_userdisplay_none">なし</string>
+    <plurals name="cache_filter_userdisplay_multi_item">
+        <item quantity="other">%1$dアイテム</item>
+    </plurals>
+    <string name="cache_filter_storage_load_button">読み込み</string>
+    <string name="cache_filter_storage_delete_button">削除</string>
+    <string name="cache_filter_storage_clear_button">削除</string>
+    <string name="cache_filter_storage_load_delete_title">フィルタの読み込みまたは削除</string>
+    <string name="cache_filter_storage_delete_title">フィルタの削除</string>
+    <string name="cache_filter_storage_delete_message">このフィルタを削除しますか?</string>
+    <string name="cache_filter_storage_load_delete_nofilter_message">フィルタは保存されていません</string>
+    <string name="cache_filter_storage_save_title">名前を付けてフィルタを保存</string>
+    <string name="cache_filter_storage_save_confirm_title">フィルタの上書き保存</string>
+    <string name="cache_filter_storage_save_confirm_message">フィルタ名「%s」と異なる設定が既に存在します。上書きしますか?</string>
+    <string name="cache_filter_stringfilter_matchcase">大小文字を区別</string>
+    <string name="cache_filter_stringfilter_searchtext_hint">検索テキスト</string>
+    <string name="cache_filter_stringfilter_info">検索方法の「パターン」でワイルドカード「?」と「*」を使用できます。「?」は任意の一文字、「*」は長さ0文字以上の任意の文字列を表します。 例えば、「H?mburg*」は「Homeburg」や「Hamburg at Night」などにマッチしますが、「A day in Hamburg」や「Hahmburg」にはマッチしません。</string>
+    <string name="cache_filter_stringfilter_type_is_not_present">なし</string>
+    <string name="cache_filter_stringfilter_type_is_present">あり</string>
+    <string name="cache_filter_stringfilter_type_contains">以下を含む</string>
+    <string name="cache_filter_stringfilter_type_does_not_contain">以下を含まない</string>
+    <string name="cache_filter_stringfilter_type_starts_with">以下で始まる</string>
+    <string name="cache_filter_stringfilter_type_ends_with">以下で終わる</string>
+    <string name="cache_filter_stringfilter_type_pattern">パターン</string>
+    <string name="cache_filter_datefilter_label_from">開始日:</string>
+    <string name="cache_filter_datefilter_label_to">終了日:</string>
+    <string name="cache_filter_checkboxlist_selectallnone">すべて選択</string>
+    <string name="cache_filter_checkboxlist_add_items">追加</string>
+    <string name="cache_filter_checkboxlist_add_all_items">すべて追加</string>
+    <string name="cache_filter_checkboxlist_add_items_dialog_title">項目を追加</string>
+    <string name="cache_filter_favorites_absolute">登録数</string>
+    <string name="cache_filter_favorites_percentage">割合(%)</string>
+    <string name="cache_filter_distance_coordinates">座標</string>
+    <string name="cache_filter_distance_use_current_position">現在地を使用</string>
+    <string name="cache_filter_status_select_all">すべて</string>
+    <string name="cache_filter_status_select_yes">はい</string>
+    <string name="cache_filter_status_select_no">いいえ</string>
+    <string name="cache_filter_status_select_label_found">発見</string>
+    <string name="cache_filter_status_select_label_owned">オーナー</string>
+    <string name="cache_filter_status_select_label_stored">保存済み</string>
+    <string name="cache_filter_status_select_label_favorite">お気に入り登録済み</string>
+    <string name="cache_filter_status_select_label_watchlist">ウォッチリスト登録済み</string>
+    <string name="cache_filter_status_select_label_premium">プレミアム会員用</string>
+    <string name="cache_filter_status_select_label_has_trackable">トラッカブルあり</string>
+    <string name="cache_filter_status_select_label_has_own_vote">評価済み</string>
+    <string name="cache_filter_status_select_label_has_offline_log">オフラインログあり</string>
+    <string name="cache_filter_status_select_label_has_offline_found_log">発見(オフラインログ)</string>
+    <string name="cache_filter_status_select_label_solved_mystery">解決済みのミステリー</string>
+    <string name="cache_filter_status_select_infotext_solved_mystery">このフィルタ項目はミステリー・キャッシュにのみ影響します。\n\n座標が変更された場合、または座標の確定した最終ウェイポイントがある場合、ミステリーは「解決済み」とみなされます。</string>
+    <string name="cache_filter_status_active">有効</string>
+    <string name="cache_filter_status_disabled">一時停止中</string>
+    <string name="cache_filter_status_archived">アーカイブ済み</string>
+    <string name="cache_filter_status_exclude_active">アクティブを除外</string>
+    <string name="cache_filter_status_exclude_disabled">一時停止中キャッシュを除外</string>
+    <string name="cache_filter_status_exclude_archived">アーカイブ済みを除外</string>
+    <string name="cache_filter_log_entry_foundby">発見したユーザー名</string>
+    <string name="cache_filter_log_entry_logtext">ログの本文</string>
+    <string name="cache_filter_stored_since_notstored">未保存</string>
+    <string name="cache_filter_stored_since_notstored_short">-</string>
+    <string name="cache_filter_stored_since_stored_zero">0時間前</string>
+    <string name="cache_filter_stored_since_stored_zero_short">0h</string>
+    <string-array name="cache_filter_stored_since_stored_values_label">
+        <item>8時間前</item>
+        <item>24時間前</item>
+        <item>7日前</item>
+        <item>30日前</item>
+    </string-array>
+    <string-array name="cache_filter_stored_since_stored_values_label_short">
+        <item>8h</item>
+        <item>24h</item>
+        <item>7日</item>
+        <item>30日</item>
+    </string-array>
+    <string name="cache_filter_stored_since_stored_max">時の始まり</string>
+    <string name="cache_filter_stored_since_stored_max_short">最大</string>
     <!-- about -->
     <string name="about_version">バージョン</string>
     <string name="about_changelog">更新履歴</string>
@@ -415,6 +556,7 @@
     <string name="about_license">ライセンス</string>
     <string name="about_apache_license"><a href="">Apache License, Version 2.0</a></string>
     <string name="about_help">ヘルプ</string>
+    <string name="about_system_collecting">システム情報を収集しています。しばらくお待ちください…</string>
     <string name="about_system_include">バグ報告や問い合わせの際は以下のシステム情報もお知らせください</string>
     <string name="about_system_info_send_button">メールで送信…</string>
     <string name="about_system_info">c:geoシステム情報</string>
@@ -425,23 +567,26 @@
     <string name="about_system_write_logcat_type_extended">拡張</string>
     <string name="about_system_write_logcat_success">ログファイル「%1$s」はフォルダ「%2$s」に保存されました</string>
     <string name="about_system_write_logcat_error">ログファイルの書き込みエラー</string>
+    <string name="about_system_write_infos_downloadmanager">ダウンロードを表示</string>
     <string name="changelog_github">すべての変更の一覧</string>
     <string name="about_nutshellmanual">マニュアル</string>
     <string name="about_contributors_carnerodetails">c:geoの父として</string>
     <string name="about_contributors_recent">最近の貢献者</string>
     <string name="about_contributors_specialthanks">スペシャルサンクス</string>
-    <string name="about_contributors_specialthanksdetails">· <a href="https://crowdin.net/project/cgeo">Crowdin.net</a>のすべての翻訳者!\n· 不具合や提案などのすべての報告者\n· すべてのサポーター\n</string>
+    <string name="about_contributors_specialthanksdetails">- [Crowdin.net](https://crowdin.net/project/cgeo)のすべての翻訳者!\n- 不具合や提案などのすべての報告者\n- その他すべてのサポーター\n</string>
     <string name="about_contributors_other">そのほかの貢献者</string>
     <string name="about_components">コンポーネント</string>
     <string name="contribution_code">コー​​ド</string>
-    <string name="contribution_tester">テスター</string>
+    <string name="contribution_tester">テスト</string>
     <string name="contribution_support">サポート</string>
     <string name="contribution_documentation">ドキュメント</string>
+    <string name="contribution_infrastructure">インフラ</string>
     <string name="contribution_projectleader">オープンソース プロジェクト リーダー</string>
     <string name="contribution_graphics">グラフィックス</string>
     <string name="debug_user_error_report_title">問題を報告</string>
     <string name="debug_user_error_errortext">予期しない問題が発生しました。報告をお願いします:</string>
-    <string name="debug_user_error_explain_options">システム情報とc:geoログファイルを添付してeメールで報告していただければ、c:geoの問題を解決するのに役立ちます。その際はエラーの詳細も含めてください。その他の連絡先などは「c:geoについて」をご覧ください。</string>
+    <string name="debug_user_error_explain_options">システム情報とc:geoログファイルを添付してeメールで報告していただければ、c:geoの問題を解決するのに役立ちます。\nその際はエラーの詳細も必ず含めてください。\n\nメールを送る前にFAQやSNSで既知の問題かどうか確認をお願いします。\nその他の連絡先などは「c:geoについて」をご覧ください。</string>
+    <string name="debug_current_downloads">実行中のダウンロード</string>
     <!-- settings -->
     <string name="settings_title_open_settings">設定を開きますか?</string>
     <string name="settings_title_services">サービス</string>
@@ -457,6 +602,8 @@
     <string name="settings_title_map">地図</string>
     <string name="settings_summary_map">地図の選択、オフライン地図の設定、地図の詳細設定</string>
     <string name="settings_title_map_data">地図データ</string>
+    <string name="settings_title_offline_routing">オフライン ルート検索</string>
+    <string name="settings_summary_offline_routing">オフラインルート検索は、BRouterアプリをインストール(セットアップ)しているか、c:geoルート検索が有効になっていると使用できます</string>
     <string name="settings_title_map_rotation">地図の回転 (Googleマップ)</string>
     <string name="settings_title_waypoints">ウェイポイント</string>
     <string name="settings_title_map_content">地図の表示</string>
@@ -469,8 +616,8 @@
     <string name="confirm_data_dir_move_title">ジオキャッシュ データフォルダを移動しますか?</string>
     <string name="confirm_data_dir_move">キャッシュデータの移動はデバイスやデータ量により非常に長い時間がかかる場合があります</string>
     <string name="settings_title_basicmembers">ベーシック会員の設定</string>
-    <string name="settings_title_navigation">ナビゲーション</string>
-    <string name="settings_summary_navigation">ナビゲーション方法や外部ナビゲーションアプリの選択</string>
+    <string name="settings_title_navigation">ルート検索/ナビゲーション</string>
+    <string name="settings_summary_navigation">オフラインルート検索の設定、ナビゲーション方法や外部ナビゲーションアプリの選択</string>
     <string name="settings_title_system">システム</string>
     <string name="settings_summary_system">システム固有の設定とデバッグオプション</string>
     <string name="settings_title_navigation_menu">ナビゲーションメニュー</string>
@@ -480,8 +627,7 @@
     <string name="settings_category_social">ソーシャルメディア</string>
     <string name="settings_category_logging_other">ほかのオプション</string>
     <string name="settings_goto_url_button">詳細…</string>
-    <string name="settings_activate_gc">有効化</string>
-    <string name="settings_activate_ec">有効化</string>
+    <string name="settings_service_activate">有効化</string>
     <string name="settings_gc_legal_note">Geocaching.comを使うにはGroundspeak利用規約に同意している必要があります</string>
     <string name="settings_info_facebook_login_title">FacebookやGoogleのアカウントでのログインについて</string>
     <string name="settings_info_facebook_login">c:geoからFacebookやGoogleのアカウントでgeocaching.comにログインすることはできません。 しかし回避策はあります…</string>
@@ -490,30 +636,24 @@
     <string name="settings_gc_description">geocaching.comでc:geoを認証してキャッシュを検索できるようにします</string>
     <string name="settings_ec_description">c:geoをextremcaching.comで認証してキャッシュを検索したり発見したキャッシュにアクセス/フィルタリングできるようにします</string>
     <string name="settings_su_description">c:geoをgeocaching.suで認証してキャッシュを検索できるようにします</string>
-    <string name="settings_activate_oc">有効化</string>
+    <string name="settings_lc_description">アドベンチャー・ラボ・キャッシュを地図に含めます\n\n(Geocaching.comのプレミアム会員である必要があります。Geocaching.comサービスを有効化してください)\n\nc:geoの再起動が必要です</string>
+    <string name="lc_default_description">これはgeocaching.comのアドベンチャー・ラボ・キャッシュです。アドベンチャーはGroundspeakの Adventure Labアプリでのみプレイできます。 「詳細」ページのアドベンチャー・ラボ アイコンをタップすると、Adventure Labアプリを開いたりインストールしたりできます。\nアドベンチャー・ラボ・キャッシュを地図や検索に表示したくない場合は「設定」&gt;「サービス 」&gt;「ジオキャッシングサイト」&gt;「Geocaching.com Adventure Lab」で無効化できます。</string>
     <string name="init_summary_oc_de">opencaching.deからキャッシュを読み込み</string>
     <string name="init_oc_de_description">c:geoをopencaching.deで認証してキャッシュを検索したり発見したキャッシュにアクセス/フィルタリングできるようにします</string>
-    <string name="settings_activate_oc_pl">有効化</string>
     <string name="init_summary_oc_pl">opencaching.plからキャッシュを読み込み</string>
     <string name="init_oc_pl_description">c:geoをopencaching.plで認証してキャッシュを検索したり見つけたキャッシュにアクセス/フィルタリングできるようにします</string>
-    <string name="settings_activate_oc_nl">有効化</string>
     <string name="init_summary_oc_nl">opencaching.nlからキャッシュを読み込み</string>
     <string name="init_oc_nl_description">c:geoをopencaching.nlで認証してキャッシュを検索したり発見したキャッシュにアクセス/フィルタリングできるようにします</string>
-    <string name="settings_activate_oc_us">有効化</string>
     <string name="init_summary_oc_us">opencaching.usからキャッシュを読み込み</string>
     <string name="init_oc_us_description">c:geoをopencaching.usで認証してキャッシュを検索したり発見したキャッシュにアクセス/フィルタリングできるようにします</string>
-    <string name="settings_activate_oc_ro">有効化</string>
     <string name="init_summary_oc_ro">opencaching.roからキャッシュを読み込み</string>
     <string name="init_oc_ro_description">c:geoをopencaching.roで認証してキャッシュを検索したり発見したキャッシュにアクセス/フィルタリングできるようにします</string>
-    <string name="settings_activate_oc_uk">有効化</string>
     <string name="init_summary_oc_uk">opencache.ukからキャッシュを読み込み</string>
     <string name="init_oc_uk_description">c:geoをopencache.ukで認証してキャッシュを検索したり発見したキャッシュにアクセス/フィルタリングできるようにします</string>
     <string name="init_summary_su">Geocaching.suからキャッシュを読み込み</string>
-    <string name="settings_activate_su">有効化</string>
     <string name="init_gcvote_password_description">キャッシュを評価するにはGCVote.comに登録してGCVoteのパスワードを入力してください</string>
     <string name="err_vote_send_rating">評価を送信中にエラーが発生しました</string>
     <string name="vote_sent">評価は正常に送信されました</string>
-    <string name="settings_activate_twitter">有効化</string>
     <string name="init_login_popup">ログイン</string>
     <string name="init_login_popup_working">ログイン中…</string>
     <string name="init_login_popup_ok">ログイン完了</string>
@@ -525,6 +665,7 @@
     <string name="init_authorization_credential_username">ユーザー名</string>
     <string name="init_authorization_credential_password">パスワード</string>
     <string name="settings_service_active">有効</string>
+    <string name="settings_service_active_unavailable">有効/利用不可</string>
     <string name="settings_navigation_disabled">未インストール</string>
     <string name="init_signature">署名</string>
     <string name="init_template_help">[NAME] のようなプレースホルダは、テンプレート機能で指定された文字列に置換されます。</string>
@@ -548,33 +689,31 @@
     <string name="init_summary_friends_and_own_logs_wanted">ジオ友達/自分のログの追加のページを表示</string>
     <string name="init_openlastdetailspage">最後に表示したページ</string>
     <string name="init_summary_openlastdetailspage">キャッシュ情報の表示では最後に表示したページを開く</string>
-    <string name="init_skin">明るいスキン</string>
-    <string name="init_summary_skin">明るい色のスキンを使用\n(c:geoの再起動が必要)</string>
-    <string name="init_transparentBackground">透明な背景</string>
-    <string name="init_summary_transparentBackground">透明な背景を使用\n(c:geoの再起動が必要)</string>
     <string name="init_address">地名表示</string>
     <string name="init_summary_address">メイン画面での現在地を座標値の代わりに地名で表示</string>
     <string name="init_select_language">言語の選択</string>
     <string name="init_summary_select_language">アプリ内の言語を選択\n(c:geoの再起動が必要)\n</string>
-    <string name="init_use_default_language">システムのデフォルト言語</string>
-    <string name="init_category_exclude">キャッシュを除外</string>
-    <string name="init_exclude">所有または発見したキャッシュ除く</string>
-    <string name="init_summary_exclude">自分で所有または発見したキャッシュは除く</string>
+    <string name="init_use_default_language">システムの言語</string>
     <string name="init_showwaypoints">地図でウェイポイントの表示</string>
     <string name="init_showwaypoint_description">地図に表示されてるキャッシュ数が入力した数より少ない場合にはウェイポイントも地図に表示</string>
     <string name="init_zoomincludingwaypoints">ウェイポイントを表示するようにズーム</string>
     <string name="init_zoomincludingwaypoints_description">1つだけキャッシュを表示している場合にすべてのウェイポイントが表示されるようにズーム</string>
-    <string name="init_brouterThreshold">ルートを計算</string>
-    <string name="init_brouterThreshold_description">BRouter(インストールされている場合)がルートを計算するまでの最大距離</string>
+    <string name="init_brouterThreshold">ルートを検索</string>
+    <string name="init_brouterThreshold_description">ルート検索する際の最大距離</string>
     <string name="init_brouterShowBothDistances">直線距離を表示</string>
-    <string name="brouter_recalculating">バックグラウンドでルートを再計算しています…</string>
+    <string name="init_autoDownloads">更新確認の通知</string>
+    <string name="init_brouterAutoTileDownloads_description">ルート検索データの更新を確認するように定期的に通知します</string>
+    <string name="init_mapAutoDownloads_description">地図とテーマファイルの更新を確認するように定期的に通知します</string>
+    <string name="init_brouterProfileWalk">「徒歩」プロファイル</string>
+    <string name="init_brouterProfileBike">「自転車」プロファイル</string>
+    <string name="init_brouterProfileCar">「自動車」プロファイル</string>
+    <string name="brouter_recalculating">バックグラウンドでルートを再検索しています…</string>
+    <string name="brouter_missing_data">BRouterアプリで欠落しているルート検索データ(%s)をダウンロードします</string>
     <string name="init_summary_brouterShowBothDistances">ルート検索が有効な場合にルート距離に加えて直線距離も表示</string>
+    <string name="init_useInternalRouting">c:geoルート検索を使用する</string>
+    <string name="init_summary_useInternalRouting">c:geoルート検索(Brouter互換)を使用するとルート検索データの自動ダウンロードなどもできます。</string>
     <string name="init_bigSmileysOnMap">大きなスマイルアイコン</string>
     <string name="init_summary_bigSmileysOnMap">ログを書いたことを示すスマイルアイコンをキャッシュタイプアイコンの代わりに表示\n(c:geoの再起動が必要)</string>
-    <string name="init_disabled">一時停止中キャッシュ除く</string>
-    <string name="init_summary_disabled">一時停止中キャッシュは除く</string>
-    <string name="init_archived">アーカイブ済み除く</string>
-    <string name="init_summary_archived">アーカイブ済みキャッシュは除く</string>
     <string name="init_global_wp_extraction_disable">ウェイポイント抽出を無効化</string>
     <string name="init_summary_global_wp_extraction_disable">ノート作成時に「ウェイポイント抽出をしない」をデフォルトにします。パーソナルノートでチェックボックスを外せば個別に有効化できます</string>
     <string name="init_customtabs_as_browser">Chrome WebViewを使用</string>
@@ -588,9 +727,18 @@
     <string name="init_choose_list">リストを選択</string>
     <string name="init_summary_choose_list">キャッシュ情報の保存時にリストを選択するダイアログを表示</string>
     <string name="init_listdisplay">キャッシュリストでリスト名を表示</string>
+    <string name="init_list_initial_load_limit">リストの初回読み込み数</string>
+    <string name="init_summary_list_initial_load_limit">保存されたリストを表示するときにデータベースから最初に読み込むキャッシュの最大数。 0にすると無制限になります。</string>
     <string name="init_summary_listdisplay">キャッシュリスト中にリスト名も表示</string>
     <string name="init_livelist">方向を表示</string>
     <string name="init_summary_livelist">キャッシュの一覧で方向の矢印を表示</string>
+    <!-- app theme -->
+    <string name="settings_theme_title">テーマ</string>
+    <string-array name="settings_theme_entries">
+        <item>システムのデフォルト</item>
+        <item>ライト</item>
+        <item>ダーク</item>
+    </string-array>
     <!-- backup / restore -->
     <string name="init_backup_title">バックアップの作成</string>
     <string name="init_backup_summary">キャッシュ、ウェイポイント、c:geo設定がバックアップされますがキャッシュ画像は対象外です。\nデバイスを紛失してもデータを復元するためにはバックアップファイルをほかの場所にコピーしておく必要があります</string>
@@ -619,7 +767,7 @@
     <string name="init_user_confirmation">はい、了承します</string>
     <string name="init_backup_success">c:geoのデータベースは正常にバックアップされました: </string>
     <string name="init_backup_failed">c:geoのデータベースをバックアップできませんでした</string>
-    <string name="init_backup_unnecessary">キャッシュのデータベースは空です。バックアップの必要はありません</string>
+    <string name="init_backup_unnecessary">データベースが空です。バックアップは必要ありませんが、それでもバックアップを作成しますか?</string>
     <string name="init_backup_folder_exists_error">新しいバックアップフォルダを作成できませんでした。1分以内に連続してバックアップはできません</string>
     <string name="init_backup_no_backup_available">バックアップファイルはありません。</string>
     <string name="backup_confirm_overwrite">一番古いバックアップ(%s)は削除されます。\n続けますか?</string>
@@ -647,14 +795,19 @@
     <string name="init_backup_settings_restore">復元の設定</string>
     <string name="settings_readingerror">設定の読み取りエラー</string>
     <string name="settings_restart">読み込まれた設定を有効にするにはc:geoを再起動する必要があります</string>
+    <string name="settings_folder_changed">復元中にフォルダ「%1$s」は「%2$s」に変更されます。\n\n「%4$s」をタップすると完了します。フォルダのアクセス権限の許可を再度求められます。\n\n現在のフォルダ設定のままにするには「%3$s」をタップしてください。</string>
+    <string name="settings_file_changed">復元中に「%1$s」は「%2$s」に変更されます。\n\n「%4$s」をタップすると完了します。フォルダのアクセス権限の許可を再度求められます。\n\n現在のフォルダ設定のままにするには「%3$s」をタップしてください。</string>
     <string name="settings_info_offline_maps_title">オフライン地図について</string>
-    <string name="settings_info_offline_maps">オフライン用の地図をサポートしています。さまざまなサイトから地図をダウンロードしたり、(OSMデータからの)自作の地図を使用することもできます。 最初にオフライン地図を保存するフォルダを選択してください。</string>
+    <string name="settings_info_offline_maps">オフライン用の地図に対応しています。さまざまなサイトから地図をダウンロードしたり、(OSMデータからの)自作の地図を使用することもできます。 最初にオフライン地図を保存するフォルダを選択してください。</string>
     <string name="settings_info_themes_title">オフライン地図のテーマについて</string>
-    <string name="settings_info_themes">オフライン地図用のテーマが使用できます。カラースタイルを変更したり(例えば夜間用表示)、自転車道や等高線などを強調表示するために使われます。\n\nzip圧縮されてないテーマファイルでは表示が遅くなる時があります。そのような場合にはテーマフォルダをアプリ専用フォルダと同期してアクセス速度を早くすることもできます(少しストレージ使用量が増えますが)。</string>
+    <string name="settings_info_themes">オフライン地図用のテーマが使用できます。カラースタイルを変更したり(例えば夜間用表示)、自転車道や等高線などを強調表示するために使われます。\n\nzip圧縮されてないテーマファイルでは表示が遅くなる時があります。そのような場合にはテーマフォルダをアプリ専用フォルダと同期してアクセス速度を早くすることもできます(少しストレージ使用量が増えます)。</string>
     <string name="init_mapsource_select">地図の選択</string>
     <string name="init_local_file_system">ローカルファイルシステム</string>
     <string name="init_base_directory_description">データ保存のベースフォルダ</string>
     <string name="init_map_directory_description">オフライン地図フォルダ</string>
+    <string name="init_brouter_directory_description">ルート検索データ(Brouter互換)フォルダ</string>
+    <string name="init_updateinterval_title">通知間隔</string>
+    <string name="init_updateinterval_description">更新確認の通知間隔(日)</string>
     <string name="init_gpx_importexportdir">GPXフォルダ</string>
     <string name="init_dataDir">データフォルダを選択</string>
     <string name="init_dataDir_note">ジオキャッシュ(スポイラー画像、ログの画像など)の追加データを外部ストレージ(お使いのデバイスに応じてエミュレートまたは実際の外部 SD カード)に格納することができます</string>
@@ -748,7 +901,7 @@
     <string name="init_ec_icons">地図のアイコン</string>
     <string name="settings_ec_icons_other">独自のスタイル</string>
     <string name="settings_ec_icons_oc">OCと同じ</string>
-    <string name="settings_features">サポートされている機能</string>
+    <string name="settings_features">対応している機能</string>
     <string name="feature_personal_notes">パーソナルノート</string>
     <string name="feature_online_logging">オンラインでログを投稿する</string>
     <string name="feature_log_images">ログに画像を添付する</string>
@@ -765,7 +918,7 @@
     <string name="init_maplines_title">地図の線表示の設定</string>
     <string name="init_map_other">そのほか</string>
     <string name="init_map_osm_multithreaded">マルチスレッド(OSM)</string>
-    <string name="init_summary_map_osm_multithreaded">OpenStreetMap地図をレンダリングするためにマルチスレッドを使用する</string>
+    <string name="init_summary_map_osm_multithreaded">OpenStreetMapをレンダリングするためにマルチスレッドを使用する</string>
     <string name="localstorage_migrate_title">ローカルファイルの移行</string>
     <string name="localstorage_migrate_status_major">バージョン %1$d</string>
     <!-- proximity notification -->
@@ -815,7 +968,7 @@
     <string name="contentstorage_err_list_failed">フォルダ「%s」内のファイルを一覧表示できません</string>
     <string name="contentstorage_err_folder_access_failed">フォルダ「%s」にアクセスできませんでした</string>
     <string name="contentstorage_err_copy_failed">ファイル「%1$s」は「%2$s」へコピー/移動できませんでした (移動=%3$s)</string>
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <string name="persistablefolder_usertype_userdefined">ユーザー定義</string>
     <string name="persistablefolder_usertype_default">デフォルト</string>
     <string name="persistablefolder_legacy">旧式</string>
@@ -828,6 +981,9 @@
     <string name="persistablefolder_logfiles">ログファイル</string>
     <string name="persistablefolder_fieldnotes">フィールドノート</string>
     <string name="persistablefolder_spoilerimages">スポイラー画像</string>
+    <string name="persistablefolder_routingbase">ルート検索</string>
+    <string name="persistablefolder_routingtiles">ルート検索データ</string>
+    <string name="persistableuri_track">トラックファイル</string>
     <!-- FolderUtils: async processing -->
     <string name="folder_process_status_done">%1$s/%2$s、%3$s/%4$s 完了</string>
     <string name="folder_process_status_currentfile">処理中:%1$s</string>
@@ -864,7 +1020,7 @@
     <!-- auth credentials -->
     <string name="auth_credentials_explain_short">次の処理で<b>c:geo</b>が%sにアクセスできるようになります</string>
     <string name="auth_credentials_explain_long">すでにアカウントをお持ちの場合は、%sのアカウント情報を入力してください:</string>
-    <string name="auth_register_explain">アカウントをお持ちでない場合は新規登録してください。以下をタップするとサービスのウェブページに移動します。 c:geoはGoogle/Apple/Facebook経由でのログインをサポートしていないため、ユーザー名とパスワードを使用してアカウントを作成してください。 c:geoでログインする前に、アカウントのメールアドレス認証が必要な場合があります</string>
+    <string name="auth_register_explain">アカウントをお持ちでない場合は新規登録してください。以下をタップするとサービスのWebページに移動します。 c:geoはGoogle/Apple/Facebook経由でのログインに対応していないため、ユーザー名とパスワードを使用してアカウントを作成してください。 c:geoでログインする前に、アカウントのメールアドレス認証が必要な場合があります</string>
     <!-- auth token -->
     <string name="auth_token_explain_short">次の処理で<b>c:geo</b>が%sにアクセスできるようになります</string>
     <string name="auth_token_explain_long">アカウント情報を入力して「c:geoを承認」ボタンをタップすると、%sに接続して認証トークンを取得します</string>
@@ -886,7 +1042,7 @@
     </plurals>
     <string name="last_day_available">利用可能期限</string>
     <string name="cache_offline_refresh">更新</string>
-    <string name="cache_offline_drop">削除</string>
+    <string name="cache_offline_drop">リストから削除</string>
     <string name="cache_delete_userdefined_waypoints">ユーザー定義のウェイポイントを削除</string>
     <string name="cache_delete_userdefined_waypoints_confirm">このキャッシュのすべてのユーザー定義ウェイポイントを削除しますか?\n\nウェイポイントはすぐに削除され、元に戻すことはできません</string>
     <string name="cache_delete_userdefined_waypoints_note">注意: 「ノートからウェイポイント抽出する」が有効化されています。パーソナルノートに(c:geoが認識できる)座標値が書いてある場合はウェイポイントが自動的に再作成されます。パーソナルノートのダイアログで抽出を無効化できます</string>
@@ -909,7 +1065,6 @@
     </plurals>
     <string name="cache_offline_about_time_year">一年以上前</string>
     <string name="cache_premium">プレミアム会員</string>
-    <string name="cache_attributes">属性</string>
     <string name="cache_inventory">目録</string>
     <string name="cache_log_images_title">ログの添付画像</string>
     <string name="cache_log_image_default_title">写真</string>
@@ -950,9 +1105,7 @@
     <string name="cache_images">画像</string>
     <string name="cache_advanced">追加設定</string>
     <string name="cache_waypoints">ウェイポイント</string>
-    <plurals name="waypoints">
-        <item quantity="other">%dウェイポイント</item>
-    </plurals>
+    <string name="waypoints_tabtitle" tools:ignore="PluralsCandidate">ウェイポイント(%d)</string>
     <string name="cache_waypoints_add">ウェイポイントを追加</string>
     <string name="cache_waypoints_add_currentLocation">現在地を追加</string>
     <string name="cache_waypoints_add_fromclipboard">クリップボードから追加</string>
@@ -960,6 +1113,7 @@
     <string name="cache_hint">ヒント</string>
     <string name="cache_hint_not_available">ヒントはありません</string>
     <string name="cache_logs">ログブック</string>
+    <string name="cache_latest_logs">最近のログ</string>
     <string name="cache_logs_friends_and_own">ジオ友達/自分のログ</string>
     <string name="cache_dialog_loading_details">キャッシュの詳細を読み込み中…</string>
     <string name="cache_dialog_loading_details_status_loadpage">ページを読み込み中</string>
@@ -985,6 +1139,7 @@
     <string name="cache_dialog_favorite_remove_title">お気に入り</string>
     <string name="cache_dialog_favorite_remove_message">お気に入りから削除中…</string>
     <string name="cache_menu_navigate">ナビゲーション</string>
+    <string name="cache_menu_target">目的地に設定</string>
     <string name="cache_menu_navigation_drive">ナビゲーション(自動車)</string>
     <string name="cache_menu_navigation_walk">ナビゲーション(徒歩)</string>
     <string name="cache_menu_navigation_transit">ナビゲーション(トランジット)</string>
@@ -998,6 +1153,7 @@
     <string name="cache_menu_map_ext">ほかの外部アプリ</string>
     <string name="cache_menu_streetview">Googleストリートビュー</string>
     <string name="cache_menu_browser">ブラウザで開く</string>
+    <string name="no_browser_found">ブラウザが見つかりません</string>
     <string name="cache_menu_open_with">開く…</string>
     <string name="cache_menu_visit">ログを書く</string>
     <string name="cache_log_too_long">ログが長すぎるために投稿できませんでした。克明なログを書こうとしてくれてありがとう ;-)</string>
@@ -1008,6 +1164,10 @@
     <string name="menu_caches">キャッシュを管理</string>
     <string name="cache_menu_event">カレンダーに登録</string>
     <string name="cache_menu_extract_waypoints">ウェイポイントを抽出</string>
+    <string name="cache_menu_set_found">「発見」に設定</string>
+    <string name="cache_menu_set_DNF">「未発見」に設定</string>
+    <string name="cache_menu_reset_foundstate">「発見」状態をリセット</string>
+    <string name="cache_foundstate_updated">「発見」状態が更新されました</string>
     <string name="cache_menu_set_cache_icon">キャッシュアイコン設定</string>
     <string name="cache_icon_updated">キャッシュアイコンを変更しました</string>
     <string name="cache_menu_details">詳細</string>
@@ -1026,27 +1186,13 @@
     <string name="ignore_confirm_title">ご注意ください</string>
     <string name="ignore_confirm_message">キャッシュを無視にするとgeocaching.com からデータを読み込んでも表示されないことになります。Webサイト上から無視を解除しないとキャッシュを参照することができません</string>
     <string name="cache_status">状態</string>
-    <string name="cache_stored">保存済み</string>
     <string name="cache_status_offline_log">保存済みのログ</string>
     <string name="cache_status_found">発見</string>
     <string name="cache_not_status_found">未発見</string>
-    <string name="cache_never_found">一度も発見されてない</string>
-    <string name="cache_found_last_30_days">過去30日間に発見された</string>
     <string name="cache_status_archived">アーカイブ済み</string>
     <string name="cache_status_disabled">一時停止中</string>
     <string name="cache_status_active">有効</string>
     <string name="cache_status_premium">プレミアム会員のみ</string>
-    <string name="cache_status_not_premium">すべての会員用</string>
-    <string name="cache_status_stored">保存済み</string>
-    <string name="cache_status_not_stored">未保存</string>
-    <string name="cache_status_stored_lasteighthours">過去8時間以内</string>
-    <string name="cache_status_stored_lasttwentyfourhours">過去24時間以内</string>
-    <string name="cache_status_stored_lastsevendays">過去7日以内</string>
-    <string name="cache_status_stored_lastthirtydays">過去30日以内</string>
-    <string name="cache_status_stored_morethaneighthours">過去8時間以前</string>
-    <string name="cache_status_stored_morethantwentyfourhours">過去24時間以前</string>
-    <string name="cache_status_stored_morethansevendays">過去7日以前</string>
-    <string name="cache_status_stored_morethanthirtydays">過去30日以前</string>
     <string name="cache_geocode">GCコード</string>
     <string name="cache_name">キャッシュ名</string>
     <string name="cache_name_set">キャッシュ名を設定</string>
@@ -1066,9 +1212,7 @@
     <string name="cache_hidden">設置日</string>
     <string name="cache_event">イベント日付</string>
     <string name="cache_location">所在地</string>
-    <string name="cache_location_country">国</string>
     <string name="cache_coordinates">座標</string>
-    <string name="cache_calculator">座標計算</string>
     <string name="cache_coordinates_original">オリジナル座標</string>
     <string name="cache_spoiler_images_title">スポイラー画像</string>
     <string name="cache_log_types">ログタイプ</string>
@@ -1083,14 +1227,17 @@
     <string name="cache_image_background">リストの背景画像をキャッシュ</string>
     <string name="cache_share_field">共有</string>
     <string name="cache_time_full_hours">時</string>
-    <string name="cache_whereyougo_start">WhereYouGoでWherigoカートリッジをダウンロードして始めます</string>
-    <string name="cache_whereyougo_install">WherigoカートリッジをダウンロードするにはWhereYouGoのインストールが必要です</string>
+    <string name="cache_whereyougo_start">WhereYouGoアプリでWherigoカートリッジをダウンロードして始めます</string>
+    <string name="cache_whereyougo_install">WherigoカートリッジをダウンロードするにはWhereYouGoアプリのインストールが必要です</string>
     <string name="cache_chirpwolf_start">Chirp Wolfでキャッシュのchirpデータを読み込みます</string>
     <string name="cache_chirpwolf_install">chirpデータを読み込むにはChirp Wolfのインストールが必要です</string>
+    <string name="cache_alc_start">Adventure Labアプリでこのアドベンチャーを始めます</string>
+    <string name="cache_alc_install">このアドベンチャーを始めるにはAdventure Labアプリのインストールが必要です</string>
     <string name="context_share_as_text">テキストを共有</string>
     <string name="context_share_as_link">リンクを共有</string>
     <string name="create_internal_cache">ユーザー定義のキャッシュを作成</string>
     <string name="create_internal_cache_short">新しいキャッシュ</string>
+    <string name="create_internal_cache_currentlist">現在のリストを使用</string>
     <string name="internal_cache_default_name">ユーザー定義キャッシュ #%1$d</string>
     <string name="internal_cache_default_description">これはユーザー定義キャッシュです</string>
     <string name="internal_cache_default_owner">あなた</string>
@@ -1136,6 +1283,7 @@
     <string name="waypoint_coordinates">座標</string>
     <string name="waypoint_cache_coordinates">キャッシュ座標</string>
     <string name="waypoint_calculate_coordinates">座標を計算</string>
+    <string name="waypoint_calculated_coordinates">計算済み座標</string>
     <string name="waypoint_custom">カスタム</string>
     <string name="waypoint_my_coordinates">現在地</string>
     <string name="waypoint_bearing">方位(度[°])</string>
@@ -1185,17 +1333,21 @@
     <string name="map_rotation">地図の回転</string>
     <string name="map_dot_mode">小さいアイコンを使用</string>
     <string name="map_show_circles">0.1マイル円</string>
-    <string name="map_showc_ownfound">所有/発見したキャッシュ</string>
-    <string name="map_showc_disabled">一時停止中キャッシュ</string>
-    <string name="map_showc_archived">アーカイブ済みのキャッシュ</string>
-    <string name="map_showwp_original">ウェイポイント(オリジナル)</string>
-    <string name="map_showwp_parking">ウェイポイント(駐車場)</string>
-    <string name="map_showwp_visited">ウェイポイント(訪問済み)</string>
-    <string name="map_show_track">GPXトラック/ルートを表示</string>
-    <string name="init_renderthemefolder_synctolocal">地図テーマをアプリ専用フォルダに同期</string>
-    <string name="init_summary_renderthemefolder_synctolocal">少しストレージを使用しますが地図表示の速度が改善するかもしれません</string>
+    <string name="map_showc_own">オーナー</string>
+    <string name="map_showc_found">発見</string>
+    <string name="map_showc_disabled">一時停止中</string>
+    <string name="map_showc_archived">アーカイブ済み</string>
+    <string name="map_showc_found_offline">発見(オフラインログ)</string>
+    <string name="map_showwp_original">オリジナル</string>
+    <string name="map_showwp_parking">駐車場</string>
+    <string name="map_showwp_visited">訪問済み</string>
+    <string name="map_show_track">GPXトラック/ルート</string>
+    <string name="init_renderthemefolder_synctolocal">地図テーマフォルダの同期</string>
+    <string name="init_summary_renderthemefolder_synctolocal">地図テーマフォルダをアプリ専用フォルダと同期すると地図表示時の遅延が軽減されます(ストレージを少し余分に使用します)</string>
     <string name="init_renderthemefolder_synctolocal_dialog_title">地図テーマフォルダの同期</string>
-    <string name="init_renderthemefolder_synctolocal_dialog_message">地図テーマフォルダをアプリ専用フォルダに常に同期します。ファイルのアクセス速度が向上します。\n\n地図テーマフォルダは現在「%1$s」に設定されます。%2$sと%3$sが含まれており、合計サイズは%4$sです。\n\nフォルダを同期しますか?</string>
+    <string name="init_renderthemefolder_synctolocal_dialog_message">地図テーマフォルダをアプリ専用フォルダに常に同期します。ファイルのアクセス速度が向上します。同期する前に、地図テーマフォルダに地図テーマファイル以外の(大きなサイズの)ファイルが含まれてないことを確認してください。\n\n地図テーマフォルダは現在「%1$s」に設定されます。%2$sと%3$sが含まれており、合計サイズは%4$sです。\n\nフォルダを同期しますか?</string>
+    <string name="onetime_mapthemefixslow_title">地図テーマ使用時の表示の遅延について</string>
+    <string name="onetime_mapthemefixslow_message">zip圧縮されてないテーマファイルでは表示が遅くなる時があります。zip圧縮するかテーマフォルダをアプリ専用フォルダと同期すると地図表示時の遅延が軽減されます。</string>
     <string name="init_hidewp">ウェイポイントを隠す</string>
     <string name="init_summary_hidewp_original">地図上でウェイポイント(オリジナル)を非表示</string>
     <string name="init_summary_hidewp_parking">地図上でウェイポイント(駐車場)を非表示</string>
@@ -1205,15 +1357,22 @@
     <string name="map_language">地図の言語</string>
     <string name="map_live_enable">オンラインで取得</string>
     <string name="map_live_disable">保存済みキャッシュのみ</string>
+    <string name="map_live_disabled">オンラインではありません</string>
+    <string name="map_live_disabled_hint">保存済みキャッシュのみ表示されるオフラインモードです。オンラインで取得するにはメニューから変更してください。</string>
     <string name="map_as_list">リスト表示</string>
     <string name="map_select_multiple_items">アイテムを選択</string>
-    <string name="map_routing">ルート検索(現在:%s)</string>
-    <string name="map_routing_brouter">ルーティングは <a href="">Brouter</a> がインストールされている場合のみ利用できます</string>
+    <string name="map_routing">ルート検索</string>
+    <string name="map_routing_activate_title">ルート検索について</string>
+    <string name="map_routing_activate">ルート検索エンジンがないためルート検索は現在使用できません。\n\nc:geoルート検索を有効にしてルート検索データをダウンロードしますか? </string>
     <string name="map_gm_autorotation">地図の自動回転</string>
     <string name="map_gm_autorotation_disable">地図の自動回転を無効にしますか?\n\n地図の回転メニューで再度有効にできます</string>
     <string name="quick_settings">クイック設定</string>
     <string name="quick_settings_info">いくつか地図の設定(地図上の表示/非表示、ルート検索など)は新しい「クイック設定」に移動しました。\n地図の下部中央の歯車アイコンをタップすると開けます</string>
-    <string name="map_show_in_map">地図に表示:</string>
+    <string name="map_show_caches_title">キャッシュ表示:</string>
+    <string name="map_show_waypoints_title">ウェイポイント表示:</string>
+    <string name="map_show_other_title">他の表示:</string>
+    <string name="map_settings_cache_filter_too_complex_title">キャッシュフィルタが複雑すぎます</string>
+    <string name="map_settings_cache_filter_too_complex_message">現在のキャッシュフィルタは複雑すぎて、フィルタ条件を適用できません。 通常、単純なAND条件の代わりにNOT(除外)またはOR条件が含まれていることを意味します。</string>
     <!-- search -->
     <string name="search_bar_hint">キャッシュ/トラッカブルを検索</string>
     <string name="search_bar_desc">キャッシュ(GCコード,キーワード), トラッカブル(TBコード)</string>
@@ -1223,15 +1382,18 @@
     <string name="search_address_button">住所で検索</string>
     <string name="search_geo">GCコード</string>
     <string name="search_geo_button">GCコードで検索</string>
+    <string name="search_geocode_from_clipboard">クリップボードから貼り付けられました</string>
     <string name="search_kw">キーワード</string>
     <string name="search_kw_prefill">キーワード</string>
     <string name="search_kw_button">キーワードで検索</string>
-    <string name="search_fbu">発見したユーザー名</string>
-    <string name="search_fbu_prefill">ユーザー名</string>
-    <string name="search_fbu_button">ユーザー名で検索</string>
     <string name="search_hbu">設置したオーナー名</string>
     <string name="search_hbu_prefill">オーナー名</string>
     <string name="search_hbu_button">オーナー名で検索</string>
+    <string name="search_filter">フィルタ</string>
+    <string name="search_filter_button">フィルタで検索</string>
+    <string name="search_filter_info_message" formatted="false">**フィルターで検索**はすべてのアクティブなジオキャッシングサイト(例:geocaching.com)のキャッシュを検索します。 ただし、オンラインのフィルタ検索機能はc:geoのフィルタよりも制限されています。\n\n- すべてのサイトではANDフィルタのみ対応しています(ORフィルタおよび除外フィルタは使えません)。\n- **キャッシュタイプ**や**キャッシュサイズ**のような基本フィルタはすべてのサイトで対応しています。**お気に入り**や**設置日**のような詳細フィルタは未対応か、いくつか制限があります。\n- サイトごとの対応しているフィルタの詳細なリストは、[こちら](https://github.com/cgeo/cgeo/wiki/%22Search-by-Filter%22-support-by-c:geo-Connectors)。\n\nサイトでサポートされていないフィルタは、c:geoが受信したデータに対して適用されます。</string>
+    <string name="search_filter_temporary_user_information_title">新しいフィルタシステム</string>
+    <string name="search_filter_temporary_user_information">フィルタ機能が新しくなりました。柔軟に複数の条件を組み合わせられ、保存も可能になります。\n\n今後、グローバルフィルタはキャッシュリストとオンライン地図で直接変更できます。</string>
     <string name="search_tb">トラッカブル</string>
     <string name="search_tb_hint">トラッカブルコード</string>
     <string name="search_tb_button">トラッカブルを検索</string>
@@ -1240,7 +1402,15 @@
     <string name="search_address_result">検索結果:所在地</string>
     <string name="search_own_caches">自分のキャッシュを検索</string>
     <string name="search_pocket_title">ポケット・クエリ</string>
-    <string name="search_pocket_loading">ポケット・クエリのリストを読み込み中</string>
+    <string name="search_bookmark_list">ブックマークリスト</string>
+    <string name="search_pocket_is_new">新着</string>
+    <string name="search_pocket_loading">ポケット・クエリの読み込み中…</string>
+    <string name="search_bookmark_loading">ブックマークリストの読み込み中…</string>
+    <string name="search_bookmark_select">ブックマークリストの選択</string>
+    <string name="search_bookmark_new">新しいブックマークリストを作成</string>
+    <string name="search_bookmark_adding_caches_success">すべてのキャッシュが選択したブックマークリストに追加されました</string>
+    <string name="search_bookmark_adding_caches_failed">ブックマークリストに追加できませんでした</string>
+    <string name="search_bookmark_create_new_failed">新しいブックマークリストを作成できませんでした</string>
     <!-- trackable -->
     <string name="trackable">トラッカブル</string>
     <string name="trackable_details_loading">トラッカブルの詳細を読み込み中…</string>
@@ -1278,7 +1448,6 @@
     <!-- user -->
     <string name="user_menu_title">ユーザー名:</string>
     <string name="user_menu_view_hidden">隠したキャッシュ</string>
-    <string name="user_menu_view_found">発見したキャッシュ</string>
     <string name="user_menu_open_browser">ブラウザでプロフィールを開く</string>
     <string name="user_menu_send_message">メッセージを送信</string>
     <string name="user_menu_send_email">メールを送る</string>
@@ -1315,14 +1484,14 @@
     <string name="helper_bluetoothgps_description">外部GPS受信機を利用することができます。より正確な位置情報を得られたりデバイスのバッテリ消費が少なくなるかもしれません</string>
     <string name="helper_gps_locker_description">GPS Lockerはアプリケーションを切り替えるときやデバイスの画面がオフのときにGPS信号をアクティブのままにします</string>
     <string name="helper_barcode_description">GCコードをQRコードで表示するGreasemonkeyスクリプトやWebサイトがあります。このアプリを使えばパソコンの画面から直接GCコードを読み込むことができます</string>
-    <string name="helper_pocketquery_description">現在地や地図上の指定した地点で簡単にポケット・クエリを作成できます。Geocaching.comのプレミアム会員である必要があります</string>
     <string name="helper_google_translate_title">Google 翻訳</string>
     <string name="helper_google_translate_description">キャッシュの説明でロングタップすればGoogle翻訳アプリで簡単に翻訳できます。
 Google翻訳アプリで各言語の辞書をダウンロードしておけばオフラインでも使用できます</string>
-    <string name="helper_where_you_go_description">WhereYouGoでWherigoキャッシュを検索して楽しむことができます。Wherigoカートリッジのダウンロードができます</string>
+    <string name="helper_where_you_go_description">WhereYouGoアプリでWherigoキャッシュを検索して楽しむことができます。Wherigoカートリッジのダウンロードができます</string>
     <string name="helper_brouter_title">BRouter Offline Navigation</string>
-    <string name="helper_brouter_description">BRouterはオフラインのルート検索エンジンです。インストール後に必要なファイルをダウンロードするなどのセットアップが必要です。c:geoで地図にキャッシュなどへのルートを表示できるようになります</string>
+    <string name="helper_brouter_description">BRouterはオフライン用のルート検索エンジンです。インストール後に必要なファイルをダウンロードするなどのセットアップが必要です。c:geoで地図にキャッシュなどへのルートを表示できるようになります</string>
     <string name="helper_chirpwolf_description">Chirp Wolfを使用するとANT+/Garmin chirp(ジオキャッシュ ビーコン)からデータを読み取ることができます。Garmin chirpを含むジオキャッシュには必要です</string>
+    <string name="helper_alc_description">スマホやタブレット用のアドベンチャー・ラボのアプリ</string>
     <!-- export -->
     <string name="share_export">共有/エクスポート</string>
     <string name="export">エクスポート</string>
@@ -1615,9 +1784,9 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="status_new_release" tools:ignore="UnusedResources">新しいバージョンがあります\nタップしてインストールしてください</string>
     <string name="status_new_nightly" tools:ignore="UnusedResources">新しいナイトリービルドがあります\nタップしてインストールしてください</string>
     <string name="status_new_rc" tools:ignore="UnusedResources">新しいRCバージョンがあります\nタップしてインストールしてください</string>
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">geocaching.comが更新されましたがc:geoはまだ未対応です。\n現在作業中です。しばらくお待ちください</string>
-    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">geocaching.comが更新されましたがオンライン地図機能はまだ未対応です。\n現在作業中です。しばらくお待ちください</string>
-    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">geocaching.com はメンテナンス中です。 \nさまざまな問題が発生する可能性があります</string>
+    <string name="status_geocaching_change" tools:ignore="UnusedResources">geocaching.comの変更によりc:geoに問題が発生しています。\n対応できるように取り組んでいます。しばらくお待ちください!</string>
+    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">geocaching.comの変更によりc:geoのオンライン地図に問題が発生しています。\n対応できるように取り組んでいます。しばらくお待ちください!</string>
+    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">geocaching.comは現在(完全には)利用できません。\nc:geoでさまざまな問題が発生する可能性があります。</string>
     <string name="status_closeout_warning" tools:ignore="UnusedResources">Androidの古いバージョンを使用しているようです。 このバージョンのc:geoはお使いのデバイスと互換性がないため、突然終了したり予期せぬ動作をする可能性があります!\n詳細についてはこのメッセージをタップしてください</string>
     <string name="status_version_deprecated" tools:ignore="UnusedResources">1年以上前のc:geoのバージョンをご利用中です。 一部の機能はWebサイトやそのほかの技術的な変更により動作しない可能性があります。アップグレード方法に関するFAQをお読みください</string>
     <!-- text-to-speech for compass view -->
@@ -1625,7 +1794,7 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="tts_toggle">音声案内の切替</string>
     <string name="tts_started">音声案内を開始しました</string>
     <string name="tts_stopped">音声案内を停止しました</string>
-    <string name="err_tts_lang_not_supported">現在の言語ではテキスト読み上げ機能がサポートされていません</string>
+    <string name="err_tts_lang_not_supported">現在の言語ではテキスト読み上げ機能に対応していません</string>
     <string name="tts_one_kilometer">1キロメートル</string>
     <plurals name="tts_kilometers">
         <item quantity="other">%sキロメートル</item>
@@ -1652,7 +1821,6 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <plurals name="favorite_points">
         <item quantity="other">お気に入り %s </item>
     </plurals>
-    <string name="more_than_percent_favorite_points">お気に入り &gt; %d%%</string>
     <!-- shortcuts -->
     <string name="cgeo_shortcut">c:geo ショートカット</string>
     <string name="create_shortcut">ショートカットを作成</string>
@@ -1662,13 +1830,12 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="confirm_report_problem_title">問題を報告</string>
     <string name="confirm_report_problem_message">「%s」を報告します。よろしいですか?</string>
     <!-- Geokrety -->
-    <string name="settings_activate_geokrety">有効化</string>
     <string name="init_summary_geokrety">GeoKrety.orgからトラッカブルを有効にする</string>
     <string name="init_geokrety_description">GeoKrety.orgでc:geoを認証してGeoKretyトラッカブルをログに記録します</string>
     <string name="init_geokrety_userid">ユーザーID: %s</string>
     <string name="trackable_title_log_without_geocode">ジオコードが設定されていません</string>
     <string name="trackable_log_without_geocode">ジオコードのないログを投稿しようとしています。それは設定することが奨励されています。今すぐ追加しますか?</string>
-    <string name="do_not_ask_me_again">次回から表示しない</string>
+    <string name="do_not_ask_me_again">次回から確認しない</string>
     <string name="geokrety_parsing_failed">GeoKretyレスポンスを解析できませんでした</string>
     <string name="command_move_caches_progress">リスト:%1sにキャッシュを移動中</string>
     <plurals name="command_move_caches_result">
@@ -1698,7 +1865,7 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <plurals name="extract_waypoints_result">
         <item quantity="other">%dウェイポイントを抽出しました</item>
     </plurals>
-    <string name="link_gc_checker">geocaching.com 座標チェッカーがブラウザーで利用できます</string>
+    <string name="link_gc_checker">geocaching.com座標チェッカーがブラウザで利用できます</string>
     <!-- calendar adder -->
     <string name="event_fail">イベントキャッシュをカレンダーに追加できませんでした</string>
     <string name="init_low_disk_space">ストレージ容量が不足しています</string>
@@ -1721,10 +1888,8 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="number_input_err_boundarymin">入力した数値が小さすぎます: 最小値にリセットします</string>
     <string name="number_input_err_boundarymax">入力した数値が大きすぎます: 最大値にリセットします</string>
     <string name="number_input_err_format">数値の書式が正しくありません</string>
-    <!-- text notification channel infos & proximity notification title -->
-    <string name="notification_channel_name">c:geo通知</string>
-    <string name="notification_channel_description">c:geoからの通知</string>
-    <string name="proximity_notification_title">c:geo接近通知</string>
+    <!-- notification / channel texts -->
+    <string name="notification_proximity_title">c:geo接近通知</string>
     <!-- individual routes -->
     <string name="individual_route">個別ルート</string>
     <string name="individual_route_added">ルートに追加しました</string>
@@ -1732,17 +1897,17 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="individual_route_error_toggling_waypoint">ルートポイントの切替エラー</string>
     <string name="individual_route_error_single_waypoint_mode">一つだけのウェイポイントでは利用できません</string>
     <string name="map_sort_individual_route">個別ルートの編集</string>
-    <string name="map_export_individual_route">個別ルートのエクスポート</string>
+    <string name="map_export_individual_route">ルートとしてエクスポート</string>
+    <string name="map_export_individual_route_as_track">トラックとしてエクスポート</string>
     <string name="map_load_individual_route">個別ルートの読み込み</string>
     <string name="map_load_individual_route_confirm">現在のルートに上書きしますか?</string>
-    <string name="map_autotarget_individual_route">自動的に目的地として設定</string>
-    <string name="map_disable_autotarget_individual_route">「自動的に目的地として設定」を無効にしました</string>
+    <string name="map_autotarget_individual_route">ルートの開始地点を目的地に設定</string>
+    <string name="map_disable_autotarget_individual_route">「ルートの開始地点を目的地に設定」は無効になっています</string>
     <string name="map_clear_manual_targets">目的地を削除</string>
     <string name="map_manual_targets_cleared">目的地を削除しました</string>
     <string name="map_clear_individual_route">個別ルート削除</string>
     <string name="map_clear_individual_route_confirm">個別ルートからすべての地点を削除しますか?</string>
     <string name="map_individual_route_cleared">個別ルートを削除しました</string>
-    <string name="save_sorted_route">保存</string>
     <string name="sorted_route_saved">個別ルートを保存しました</string>
     <string name="load_individual_route_error">個別ルートの読み込みに失敗しました</string>
     <string name="route_item_not_yet_loaded">ルートアイテムがまだ読み込まれていません</string>
@@ -1750,6 +1915,8 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
         <item quantity="other">ルート(%dルート地点)を読み込みました</item>
     </plurals>
     <string name="center_on_route">ルートの中心に移動</string>
+    <string name="individual_route_set_as_start_title">ルート開始点にする</string>
+    <string name="individual_route_set_as_start_message">この場所をルートの開始点にして後続の場所を繰り上げますか?</string>
     <!-- individual track -->
     <string name="individual_track">GPXトラック/ルート</string>
     <string name="map_load_track">GPXファイルからトラック/ルートを読み込み</string>
@@ -1780,7 +1947,7 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="delete_setting">設定キーの削除</string>
     <string name="delete_setting_warning">設定キー「%s」を削除しますか?\n\nこの操作は元に戻せません</string>
     <string name="edit_setting">「%s」設定値を編集</string>
-    <string name="edit_setting_error_unknown_type">不明な設定タイプ: 編集はサポートされていません</string>
+    <string name="edit_setting_error_unknown_type">不明な設定タイプ: 編集できません</string>
     <string name="edit_setting_error_invalid_data">無効な設定値「%s」 が入力されました。 設定値は変更されません</string>
     <string name="activate_editmode_title">編集モードを有効にする</string>
     <string name="activate_editmode_warning">ここからは危険なエリアです!\n\n設定値を直接変更するとc:geoが異常な挙動を引き起こしたり起動しなくなる可能性もあります。慎重にしてください。\n\nご自身の責任の元で続けますか?</string>
@@ -1794,27 +1961,27 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="localfile_intenttitle">c:geoローカルファイルハンドラ</string>
     <string name="localfile_title">ローカルファイルを開く</string>
     <string name="localfile_cannot_handle">ファイルの読み取りエラー、またはc:geoはこのファイルタイプを処理できません</string>
-    <!-- ReceiveMapFileActivity -->
-    <string name="receivemapfile_intenttitle">地図ファイルの保存</string>
-    <string name="receivemapfile_success">地図ファイル「%s」は地図フォルダに保存されました</string>
-    <string name="receivemapfile_error">地図ファイルの受信中にエラーが発生しました</string>
-    <string name="receivemapfile_error_io_exception">地図ファイルのダウンロード中にI/Oエラーが発生しました。地図フォルダ「%s」は書き込み可能ですか?</string>
-    <string name="receivemapfile_error_filenotfound_exception">地図ファイルのダウンロード中にファイルが見つかりませんでした</string>
-    <string name="receivemapfile_alreadyexists">同名ファイルが既にあります。上書きしますか? または別名(連番を付加)で保存しますか?</string>
-    <string name="receivemapfile_option_overwrite">上書き保存</string>
-    <string name="receivemapfile_option_differentname">別名で保存</string>
-    <string name="receivemapfile_kb_copied">%d がコピー済み</string>
-    <string name="receivemapfile_cancelled">ファイル転送を取り消しました</string>
+    <!-- ReceiveDownloadActivity -->
+    <string name="receivedownload_intenttitle">ファイルのダウンロード</string>
+    <string name="receivedownload_success">ファイルを「%s」として保存しました</string>
+    <string name="receivedownload_error">ファイルのダウンロード中にエラーが発生しました</string>
+    <string name="receivedownload_error_io_exception">ファイルのダウンロード中にI/Oエラーが発生しました。フォルダ「%s」は書き込み可能ですか？</string>
+    <string name="receivedownload_error_filenotfound_exception">ダウンロードするファイルが見つかりませんでした</string>
+    <string name="receivedownload_amount_copied">%sをコピーしました</string>
+    <string name="receivedownload_cancelled">ファイル転送がキャンセルされました</string>
     <!-- Download map preference and menu entry -->
     <string name="downloadmap_title">オフライン用に地図をダウンロード</string>
+    <string name="download_title">ファイルをダウンロード</string>
     <string name="downloadmap_info">お好みの地域の「保存アイコン」をタップするとダウンロードできます。\n\nダウンロードはバックグラウンドで実行されます。完了後に地図フォルダに保存され、表示する地図に設定されます。\n\n注意: 地図ファイルはサイズがとても大きいので、たくさんのデータ通信量が必要です!</string>
     <string name="downloadmap_choose">地図を選択</string>
     <string name="downloadmap_filename">%sをダウンロード中</string>
-    <string name="downloadmanager_not_available">地図ファイルをダウンロードできません。システムのダウンロードマネージャーが利用できません</string>
+    <string name="downloadmanager_not_available">システムのダウンロードマネージャーが利用できないため、ファイルをダウンロードできません</string>
     <string name="download_started">バックグラウンドでダウンロードを開始しました</string>
     <string name="downloadmap_target_not_writable">選択したファルダ「%s」は書き込み可能ではありません。地図ファイルはシステムのダウンロードフォルダに保存されており、地図フォルダに手動で移動する必要があります。</string>
     <string name="downloadmap_allow_metered_network">従量制課金ネットワーク経由のダウンロードを許可(例:モバイル接続)</string>
-    <string name="downloadmap_confirmation">地図ファイル「%1$s」をダウンロードしますか?\n\nネットワーク接続によっては長時間かかり通信料が高額になる場合があります。\n\nファイルサイズ:%2$s</string>
+    <string name="download_confirmation">%1$sダウンロードファイル: %2$s %3$s</string>
+    <string name="download_confirmation_updates">更新が見つかりました:\n%1$s\n\n更新しますか?%2$s</string>
+    <string name="download_warning">ネットワーク接続によってはダウンロードに長時間かかり通信料が高額になる場合があります</string>
     <string name="downloadmap_handling">ダウンロードはバックグラウンドでシステムのダウンロードマネージャーによって実行されます。 ダウンロードが開始されるとすぐに通知されます(時間がかかる場合があります)</string>
     <string name="button_continue">続ける</string>
     <string name="downloadmap_onedirup">..</string>
@@ -1823,15 +1990,25 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="downloadmap_no_updates_found">地図ファイルは最新です</string>
     <string name="downloadmap_directory">フォルダ</string>
     <string name="downloadmap_mapfile">地図ファイル</string>
+    <string name="downloadmap_themefile">テーマファイル</string>
+    <string name="downloadmap_tilefile">ルート検索データ</string>
+    <string name="downloadmap_download">ダウンロード</string>
     <string name="downloadmap_retrieving_directory_data">フォルダ情報を取得中…</string>
     <string name="downloadmap_checking_for_updates">更新を確認中…</string>
-    <string name="downloadmap_install_theme_title">テーマファイルのダウンロード</string>
-    <string name="downloadmap_install_theme_info">ダウンロードした地図には特別なテーマファイルが必要です。これもダウンロードしますか?</string>
+    <string name="downloadtile_title">ルート検索データが見つかりません</string>
+    <string name="downloadtile_info">ルート検索データが不足しているため、c:geoはルートを検索できません。ルート検索データをダウンロードしますか？</string>
+    <string name="tileupdate_info">ダウンロードしたルート検索データの更新を確認しますか?</string>
+    <string name="mapupdate_info">地図とテーマファイルの更新を確認しますか?</string>
+    <string name="no_updates_found">更新はありません。</string>
+    <string name="updates_check">更新を確認</string>
     <string name="mapserver_mapsforge_info">基本地図(地図テーマは必要ありません)</string>
     <string name="mapserver_openandromaps_info">詳細地図(地図テーマ\"Elevate\"が必要です)</string>
     <string name="mapserver_openandromaps_themes_info">「OpenAndroMaps」用の詳細な地図テーマ</string>
     <string name="mapserver_freizeitkarte_info">詳細な地図は「Freizeitkartte」用の地図テーマが必要です。</string>
     <string name="mapserver_freizeitkarte_themes_info">「Freizeitkarte」用の詳細な地図テーマ</string>
+    <string name="mapserver_hylly_info">フィンランドの詳細な地図は「Hylly」用の地図テーマが必要です。</string>
+    <string name="mapserver_hylly_themes_info">「Hylly」用の詳細な地図テーマ</string>
+    <string name="brouter_info">オフラインルート検索</string>
     <!-- history track -->
     <string name="map_clear_trailhistory">軌跡を削除</string>
     <string name="map_trailhistory_cleared">軌跡を削除しました</string>
@@ -1856,11 +2033,13 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="wizard_outro_error">設定が完了していません\nこのままでは、すべての機能が期待どおり動作するわけではありません!</string>
     <string name="wizard_permissions_title">アプリの権限の設定</string>
     <string name="wizard_permissions_intro">c:geoが正しく機能するために特定の権限が必要です\n次のステップで説明します</string>
-    <string name="wizard_permissions_folder_title">フォルダの設定: %s</string>
+    <string name="wizard_permissions_folder_title">%sフォルダの設定</string>
     <string name="wizard_basefolder_request_explanation">GPXファイル、バックアップ、フィールドノート、ログファイルなどを保存するためにローカルフォルダが必要です。デフォルトでは「ベースフォルダ」下の各フォルダにそれぞれ保存されます。次のステップでそのフォルダを選択または作成します。\n\n以前のバージョンからアップグレードされる場合はデバイスストレージのルートにある「cgeo」フォルダを選択してください。\nヒント:次のファイルセレクタで最初にデバイスの「内部ストレージを表示」にする必要があるかもしれません。</string>
-    <string name="wizard_mapfolder_request_explanation">オフライン用の地図ファイルを保存するためにローカルフォルダが必要です。次のステップでそのフォルダを選択または作成します。</string>
-    <string name="wizard_mapthemesfolder_request_explanation">オフライン地図のテーマファイルを保存するためにローカルフォルダが必要です。次のステップでそのフォルダを選択または作成します。</string>
-    <string name="wizard_gpxfolder_request_explanation">GPXファイルを保存(キャッシュやトラックをインポート/エクスポート)するためにローカルフォルダが必要です。次のステップでそのフォルダを選択または作成します。</string>
+    <string name="wizard_mapfolder_request_explanation">オフライン地図を保存するためにローカルフォルダが必要です。</string>
+    <string name="wizard_mapthemesfolder_request_explanation">オフライン地図のテーマファイルを保存するためにローカルフォルダが必要です。</string>
+    <string name="wizard_gpxfolder_request_explanation">GPXファイルを保存するためにローカルフォルダが必要です(例: キャッシュやトラックのインポート/エクスポート)。</string>
+    <string name="wizard_broutertilesfolder_request_explanation">c:geo内部ルート検索を有効化してルート検索データを自動ダウンロード(更新)するには、ルート検索データフォルダを設定する必要があります。</string>
+    <string name="wizard_select_or_create">次のステップでそのようなフォルダを選択または作成します。</string>
     <string name="wizard_platforms_title">ジオキャッシングサイトの設定</string>
     <string name="wizard_platforms_intro">c:geoでキャッシュを探すには、対応しているジオキャッシングサイトの少なくとも1つのアカウントが必要です。\nお持ちのアカウントでログインするかアカウント作成してください</string>
     <string name="wizard_platforms_gc">geocaching.com</string>
@@ -1868,8 +2047,8 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="wizard_welcome_advanced">追加設定</string>
     <string name="wizard_advanced_offlinemaps_label">オフライン地図のダウンロード</string>
     <string name="wizard_advanced_offlinemaps_info">ここでは追加の設定ができます\n\nオフラインで使うために地図ファイルをダウンロードできます</string>
-    <string name="wizard_advanced_brouter_label">ルーティングアプリ</string>
-    <string name="wizard_advanced_brouter_info">BRouter Offline Navigationをインストールしてセットアップすると(オフラインでも)目的地へナビゲーションしたり地図にルートを表示することができます</string>
+    <string name="wizard_advanced_routing_label">c:geoルート検索を使用する</string>
+    <string name="wizard_advanced_routing_info">c:geoルート検索(Brouter互換)はオフライン用のルート検索エンジンです。データの自動ダウンロードなどもできます。</string>
     <string name="wizard_advanced_restore_label">復元</string>
     <string name="wizard_advanced_restore_info">バックアップからc:geo設定やキャッシュ情報を復元できます</string>
     <string name="status_not_ok">未完了</string>
@@ -1889,4 +2068,7 @@ Google翻訳アプリで各言語の辞書をダウンロードしておけば�
     <string name="done">完了</string>
     <string name="finish">終了</string>
     <string name="back">戻る</string>
+    <string name="later">後で</string>
+    <!-- ChipChoiceGroup -->
+    <string name="chipchoicegroup_selectall">すべて選択</string>
 </resources>

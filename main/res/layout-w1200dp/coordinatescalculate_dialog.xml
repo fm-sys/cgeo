@@ -5,7 +5,7 @@
               android:orientation="vertical"
               tools:context=".ui.dialog.CoordinatesCalculateDialog" >
 
-    <include layout="@layout/dialog_title_ok_cancel" />
+    <include layout="@layout/actionbar_popup" />
 
     <ScrollView
         android:id="@+id/scroller"
@@ -15,7 +15,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:baselineAligned="false">
 
             <LinearLayout
@@ -69,18 +69,17 @@
                 android:layout_weight="1"
                 android:orientation="vertical" >
 
-                <EditText
-                    android:id="@+id/notes_text"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    style="@style/edittext_full"
-                    android:textSize="16sp"
-                    android:singleLine="false"
-                    android:overScrollMode="always"
-                    android:scrollbarStyle="insideInset"
-                    android:scrollbars="vertical"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:hint="@string/waypointcalc_notes_prompt" />
+                <com.google.android.material.textfield.TextInputLayout style="@style/textinput_edittext">
+                    <EditText
+                        android:id="@+id/notes_text"
+                        style="@style/textinput_embedded"
+                        android:singleLine="false"
+                        android:overScrollMode="always"
+                        android:scrollbarStyle="insideInset"
+                        android:scrollbars="vertical"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:hint="@string/waypointcalc_notes_prompt" />
+                </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

@@ -20,21 +20,21 @@
         android:layout_height="wrap_content"
         android:importantForAutofill="noExcludeDescendants"
         android:orientation="vertical">
-        <EditText
-            android:id="@+id/PlainLat"
-            style="@style/edittext_full"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text|textCapCharacters"
-            android:hint="@string/latitude" />
+        <com.google.android.material.textfield.TextInputLayout style="@style/textinput_edittext_singleline">
+            <EditText
+                android:id="@+id/PlainLat"
+                style="@style/textinput_embedded"
+                android:inputType="text|textCapCharacters"
+                android:hint="@string/latitude" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <EditText
-            android:id="@+id/PlainLon"
-            style="@style/edittext_full"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text|textCapCharacters"
-            android:hint="@string/longitude" />
+        <com.google.android.material.textfield.TextInputLayout style="@style/textinput_edittext_singleline">
+            <EditText
+                android:id="@+id/PlainLon"
+                style="@style/textinput_embedded"
+                android:inputType="text|textCapCharacters"
+                android:hint="@string/longitude" />
+        </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 
     <!-- H DDD°MM'SS.PPPPP" -->
@@ -42,7 +42,9 @@
         android:id="@+id/coordTable"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:columnCount="17">
+        app:columnCount="17"
+        android:background="@drawable/textinputlayout_bcg_active"
+        android:padding="8dp">
 
         <Button
             android:id="@+id/ButtonLatHem"
@@ -67,7 +69,7 @@
         <TextView
             android:id="@+id/LatDegChar"
             android:text="°"
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             android:layout_marginRight="1dp"
             tools:ignore="HardcodedText" />
 
@@ -81,7 +83,7 @@
         <TextView
             android:id="@+id/LatMinChar"
             android:text="'"
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             android:layout_marginRight="1dp"
             tools:ignore="HardcodedText" />
 
@@ -95,7 +97,7 @@
         <TextView
             android:id="@+id/LatPointChar"
             android:text="."
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             app:layout_gravity="center_vertical|left"
             android:layout_marginLeft="0dp"
             android:layout_marginRight="0dp"
@@ -119,7 +121,7 @@
         <TextView
             android:id="@+id/LatLastUnitsChar"
             android:text='"'
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             android:layout_marginRight="1dp"
             tools:ignore="HardcodedText" />
 
@@ -147,7 +149,7 @@
         <TextView
             android:id="@+id/LonDegChar"
             android:text="°"
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             android:layout_marginRight="1dp"
             tools:ignore="HardcodedText" />
 
@@ -161,7 +163,7 @@
         <TextView
             android:id="@+id/LonMinChar"
             android:text="'"
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             android:layout_marginRight="1dp"
             tools:ignore="HardcodedText" />
 
@@ -175,7 +177,7 @@
         <TextView
             android:id="@+id/LonPointChar"
             android:text="."
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             app:layout_gravity="center_vertical"
             tools:ignore="HardcodedText" />
 
@@ -198,7 +200,7 @@
         <TextView
             android:id="@+id/LonLastUnitsChar"
             android:text='"'
-            android:textSize="22sp"
+            android:textSize="@dimen/textSize_inputCoords"
             android:layout_marginRight="1dp"
             tools:ignore="HardcodedText" />
     </androidx.gridlayout.widget.GridLayout>

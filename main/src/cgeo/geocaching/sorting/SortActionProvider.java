@@ -1,6 +1,7 @@
 package cgeo.geocaching.sorting;
 
 import cgeo.geocaching.R;
+import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.TextUtils;
 import cgeo.geocaching.utils.functions.Action1;
@@ -13,6 +14,7 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
+import androidx.core.util.Supplier;
 import androidx.core.view.ActionProvider;
 
 import java.util.ArrayList;
@@ -38,14 +40,36 @@ public class SortActionProvider extends ActionProvider implements OnMenuItemClic
 
     // Used to change menu Filter label
     private boolean isEventsOnly = false;
+    private Geopoint targetCoords = null;
 
     private static final class ComparatorEntry {
         private final String name;
         private final Class<? extends CacheComparator> cacheComparator;
+        private final Supplier<? extends CacheComparator> cacheComparatorSupplier;
 
-        ComparatorEntry(final String name, final Class<? extends CacheComparator> cacheComparator) {
+        ComparatorEntry(final String name, final Class<? extends CacheComparator> cacheComparator, final Supplier<? extends CacheComparator> cacheComparatorSupplier) {
             this.name = name;
             this.cacheComparator = cacheComparator;
+            this.cacheComparatorSupplier = getCacheComparatorSupplier(cacheComparator, cacheComparatorSupplier);
+        }
+
+        private static Supplier<? extends CacheComparator> getCacheComparatorSupplier(final Class<? extends CacheComparator> ccClass, final Supplier<? extends CacheComparator> ccSupplier) {
+            if (ccSupplier != null) {
+                return ccSupplier;
+            }
+
+            return () -> {
+                try {
+                    return ccClass == null ? null : ccClass.newInstance();
+                } catch (Exception e) {
+                    Log.e("Problem creating Cache Comparator for class '" + ccClass + "'", e);
+                    return null;
+                }
+            };
+        }
+
+        public CacheComparator getComparator() {
+            return this.cacheComparatorSupplier.get();
         }
 
         @Override
@@ -68,12 +92,19 @@ public class SortActionProvider extends ActionProvider implements OnMenuItemClic
     }
 
     private void register(@StringRes final int resourceId, final Class<? extends CacheComparator> comparatorClass) {
-        registry.add(new ComparatorEntry(context.getString(resourceId), comparatorClass));
+        register(resourceId, comparatorClass, null);
+    }
+
+    private void register(@StringRes final int resourceId, final Class<? extends CacheComparator> comparatorClass, final Supplier<CacheComparator> comparatorSupplier) {
+        registry.add(new ComparatorEntry(context.getString(resourceId), comparatorClass, comparatorSupplier));
     }
 
     private void registerComparators() {
         registry.clear();
-        register(R.string.caches_sort_distance, DistanceComparator.class);
+        if (targetCoords != null) {
+            register(R.string.caches_sort_distance_target, TargetDistanceComparator.class, () -> new TargetDistanceComparator(targetCoords));
+        }
+        register(R.string.caches_sort_distance, GlobalGPSDistanceConparator.class, () -> GlobalGPSDistanceConparator.INSTANCE);
         if (isEventsOnly) {
             register(R.string.caches_sort_eventdate, EventDateComparator.class);
         } else {
@@ -130,21 +161,8 @@ public class SortActionProvider extends ActionProvider implements OnMenuItemClic
 
     @Override
     public boolean onMenuItemClick(final MenuItem item) {
-        callListener(registry.get(item.getItemId()).cacheComparator);
+        onClickListener.call(registry.get(item.getItemId()).getComparator());
         return true;
-    }
-
-    private void callListener(final Class<? extends CacheComparator> cacheComparator) {
-        try {
-            if (cacheComparator == null) {
-                onClickListener.call(null);
-            } else {
-                final CacheComparator comparator = cacheComparator.newInstance();
-                onClickListener.call(comparator);
-            }
-        } catch (Exception e) { // no multi-catch below SDK 19
-            Log.e("selectComparator", e);
-        }
     }
 
     public void setClickListener(@NonNull final Action1<CacheComparator> onClickListener) {
@@ -157,5 +175,9 @@ public class SortActionProvider extends ActionProvider implements OnMenuItemClic
 
     public void setIsEventsOnly(final boolean isEventsOnly) {
         this.isEventsOnly = isEventsOnly;
+    }
+
+    public void setTargetCoords(final Geopoint targetCoords) {
+        this.targetCoords = targetCoords;
     }
 }

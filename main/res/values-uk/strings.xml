@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
     <!-- basics -->
     <string name="cache">Кеш</string>
     <string name="detail">Деталі</string>
@@ -197,7 +199,6 @@
     <string name="err_tb_display">c:geo не може відобразити те, що ви хочете. Ви дійсно хочете відстежувати?</string>
     <string name="err_tb_details_open">c:geo не вдалося відкрити подробиці, що відстежуються.</string>
     <string name="err_tb_not_loggable">Це відстежуване неможливо увійти.</string>
-    <string name="err_tb_find">c:geo не вдається знайти схованку</string>
     <string name="err_tb_find_that">c:geo не може знайти цей геокеш.</string>
     <string name="err_waypoint_cache_unknown">c:geo не знає, який кеш ви хочете додати точку.</string>
     <string name="err_waypoint_add_failed">c:geo не вдалося додати вашу точку.</string>
@@ -281,7 +282,6 @@
     <string name="menu_history">Історія</string>
     <string name="menu_filter">Фільтр</string>
     <string name="menu_scan_geo">Сканувати геокод</string>
-    <string name="menu_pocket_queries">Pocket-запити</string>
     <string name="menu_scan_description">c:geo можна сканувати гео-коди, які надруковані як QR-код. Не встановлено потрібне додатку. Відкрити Google Play, щоб встановити його?</string>
     <!-- main screen -->
     <string name="live_map_button">Жива мапа</string>
@@ -332,8 +332,6 @@
     <string name="caches_select_mode_exit">Вийти з режиму вибору</string>
     <string name="caches_select_invert">Інвертувати вибране</string>
     <string name="caches_nearby">Неподалік</string>
-    <string name="caches_remove_all">Видалити все</string>
-    <string name="caches_remove_selected">Видалити вибране</string>
     <string name="caches_delete_events">Видалити минулі події</string>
     <string name="caches_upload_modifiedcoords">Вивантажити змінені координати</string>
     <string name="caches_upload_modifiedcoords_warning">Ви хочете, щоб завантажити модифіковані координати для всіх (вибраних) кеш і перезаписати наявні координати на сервері? Це не можна скасувати.</string>
@@ -347,27 +345,7 @@
     <string name="caches_copy_selected">Копіювати виділене</string>
     <string name="caches_copy_all">Скопіювати все</string>
     <string name="caches_map_locus_export">Експорт в Locus</string>
-    <string name="caches_filter">Фільтр</string>
     <string name="caches_filter_title">Фільтрувати за</string>
-    <string name="caches_filter_size">Розмір</string>
-    <string name="caches_filter_type">Тип</string>
-    <string name="caches_filter_track">З трекерами</string>
-    <string name="caches_filter_clear">Очистити фільтри</string>
-    <string name="caches_filter_modified">Вивантажити змінені координати</string>
-    <string name="caches_filter_offline_log">З журналом оффлайн</string>
-    <string name="caches_filter_origin">Оригінальний</string>
-    <string name="caches_filter_distance">Відстань</string>
-    <string name="caches_filter_personal_note">З персональною приміткою</string>
-    <string name="caches_filter_popularity">Улюблене</string>
-    <string name="caches_filter_popularity_ratio">Улюблені [%]</string>
-    <string name="caches_filter_personal_data">З персональними даними</string>
-    <string name="caches_filter_rating">З рейтингом</string>
-    <string name="caches_filter_own_rating">З власним рейтингом</string>
-    <string name="caches_filter_multi_listing">Багатоканальний список з іншим станом</string>
-    <string name="caches_filter_own_waypoint">З визначеними користувачем точками</string>
-    <string name="caches_filter_missing_gcvote">Знайдені кеші не проголосовані</string>
-    <string name="caches_filter_lists">присвоєний списку</string>
-    <string name="caches_filter_empty">(порожній)</string>
     <string name="caches_removing_from_history">Видалення з історії…</string>
     <string name="caches_clear_offlinelogs">очистити офлайн-списки</string>
     <string name="caches_clear_offlinelogs_message">Ви хочете очистити журнали офлайн?</string>
@@ -394,6 +372,7 @@
     <string name="list_dialog_rename_title">перейменувати список</string>
     <string name="list_dialog_rename">Перейменувати</string>
     <string name="list_not_available">Список більше не доступний, перемикаючись на стандартний список</string>
+    <!-- caches lists filter -->
     <!-- about -->
     <string name="about_version">версія</string>
     <string name="about_changelog">журнал змін</string>
@@ -418,7 +397,6 @@
     <string name="about_contributors_carnerodetails">як батько c:geo</string>
     <string name="about_contributors_recent">Останні учасники</string>
     <string name="about_contributors_specialthanks">Особлива подяка</string>
-    <string name="about_contributors_specialthanksdetails">· Усі наші учасники перекладу на <a href="https://crowdin.net/project/cgeo">Crowdin.net</a>!\n· Всі творці проблем\n· та всі інші підтримки.\n</string>
     <string name="about_contributors_other">Останні учасники</string>
     <string name="about_components">Компоненти</string>
     <string name="contribution_code">код</string>
@@ -427,7 +405,6 @@
     <string name="contribution_documentation">Документація</string>
     <string name="contribution_projectleader">лідер проекту з відкритим кодом</string>
     <string name="contribution_graphics">Графіка</string>
-    <string name="debug_user_error_explain_options">Допоможіть нам виправити c:geo, повідомляючи про це електронною поштою з системною інформацією та c:geo logfile включено. Будь ласка, також додайте докладний опис помилки з вашою поштою. Інші параметри контактів можна знайти на \'Про\":\"geo\'</string>
     <!-- settings -->
     <string name="settings_title_open_settings">Відкрити налаштування?</string>
     <string name="settings_title_services">Послуги</string>
@@ -451,8 +428,6 @@
     <string name="settings_data_dir_item">%1$s (%2$s вільно)</string>
     <string name="confirm_data_dir_move">Переміщення даних схованки може зайняти багато часу, в залежності від пристрою та кількості даних.</string>
     <string name="settings_title_basicmembers">Налаштування для основних учасників</string>
-    <string name="settings_title_navigation">Навігація</string>
-    <string name="settings_summary_navigation">Виберіть бажані методи навігації та виберіть зовнішні навігаційні програми.</string>
     <string name="settings_title_system">Система</string>
     <string name="settings_summary_system">Параметри особливих налаштувань і відлагодження.</string>
     <string name="settings_title_navigation_menu">Навігаційне меню</string>
@@ -462,8 +437,7 @@
     <string name="settings_category_social">Соціальні медіа</string>
     <string name="settings_category_logging_other">Інші параметри ведення журналу</string>
     <string name="settings_goto_url_button">більше …</string>
-    <string name="settings_activate_gc">Активувати</string>
-    <string name="settings_activate_ec">Активувати</string>
+    <string name="settings_service_activate">Активувати</string>
     <string name="settings_gc_legal_note">Використовуючи сервіс geocaching.com, ви приймаєте умови використання Groundspeak.</string>
     <string name="settings_info_facebook_login_title">Увійти через Facebook або Google</string>
     <string name="settings_info_facebook_login">Ви не можете зробити c: geo вхід на geocaching.com за допомогою свого облікового запису Facebook або Google. Але є просте обхідне рішення…</string>
@@ -472,30 +446,22 @@
     <string name="settings_gc_description">Авторизуйте c:geo з geocaching.com для пошуку кешів.</string>
     <string name="settings_ec_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
     <string name="settings_su_description">Авторизуйте c:geo з geocaching.com для пошуку кешів.</string>
-    <string name="settings_activate_oc">Активувати</string>
     <string name="init_summary_oc_de">Завантажте кеші з opencaching.de</string>
     <string name="init_oc_de_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
-    <string name="settings_activate_oc_pl">Активувати</string>
     <string name="init_summary_oc_pl">Завантажте кеші з opencaching.de</string>
     <string name="init_oc_pl_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
-    <string name="settings_activate_oc_nl">Активувати</string>
     <string name="init_summary_oc_nl">Завантажте кеші з opencaching.de</string>
     <string name="init_oc_nl_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
-    <string name="settings_activate_oc_us">Активувати</string>
     <string name="init_summary_oc_us">Завантажте кеші з opencaching.de</string>
     <string name="init_oc_us_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
-    <string name="settings_activate_oc_ro">Активувати</string>
     <string name="init_summary_oc_ro">Завантажте кеші з opencaching.de</string>
     <string name="init_oc_ro_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
-    <string name="settings_activate_oc_uk">Активувати</string>
     <string name="init_summary_oc_uk">Завантажте кеші з opencaching.de</string>
     <string name="init_oc_uk_description">Авторизуйте c:geo з extremcaching.com для пошуку схованок та доступу/фільтрування ваших знайдених кешів.</string>
     <string name="init_summary_su">Завантажте кеші з opencaching.de</string>
-    <string name="settings_activate_su">Активувати</string>
     <string name="init_gcvote_password_description">Щоб мати можливість оцінити кеш, вам необхідно дотримуватися інструкцій в GCVote.com та ввести свій пароль до GCVote тут.</string>
     <string name="err_vote_send_rating">Помилка надсилання повідомлення.</string>
     <string name="vote_sent">Голосування успішно відправлено</string>
-    <string name="settings_activate_twitter">Активувати</string>
     <string name="init_login_popup">логін</string>
     <string name="init_login_popup_working">вхід в систему…</string>
     <string name="init_login_popup_ok">Логін добре</string>
@@ -529,18 +495,11 @@
     <string name="init_summary_friends_and_own_logs_wanted">Відображати додаткову сторінку логів для друзів і власних журналів</string>
     <string name="init_openlastdetailspage">Сторінка останніх деталей</string>
     <string name="init_summary_openlastdetailspage">Відкрити деталі зі останній використаний сторінкою</string>
-    <string name="init_skin">Світла шкіра</string>
-    <string name="init_summary_skin">Використовувати світлий скін (потрібен перезапуск)</string>
-    <string name="init_transparentBackground">прозорий фон</string>
-    <string name="init_summary_transparentBackground">Використовувати прозорий фон (необхідне перезавантаження)</string>
     <string name="init_address">Показати адресу</string>
     <string name="init_summary_address">Відображати адресу замість координат на головному екрані</string>
     <string name="init_select_language">Виберіть мову</string>
     <string name="init_summary_select_language">Оберіть мову програм (потрібен перезапуск)\n</string>
     <string name="init_use_default_language">Мова за замовчуванням</string>
-    <string name="init_category_exclude">виключити кеші</string>
-    <string name="init_exclude">Виключити власні та знайдено</string>
-    <string name="init_summary_exclude">Виключити кеші ваші власні або знайдені</string>
     <string name="init_showwaypoints">Показати точки маршруту</string>
     <string name="init_showwaypoint_description">Якщо на карті відображається менше заданої кількості схованок, то додатково відображаються їхні шляхові точки.</string>
     <string name="init_zoomincludingwaypoints">Масштабування містить маршрутні точки</string>
@@ -551,13 +510,8 @@
     <string name="init_summary_brouterShowBothDistances">Якщо маршрут активний: відображення прямої відстані в додаток до розрахункової довжини маршруту.</string>
     <string name="init_bigSmileysOnMap">Великі іконки для журналювальних схованок</string>
     <string name="init_summary_bigSmileysOnMap">Якщо увімкнено, то великі смайли будуть показані для журнальованих кешів на мапі замість значка кешу (потребує перезапуску).</string>
-    <string name="init_disabled">виключити інвалідів</string>
-    <string name="init_summary_disabled">Виключити відключені кеші</string>
-    <string name="init_archived">виключити заархівовані</string>
-    <string name="init_summary_archived">Виключити архівовані кеші</string>
     <string name="init_global_wp_extraction_disable">відключити спосіб вилучення</string>
     <string name="init_summary_global_wp_extraction_disable">Глобально вимкнути видобуток шляхових точок з особистих схованок. Воно може бути увімкнено для окремих кеш, вимикаючи прапорець під особистою приміткою кешу</string>
-    <string name="init_customtabs_as_browser">Використовувати веб-перегляд</string>
     <string name="init_summary_customtabs_as_browser">Зовнішні веб-сайти будуть відображатися без залишення c:geo (лише при встановленні Chrome)</string>
     <string name="init_save_log_img">Зберегти зображення</string>
     <string name="init_summary_save_log_img">Зберегти зображення з логів</string>
@@ -570,6 +524,7 @@
     <string name="init_listdisplay">Додаткові списки</string>
     <string name="init_summary_listdisplay">Показати членство в кеші в додаткових списках зі схованки</string>
     <string name="init_livelist">Показати напрямок</string>
+    <!-- app theme -->
     <!-- backup / restore -->
     <string name="init_backup_title">Створити резервну копію</string>
     <string name="init_backup_summary">Зверніть увагу, що ця функція може створювати резервні копії кешів, шляхових точок &amp; налаштувань, але немає схованок. \nДля того, щоб мати можливість відновити дані навіть після втрати телефону, резервні копії файлів слід скопіювати у незалежне місце.</string>
@@ -597,7 +552,6 @@
     <string name="init_user_confirmation">Я знаю, що я роблю</string>
     <string name="init_backup_success">c:geo базу даних успішно скопійовано до:</string>
     <string name="init_backup_failed">Резервне копіювання бази даних c:geo не вдалося.</string>
-    <string name="init_backup_unnecessary">База даних порожня, резервна копія не потрібна.</string>
     <string name="init_backup_no_backup_available">Немає доступного файлу резервної копії.</string>
     <string name="restore_confirm_overwrite_database">ПОПЕРЕДЖЕННЯ: На пристрої буде перезаписано %s!</string>
     <string name="restore_confirm_overwrite_database_and_settings">УВАГА: Це перезапише %s та поточні налаштування на вашому пристрої!</string>
@@ -742,7 +696,7 @@
     <string name="sendToCgeo_download_fail">c: geo не вдалося завантажити кеші. Немає підключення до Інтернету, або send2cgeo не працює.</string>
     <string name="sendToCgeo_no_registration">c: geo не вдалося завантажити кеші. Термін реєстрації на send2cgeo закінчився. Будь ласка, зареєструйтесь у налаштуваннях.</string>
     <!-- Content Storage -->
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <!-- FolderUtils: async processing -->
     <!-- FolderUtils: copy/move -->
     <!-- auth generic -->
@@ -774,7 +728,6 @@
     <!-- days remaining -->
     <string name="last_day_available">доступний останній день</string>
     <string name="cache_offline_refresh">освіжити</string>
-    <string name="cache_offline_drop">видалити</string>
     <string name="cache_delete_userdefined_waypoints">Видаліть визначені користувачем точки</string>
     <string name="cache_delete_userdefined_waypoints_confirm">Видавати всі визначені користувачі точки цього кешу? \n\n Шляхові точки будуть негативно видалені, а співпраця не відбудеться.</string>
     <string name="cache_delete_userdefined_waypoints_note">Примітка: у вас ввімкнено \"маршрутні точки\" з нотатки. Якщо ви маєте координати для своєї особистої ноти, що розпізнає c:ge, шляхові точки будуть створені для них автоматично. Ви можете відключити це в особистому діалозі редагування.</string>
@@ -785,7 +738,6 @@
     <string name="cache_offline_time_mins_few">кілька хвилин тому</string>
     <string name="cache_offline_about_time_year">більше року тому</string>
     <string name="cache_premium">Преміум</string>
-    <string name="cache_attributes">атрибути</string>
     <string name="cache_inventory">Інвентар</string>
     <string name="cache_log_images_title">журнальні зображення</string>
     <string name="cache_log_image_default_title">Фото</string>
@@ -893,27 +845,13 @@
     <string name="ignore_confirm_title">Будьте обережні</string>
     <string name="ignore_confirm_message">Ігнорування кешу означає, що цей кеш ніколи не буде використовуватися знову під час завантаження даних із схованки. м.Ви зможете знову побачити кеш не ігноруючи його на сайті.</string>
     <string name="cache_status">Статус</string>
-    <string name="cache_stored">зберігається</string>
     <string name="cache_status_offline_log">Зберегти у журнал</string>
     <string name="cache_status_found">Знайдено</string>
     <string name="cache_not_status_found">Не знайдено</string>
-    <string name="cache_never_found">Ніколи не знайдено</string>
-    <string name="cache_found_last_30_days">Знайдено за останні 30 днів</string>
     <string name="cache_status_archived">Архівний</string>
     <string name="cache_status_disabled">Робити нездатним</string>
     <string name="cache_status_active">активний</string>
     <string name="cache_status_premium">Тільки Преміум Учасники</string>
-    <string name="cache_status_not_premium">Доступ до всіх учасників</string>
-    <string name="cache_status_stored">зберігається</string>
-    <string name="cache_status_not_stored">Не збережено</string>
-    <string name="cache_status_stored_lasteighthours">За останні вісім годин</string>
-    <string name="cache_status_stored_lasttwentyfourhours">За останні двадцять чотири години</string>
-    <string name="cache_status_stored_lastsevendays">За останні сім днів</string>
-    <string name="cache_status_stored_lastthirtydays">За останні тридцять днів</string>
-    <string name="cache_status_stored_morethaneighthours">За останні вісім годин</string>
-    <string name="cache_status_stored_morethantwentyfourhours">За останні двадцять чотири години</string>
-    <string name="cache_status_stored_morethansevendays">За останні сім днів</string>
-    <string name="cache_status_stored_morethanthirtydays">За останні тридцять днів</string>
     <string name="cache_geocode">гео код</string>
     <string name="cache_name">Ім’я</string>
     <string name="cache_name_set">Встановити ім\'я кеша</string>
@@ -931,9 +869,7 @@
     <string name="cache_hidden">Прихований</string>
     <string name="cache_event">Дата</string>
     <string name="cache_location">Розташування</string>
-    <string name="cache_location_country">Країна</string>
     <string name="cache_coordinates">Координати</string>
-    <string name="cache_calculator">Калькулятор</string>
     <string name="cache_coordinates_original">Оригінальні координати</string>
     <string name="cache_spoiler_images_title">Зображення спойлера</string>
     <string name="cache_log_types">Типи журналiв</string>
@@ -1045,8 +981,6 @@
     <string name="map_view_map">Перегляд карти</string>
     <string name="map_rotation">Обертання мапи</string>
     <string name="map_dot_mode">Використовуйте компактні значки</string>
-    <string name="map_show_circles">Показати кола</string>
-    <string name="map_show_track">Відображення маршруту GPX</string>
     <string name="init_hidewp">сховати шляхові точки</string>
     <string name="init_summary_hidewp_original">Сховати оригінальні маршрутні точки на карті</string>
     <string name="init_summary_hidewp_parking">Сховати на карті маршрутні точки паркування</string>
@@ -1072,9 +1006,6 @@
     <string name="search_kw">Ключові слова</string>
     <string name="search_kw_prefill">Ключове слово</string>
     <string name="search_kw_button">пошук за ключовим словом</string>
-    <string name="search_fbu">Знайдено</string>
-    <string name="search_fbu_prefill">Ім\'я користувача</string>
-    <string name="search_fbu_button">пошук за іменем користувача</string>
     <string name="search_hbu">прихований</string>
     <string name="search_hbu_prefill">Власник</string>
     <string name="search_hbu_button">пошук за іменем користувача</string>
@@ -1087,7 +1018,6 @@
     <string name="search_address_result">Знайдені місця</string>
     <string name="search_own_caches">Пошук моїх кешів</string>
     <string name="search_pocket_title">кишеньковий запит</string>
-    <string name="search_pocket_loading">Завантаження списку кишенькових запитів</string>
     <!-- trackable -->
     <string name="trackable">відстежуваний</string>
     <string name="trackable_details_loading">завантаження відстежуваних пристроїв…</string>
@@ -1125,7 +1055,6 @@
     <!-- user -->
     <string name="user_menu_title">Про</string>
     <string name="user_menu_view_hidden">Кеш приховано</string>
-    <string name="user_menu_view_found">знайдено кеш</string>
     <string name="user_menu_open_browser">Відкрити профіль в браузері</string>
     <string name="user_menu_send_message">Надіслати повідомлення</string>
     <string name="user_menu_send_email">Надіслати ел. листа</string>
@@ -1163,7 +1092,6 @@
     <string name="helper_bluetoothgps_description">Дозволяє використовувати зовнішній приймач GPS для отримання більш точних даних про місцезнаходження та може заощадити акумулятор вашого пристрою.</string>
     <string name="helper_gps_locker_description">GPS Locker підтримує активний сигнал GPS під час перемикання між програмами та коли екран вашого пристрою вимкнений.</string>
     <string name="helper_barcode_description">Існують сценарії та веб-сайти Greasemonkey, які дозволяють відображати геокоди як штрих-коди. За допомогою цієї програми c: geo може зчитувати такі геокоди безпосередньо з екрану вашого комп’ютера.</string>
-    <string name="helper_pocketquery_description">Дозволяє легко створювати і завантажувати кишенькові запити з центром на вашому поточному положенні, або з карти - Преміум акаунт Geocaching.com.</string>
     <string name="helper_google_translate_title">Перекладач Google</string>
     <string name="helper_google_translate_description">Якщо ви завантажите пакети перекладів у додатку Google Translate після цього ви можете легко перекладати описи кешу в c:geo довгим натисканням на текст опису кешу (без підключення до Інтернету).</string>
     <string name="helper_where_you_go_description">Тут Ви можете грати та шукати схованки типу Wherigo. c:geo може автоматично запустити завантаження картриджів у цьому додатку.</string>
@@ -1454,9 +1382,6 @@
     <string name="github_title">вишукувач</string>
     <string name="faq_title">FAQ</string>
     <!-- status (used via string based resource loading) -->
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">Останні зміни на geocaching.com зламали c: geo.\nМи працюємо над цим, невдовзі перевірте ще раз.</string>
-    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">Останні зміни на geocaching.com зламали c: geo.\nМи працюємо над цим, невдовзі перевірте ще раз.</string>
-    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">geocaching.com перебуває на технічному обслуговуванні.\nВи можете зіткнутися з різними питаннями.</string>
     <string name="status_closeout_warning" tools:ignore="UnusedResources">Здається, ви використовуєте старішу версію Android. Ця версія c:geo більше не сумісна з вашим пристроєм, і може бути нестабільною або некоректною!\nНатисніть на це повідомлення для отримання додаткової інформації.</string>
     <string name="status_version_deprecated" tools:ignore="UnusedResources">Ви використовуєте версію c:geo, яка, здається, старша за один рік. Деякі функції можуть не працювати більше через веб-сайт або інші технічні зміни. Будь ласка, прочитайте наші FAQ про те, як оновити їх.</string>
     <!-- text-to-speech for compass view -->
@@ -1473,7 +1398,6 @@
     <string name="tts_oclock">%s годин</string>
     <!-- various -->
     <string name="clipboard_copy_ok">Скопійовано в буфер обміну</string>
-    <string name="more_than_percent_favorite_points">&gt; %d%% улюблені</string>
     <!-- shortcuts -->
     <string name="cgeo_shortcut">ярлик c:geo</string>
     <string name="create_shortcut">Створити ярлик</string>
@@ -1483,7 +1407,6 @@
     <string name="confirm_report_problem_title">Повідомити про проблему</string>
     <string name="confirm_report_problem_message">Ви бажаєте увійти \'%s. Ви впевнені?</string>
     <!-- Geokrety -->
-    <string name="settings_activate_geokrety">Активувати</string>
     <string name="init_summary_geokrety">Увімкнути відстеження з GeoKrety.org</string>
     <string name="init_geokrety_description">Авторизуйте c:geo з GeoKrety.org та записи GeoKrety відстежувань.</string>
     <string name="init_geokrety_userid">ID користувача: %s</string>
@@ -1522,10 +1445,8 @@
     <string name="number_input_err_boundarymin">Введене значення занадто мале - скинути до мінімального значення</string>
     <string name="number_input_err_boundarymax">Введене значення занадто мале - скинути до мінімального значення</string>
     <string name="number_input_err_format">Неприпустимий час формат</string>
-    <!-- text notification channel infos & proximity notification title -->
-    <string name="notification_channel_name">c: гео повідомлення</string>
-    <string name="notification_channel_description">сповіщення від застосунку:geo геокешинг</string>
-    <string name="proximity_notification_title">повідомлення про близькість</string>
+    <!-- notification / channel texts -->
+    <string name="notification_proximity_title">повідомлення про близькість</string>
     <!-- individual routes -->
     <string name="individual_route">Індивідуальний маршрут</string>
     <string name="individual_route_added">Додати до маршруту</string>
@@ -1533,17 +1454,13 @@
     <string name="individual_route_error_toggling_waypoint">помилка перемикання точки</string>
     <string name="individual_route_error_single_waypoint_mode">Не доступно в режимі однієї точки</string>
     <string name="map_sort_individual_route">Сортувати за окремим маршрутом</string>
-    <string name="map_export_individual_route">Експорт за окремим маршрутом</string>
     <string name="map_load_individual_route">Експорт за окремим маршрутом</string>
     <string name="map_load_individual_route_confirm">Перезаписувати існуючі файли?</string>
-    <string name="map_autotarget_individual_route">Автоматично встановити як ціль</string>
-    <string name="map_disable_autotarget_individual_route">Автоматично встановити як ціль</string>
     <string name="map_clear_manual_targets">Очистити ручні ярлики</string>
     <string name="map_manual_targets_cleared">Елементи вручну очищено</string>
     <string name="map_clear_individual_route">Експорт за окремим маршрутом</string>
     <string name="map_clear_individual_route_confirm">Чи хочете ви вилучити всі кешування/шляхові точки з вашого маршруту?</string>
     <string name="map_individual_route_cleared">Індивідуальний маршрут очищено</string>
-    <string name="save_sorted_route">Зберегти</string>
     <string name="sorted_route_saved">Окремий маршрут збережено</string>
     <string name="load_individual_route_error">Помилка при завантаженні окремого маршруту</string>
     <string name="route_item_not_yet_loaded">Елемент маршруту ще не завантажений</string>
@@ -1584,23 +1501,13 @@
     <string name="localfile_intenttitle">c:geo локальний обробник файлів</string>
     <string name="localfile_title">Відкрити локальний файл</string>
     <string name="localfile_cannot_handle">Помилка читання файлу або c:geo не може обробляти цей тип файлу.</string>
-    <!-- ReceiveMapFileActivity -->
-    <string name="receivemapfile_intenttitle">Отримання файлу карти</string>
-    <string name="receivemapfile_error">Помилка під час запису у файл</string>
-    <string name="receivemapfile_error_filenotfound_exception">Помилка при отриманні файлу карти.</string>
-    <string name="receivemapfile_alreadyexists">Файл з такою назвою вже існує. Перезаписати наявний файл або зберегти новий файл?</string>
-    <string name="receivemapfile_option_overwrite">Перезаписати</string>
-    <string name="receivemapfile_option_differentname">Інша назва</string>
-    <string name="receivemapfile_kb_copied">%d КБ скопійовано</string>
-    <string name="receivemapfile_cancelled">Передачу файлів відмінено</string>
+    <!-- ReceiveDownloadActivity -->
     <!-- Download map preference and menu entry -->
     <string name="downloadmap_title">Завантажити автономну карту</string>
     <string name="downloadmap_choose">Обрати мапу</string>
     <string name="downloadmap_filename">Завантаження %s</string>
-    <string name="downloadmanager_not_available">Не вдалося завантажити файл карти, системний менеджер завантажень не доступний</string>
     <string name="download_started">Завантаження розпочалося у фоновому режимі</string>
     <string name="downloadmap_allow_metered_network">Дозволити завантаження по мережі через трафік (наприклад, мобільне з\'єднання)</string>
-    <string name="downloadmap_confirmation">Завантажити карту %1$s\"?\n\nЦе може зайняти певний час і може призвести до значних витрат, залежно від підключення до мережі. \n\nРозмір інформації:%2$s</string>
     <string name="downloadmap_handling">Сам завантаження буде оброблено менеджером завантаження вашої системи у фоновому режимі. Ви побачите сповіщення, щойно почалося завантаження (що може зайняти деякий час).</string>
     <string name="button_continue">Продовжити</string>
     <!-- history track -->
@@ -1625,7 +1532,6 @@
     <string name="wizard_platforms_gc">geocaching.com</string>
     <string name="wizard_welcome_advanced">Розширена конфігурація</string>
     <string name="wizard_advanced_offlinemaps_label">офлайн-карти</string>
-    <string name="wizard_advanced_brouter_label">Додаток для маршрутизації</string>
     <string name="wizard_advanced_restore_label">Відновити</string>
     <string name="status_not_ok">Помилка</string>
     <string name="wizard_status_title">Налаштування статусу</string>
@@ -1637,4 +1543,5 @@
     <string name="skip">Пропустити</string>
     <string name="next">Наступний</string>
     <string name="finish">Закінчити</string>
+    <!-- ChipChoiceGroup -->
 </resources>

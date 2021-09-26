@@ -44,6 +44,13 @@ public final class Viewport {
         topRight = point.getCoords();
     }
 
+    /** Creates a Viewport with given center which covers the area around it with given radius */
+    public Viewport(@NonNull final ICoordinates center, final float radiusInKilometers) {
+        this.center = center.getCoords();
+        this.topRight = this.center.project(0, radiusInKilometers).project(90, radiusInKilometers);
+        this.bottomLeft = this.center.project(180, radiusInKilometers).project(270, radiusInKilometers);
+    }
+
     public double getLatitudeMin() {
         return bottomLeft.getLatitude();
     }
@@ -148,10 +155,17 @@ public final class Viewport {
     @NonNull
     public StringBuilder sqlWhere(@Nullable final String dbTable) {
         final String prefix = dbTable == null ? "" : (dbTable + ".");
-        return new StringBuilder(prefix).append("latitude >= ").append(getLatitudeMin()).append(" and ")
-                .append(prefix).append("latitude <= ").append(getLatitudeMax()).append(" and ")
-                .append(prefix).append("longitude >= ").append(getLongitudeMin()).append(" and ")
-                .append(prefix).append("longitude <= ").append(getLongitudeMax());
+        return new StringBuilder(prefix).append("latitude >= ").append(doubleToSql(getLatitudeMin())).append(" and ")
+                .append(prefix).append("latitude <= ").append(doubleToSql(getLatitudeMax())).append(" and ")
+                .append(prefix).append("longitude >= ").append(doubleToSql(getLongitudeMin())).append(" and ")
+                .append(prefix).append("longitude <= ").append(doubleToSql(getLongitudeMax()));
+    }
+
+    private static String doubleToSql(final double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return "0";
+        }
+        return String.valueOf(value).replace(',', '.');
     }
 
     /**

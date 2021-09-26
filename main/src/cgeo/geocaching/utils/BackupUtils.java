@@ -3,6 +3,8 @@ package cgeo.geocaching.utils;
 import cgeo.geocaching.InstallWizardActivity;
 import cgeo.geocaching.MainActivity;
 import cgeo.geocaching.R;
+import cgeo.geocaching.connector.ConnectorFactory;
+import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.settings.BackupSeekbarPreference;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.ContentStorage;
@@ -13,19 +15,21 @@ import cgeo.geocaching.storage.FolderUtils;
 import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.storage.PersistableUri;
 import cgeo.geocaching.storage.extension.OneTimeDialogs;
+import cgeo.geocaching.ui.TextParam;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import static cgeo.geocaching.utils.SettingsUtils.SettingsType.TYPE_STRING;
 import static cgeo.geocaching.utils.SettingsUtils.SettingsType.TYPE_UNKNOWN;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Xml;
-import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -35,6 +39,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Consumer;
 
 import java.io.IOException;
@@ -44,8 +49,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -67,25 +72,103 @@ public class BackupUtils {
     private static final String TAG_MAP = "map";
     private static final String SETTINGS_FILENAME = "cgeo-settings.xml";
 
+    private static final String STATE_CSAH = "csam";
+
+    private final ContentStorageActivityHelper fileSelector;
+
     private final Activity activityContext;
 
-    public BackupUtils(final Activity activityContext) {
+    private final List<ImmutableTriple<PersistableFolder, String, String>> regrantAccessFolders = new ArrayList<>();
+    private final List<ImmutableTriple<PersistableUri, String, String>> regrantAccessUris = new ArrayList<>();
+    private boolean regrantAccessRestartNeeded = false;
+    private String regrantAccessResultString = null;
+
+    public BackupUtils(final Activity activityContext, final Bundle savedState) {
         this.activityContext = activityContext;
+        this.fileSelector = new ContentStorageActivityHelper(activityContext, savedState == null ? null : savedState.getBundle(STATE_CSAH))
+            .addSelectActionCallback(ContentStorageActivityHelper.SelectAction.SELECT_FOLDER, Folder.class, f -> restore(f))
+            .addSelectActionCallback(ContentStorageActivityHelper.SelectAction.SELECT_FOLDER_PERSISTED, PersistableFolder.class, pf -> triggerNextRegrantStep(pf, null))
+            .addSelectActionCallback(ContentStorageActivityHelper.SelectAction.SELECT_FILE_PERSISTED, PersistableUri.class, uri -> triggerNextRegrantStep(null, uri));
     }
+
+    private void triggerNextRegrantStep(final PersistableFolder folder, final PersistableUri uri) {
+        if (folder != null) {
+            final Iterator<ImmutableTriple<PersistableFolder, String, String>> it = regrantAccessFolders.iterator();
+            while (it.hasNext()) {
+                if (it.next().left == folder) {
+                    it.remove();
+                    break;
+                }
+            }
+        }
+        if (uri != null) {
+            final Iterator<ImmutableTriple<PersistableUri, String, String>> it = regrantAccessUris.iterator();
+            while (it.hasNext()) {
+                if (it.next().left == uri) {
+                    it.remove();
+                    break;
+                }
+            }
+        }
+
+        if (!regrantAccessFolders.isEmpty()) {
+            final ImmutableTriple<PersistableFolder, String, String> current = regrantAccessFolders.get(0);
+            final Folder folderToBeRestored = Folder.fromConfig(current.right);
+
+            SimpleDialog.of(activityContext)
+                    .setTitle(R.string.init_backup_settings_restore)
+                    .setMessage(R.string.settings_folder_changed, activityContext.getString(current.left.getNameKeyId()), folderToBeRestored.toUserDisplayableString(), activityContext.getString(android.R.string.cancel), activityContext.getString(android.R.string.ok))
+                    .confirm((d, v) -> {
+                    fileSelector.restorePersistableFolder(current.left, current.left.getUriForFolder(folderToBeRestored));
+                },
+                (d2, v2) -> {
+                    regrantAccessFolders.remove(0);
+                    triggerNextRegrantStep(null, null);
+                });
+        } else if (!regrantAccessUris.isEmpty()) {
+            final Uri uriToBeRestored = Uri.parse(regrantAccessUris.get(0).right);
+            final String temp = uriToBeRestored.getPath();
+            final String displayName = temp.substring(temp.lastIndexOf('/') + 1);
+
+            SimpleDialog.of(activityContext)
+                .setTitle(R.string.init_backup_settings_restore)
+                .setMessage(R.string.settings_file_changed, activityContext.getString(regrantAccessUris.get(0).left.getNameKeyId()), displayName, activityContext.getString(android.R.string.cancel), activityContext.getString(android.R.string.ok))
+                .confirm((d, v) -> {
+                    fileSelector.restorePersistableUri(PersistableUri.TRACK, uriToBeRestored);
+                },
+                (d2, v2) -> {
+                    regrantAccessUris.remove(0);
+                    triggerNextRegrantStep(null, null);
+                });
+        } else {
+            finishRestoreInternal(activityContext, regrantAccessRestartNeeded, regrantAccessResultString);
+        }
+    }
+
+    public Bundle getState() {
+        final Bundle bundle = new Bundle();
+        bundle.putBundle(STATE_CSAH, fileSelector.getState());
+        return bundle;
+    }
+
+    public boolean onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        return fileSelector.onActivityResult(requestCode, resultCode, data);
+    }
+
 
 
     /* Public methods containing question dialogs, etc */
 
-    public void selectBackupDirIntent (final ContentStorageActivityHelper contentStorageHelper) {
+    public void selectBackupDirIntent () {
         Toast.makeText(activityContext, R.string.init_backup_restore_different_backup_explanation, Toast.LENGTH_LONG).show();
-        contentStorageHelper.selectFolder(PersistableFolder.BACKUP.getUri(), f -> restore(f, contentStorageHelper));
+        fileSelector.selectFolder(PersistableFolder.BACKUP.getUri());
     }
 
     /**
      * Show restore dialog
      */
     @SuppressLint("SetTextI18n")
-    public void restore(final Folder backupDir, final ContentStorageActivityHelper contentStorageActivityHelper) {
+    public void restore(final Folder backupDir) {
 
         if (backupDir == null) {
             return;
@@ -97,8 +180,7 @@ public class BackupUtils {
         }
 
         // We are using ContextThemeWrapper to prevent crashes caused by missing attribute definitions when starting the dialog from MainActivity
-        final Context c = new ContextThemeWrapper(activityContext, Settings.isLightSkin() ? R.style.Dialog_Alert_light : R.style.Dialog_Alert);
-        final View content = LayoutInflater.from(c).inflate(R.layout.restore_dialog, null);
+        final View content = LayoutInflater.from(Dialogs.newContextThemeWrapper(activityContext)).inflate(R.layout.restore_dialog, null);
         final CheckBox databaseCheckbox = content.findViewById(R.id.database_check_box);
         final CheckBox settingsCheckbox = content.findViewById(R.id.settings_check_box);
         final TextView warningText = content.findViewById(R.id.warning);
@@ -123,7 +205,7 @@ public class BackupUtils {
                 .setView(content)
                 .setPositiveButton(activityContext.getString(android.R.string.yes), (alertDialog, id) -> {
                     alertDialog.dismiss();
-                    restoreInternal(activityContext, contentStorageActivityHelper, backupDir, databaseCheckbox.isChecked(), settingsCheckbox.isChecked());
+                    restoreInternal(activityContext, backupDir, databaseCheckbox.isChecked(), settingsCheckbox.isChecked());
                 })
                 .setNegativeButton(activityContext.getString(android.R.string.no), (alertDialog, id) -> {
                     alertDialog.cancel();
@@ -156,50 +238,58 @@ public class BackupUtils {
         }
     }
 
-    public void restoreInternal(final Activity activityContext, final ContentStorageActivityHelper contentStorageActivityHelper, final Folder backupDir, final boolean database, final boolean settings) {
+    @SuppressWarnings("PMD.NPathComplexity") // split up would not help readibility
+    public void restoreInternal(final Activity activityContext, final Folder backupDir, final boolean database, final boolean settings) {
         final Consumer<String> consumer = resultString -> {
 
-            // build a list of folders currently set and a list of remaining folders
+            boolean settingsChanged = false;
             final ArrayList<ImmutableTriple<PersistableFolder, String, String>> currentFolderValues = new ArrayList<>();
-            final ArrayList<ImmutablePair<PersistableFolder, String>> unsetFolders = new ArrayList<>();
-            for (PersistableFolder folder : PersistableFolder.values()) {
-                final String value = Settings.getPersistableFolderRaw(folder);
-                if (value != null) {
-                    currentFolderValues.add(new ImmutableTriple<>(folder, activityContext.getString(folder.getPrefKeyId()), value));
-                } else {
-                    unsetFolders.add(new ImmutablePair<>(folder, activityContext.getString(folder.getPrefKeyId())));
-                }
-            }
-
-            // same for files
             final ArrayList<ImmutableTriple<PersistableUri, String, String>> currentUriValues = new ArrayList<>();
-            final ArrayList<ImmutablePair<PersistableUri, String>> unsetUris = new ArrayList<>();
-            for (PersistableUri uri : PersistableUri.values()) {
-                final String value = Settings.getPersistableUriRaw(uri);
-                if (value != null) {
-                    currentUriValues.add(new ImmutableTriple<>(uri, activityContext.getString(uri.getPrefKeyId()), value));
-                } else {
-                    unsetUris.add(new ImmutablePair<>(uri, activityContext.getString(uri.getPrefKeyId())));
-                }
-            }
 
-            boolean restartNeeded = false;
             if (settings) {
+                // build a list of folders currently set and a list of remaining folders
+                final ArrayList<ImmutablePair<PersistableFolder, String>> unsetFolders = new ArrayList<>();
+                for (PersistableFolder folder : PersistableFolder.values()) {
+                    final String value = Settings.getPersistableFolderRaw(folder);
+                    if (value != null) {
+                        currentFolderValues.add(new ImmutableTriple<>(folder, activityContext.getString(folder.getPrefKeyId()), value));
+                    } else {
+                        unsetFolders.add(new ImmutablePair<>(folder, activityContext.getString(folder.getPrefKeyId())));
+                    }
+                }
+
+                // same for files
+                final ArrayList<ImmutablePair<PersistableUri, String>> unsetUris = new ArrayList<>();
+                for (PersistableUri uri : PersistableUri.values()) {
+                    final String value = Settings.getPersistableUriRaw(uri);
+                    if (value != null) {
+                        currentUriValues.add(new ImmutableTriple<>(uri, activityContext.getString(uri.getPrefKeyId()), value));
+                    } else {
+                        unsetUris.add(new ImmutablePair<>(uri, activityContext.getString(uri.getPrefKeyId())));
+                    }
+                }
+
                 if (!resultString.isEmpty()) {
                     resultString += "\n\n";
                 }
-                restartNeeded = restoreSettingsInternal(backupDir, currentFolderValues, unsetFolders, currentUriValues, unsetUris);
+                settingsChanged = restoreSettingsInternal(backupDir, currentFolderValues, unsetFolders, currentUriValues, unsetUris);
 
-                if (!restartNeeded) {
+                if (!settingsChanged) {
                     resultString += activityContext.getString(R.string.init_restore_settings_failed);
                 }
             }
 
             // check if folder settings changed and request grants, if necessary
-            if (currentFolderValues.size() > 0 || currentUriValues.size() > 0) {
-                regrantAccess(activityContext, contentStorageActivityHelper, currentFolderValues, currentUriValues, restartNeeded, resultString);
+            if (settings && (currentFolderValues.size() > 0 || currentUriValues.size() > 0)) {
+                this.regrantAccessFolders.clear();
+                this.regrantAccessFolders.addAll(currentFolderValues);
+                this.regrantAccessUris.clear();
+                this.regrantAccessUris.addAll(currentUriValues);
+                this.regrantAccessRestartNeeded = settingsChanged;
+                this.regrantAccessResultString = resultString;
+                triggerNextRegrantStep(null, null);
             } else {
-                finishRestoreInternal(activityContext, restartNeeded, resultString);
+                finishRestoreInternal(activityContext, settingsChanged, resultString);
             }
         };
 
@@ -210,55 +300,20 @@ public class BackupUtils {
         }
     }
 
-    private void regrantAccess(final Activity activityContext, final ContentStorageActivityHelper contentStorageActivityHelper, final ArrayList<ImmutableTriple<PersistableFolder, String, String>> currentFolderValues, final ArrayList<ImmutableTriple<PersistableUri, String, String>> currentUriValues, final boolean restartNeeded, final String resultString) {
-        if (currentFolderValues.size() > 0) {
-            final ImmutableTriple<PersistableFolder, String, String> current = currentFolderValues.get(0);
-            final Folder folderToBeRestored = Folder.fromConfig(current.right);
-
-            Dialogs.confirm(activityContext,
-                activityContext.getString(R.string.init_backup_settings_restore),
-                String.format(activityContext.getString(R.string.settings_folder_changed), activityContext.getString(currentFolderValues.get(0).left.getNameKeyId()), folderToBeRestored.toUserDisplayableString(), activityContext.getString(android.R.string.cancel), activityContext.getString(android.R.string.ok)),
-                activityContext.getString(android.R.string.ok),
-                (d, v) -> {
-                    contentStorageActivityHelper.restorePersistableFolder(current.left, current.left.getUriForFolder(folderToBeRestored), v2 -> {
-                        currentFolderValues.remove(0);
-                        regrantAccess(activityContext, contentStorageActivityHelper, currentFolderValues, currentUriValues, restartNeeded, resultString);
-                    });
-                },
-                d2 -> {
-                    currentFolderValues.remove(0);
-                    regrantAccess(activityContext, contentStorageActivityHelper, currentFolderValues, currentUriValues, restartNeeded, resultString);
-                });
-        } else if (currentUriValues.size() > 0) {
-            final Uri uriToBeRestored = Uri.parse(currentUriValues.get(0).right);
-            final String temp = uriToBeRestored.getPath();
-            final String displayName = temp.substring(temp.lastIndexOf('/') + 1);
-
-            Dialogs.confirm(activityContext,
-                activityContext.getString(R.string.init_backup_settings_restore),
-                String.format(activityContext.getString(R.string.settings_file_changed), activityContext.getString(currentUriValues.get(0).left.getNameKeyId()), displayName, activityContext.getString(android.R.string.cancel), activityContext.getString(android.R.string.ok)),
-                activityContext.getString(android.R.string.ok),
-                (d, v) -> {
-                    contentStorageActivityHelper.restorePersistableUri(PersistableUri.TRACK, uriToBeRestored, v2 -> {
-                        currentUriValues.remove(0);
-                        regrantAccess(activityContext, contentStorageActivityHelper, currentFolderValues, currentUriValues, restartNeeded, resultString);
-                    });
-                },
-                d2 -> {
-                    currentUriValues.remove(0);
-                    regrantAccess(activityContext, contentStorageActivityHelper, currentFolderValues, currentUriValues, restartNeeded, resultString);
-                });
-        } else {
-            finishRestoreInternal(activityContext, restartNeeded, resultString);
+    private void finishRestoreInternal(final Activity activityContext, final boolean settingsChanged, final String resultString) {
+        // if the settings where edited, the user account data could have changed. Therefore logout...
+        if (settingsChanged) {
+            for (final ILogin conn : ConnectorFactory.getActiveLiveConnectors()) {
+                AndroidRxUtils.networkScheduler.scheduleDirect(conn::logout);
+            }
         }
-    }
 
-    private void finishRestoreInternal(final Activity activityContext, final boolean restartNeeded, final String resultString) {
-        // finish restore settings
-        if (restartNeeded && !(activityContext instanceof InstallWizardActivity)) {
-            Dialogs.confirmYesNo(activityContext, R.string.init_restore_restored, resultString + activityContext.getString(R.string.settings_restart), (dialog2, which2) -> ProcessUtils.restartApplication(activityContext));
+        // finish restore with restore if settings where changed
+        if (settingsChanged && !(activityContext instanceof InstallWizardActivity)) {
+            SimpleDialog.of(activityContext).setTitle(R.string.init_restore_restored).setMessage(TextParam.text(resultString + activityContext.getString(R.string.settings_restart)))
+                .setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm((dialog2, which2) -> ProcessUtils.restartApplication(activityContext));
         } else {
-            Dialogs.message(activityContext, R.string.init_restore_restored, resultString);
+            SimpleDialog.of(activityContext).setTitle(R.string.init_restore_restored).setMessage(TextParam.text(resultString)).show();
         }
     }
 
@@ -272,7 +327,7 @@ public class BackupUtils {
             textView.setText(R.string.init_backup_history_delete_warning);
             checkbox.setText(R.string.init_user_confirmation);
 
-            final AlertDialog alertDialog = new AlertDialog.Builder(new ContextThemeWrapper(activityContext, R.style.Dialog_Alert))
+            final AlertDialog alertDialog = Dialogs.newBuilder(activityContext)
                 .setView(content)
                 .setTitle(R.string.init_backup_backup_history)
                 .setCancelable(true)
@@ -301,10 +356,14 @@ public class BackupUtils {
         // avoid overwriting an existing backup with an empty database
         // (can happen directly after reinstalling the app)
         if (DataStore.getAllCachesCount() == 0) {
-            Toast.makeText(activityContext, R.string.init_backup_unnecessary, Toast.LENGTH_LONG).show();
-            return;
+            SimpleDialog.of(activityContext).setTitle(R.string.init_backup_backup).setMessage(R.string.init_backup_unnecessary)
+                .setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm((dialog, which) -> backupStep2(runAfterwards));
+        } else {
+            backupStep2(runAfterwards);
         }
+    }
 
+    private void backupStep2(final Runnable runAfterwards) {
         final List<ContentStorage.FileInformation> dirs = getDirsToRemove(Settings.allowedBackupsNumber());
         if (dirs != null) {
             Dialogs.advancedOneTimeMessage(activityContext, OneTimeDialogs.DialogType.DATABASE_CONFIRM_OVERWRITE, activityContext.getString(R.string.init_backup_backup), activityContext.getString(R.string.backup_confirm_overwrite, getBackupDateTime(dirs.get(dirs.size() - 1).dirLocation)), null, true, null, () -> {
@@ -405,7 +464,7 @@ public class BackupUtils {
             if (null != error) {
                 Log.d("error reading settings file: " + error);
             }
-            Dialogs.message(activityContext, R.string.init_backup_settings_restore, R.string.settings_readingerror);
+            SimpleDialog.of(activityContext).setTitle(R.string.init_backup_settings_restore).setMessage(R.string.settings_readingerror).show();
             return false;
         }
     }
@@ -503,20 +562,7 @@ public class BackupUtils {
 
         // if a backup without account data is requested add all account related preference keys to the ignore set
         if (!fullBackup) {
-            Collections.addAll(ignoreKeys,
-                    activityContext.getString(R.string.pref_username), activityContext.getString(R.string.pref_password), activityContext.getString(R.string.pref_memberstatus), activityContext.getString(R.string.pref_gccustomdate),
-                    activityContext.getString(R.string.pref_ecusername), activityContext.getString(R.string.pref_ecpassword),
-                    activityContext.getString(R.string.pref_user_vote), activityContext.getString(R.string.pref_pass_vote),
-                    activityContext.getString(R.string.pref_twitter), activityContext.getString(R.string.pref_temp_twitter_token_secret), activityContext.getString(R.string.pref_temp_twitter_token_public), activityContext.getString(R.string.pref_twitter_token_secret), activityContext.getString(R.string.pref_twitter_token_public),
-                    activityContext.getString(R.string.pref_ocde_tokensecret), activityContext.getString(R.string.pref_ocde_tokenpublic), activityContext.getString(R.string.pref_temp_ocde_token_secret), activityContext.getString(R.string.pref_temp_ocde_token_public),
-                    activityContext.getString(R.string.pref_ocpl_tokensecret), activityContext.getString(R.string.pref_ocpl_tokenpublic), activityContext.getString(R.string.pref_temp_ocpl_token_secret), activityContext.getString(R.string.pref_temp_ocpl_token_public),
-                    activityContext.getString(R.string.pref_ocnl_tokensecret), activityContext.getString(R.string.pref_ocnl_tokenpublic), activityContext.getString(R.string.pref_temp_ocnl_token_secret), activityContext.getString(R.string.pref_temp_ocnl_token_public),
-                    activityContext.getString(R.string.pref_ocus_tokensecret), activityContext.getString(R.string.pref_ocus_tokenpublic), activityContext.getString(R.string.pref_temp_ocus_token_secret), activityContext.getString(R.string.pref_temp_ocus_token_public),
-                    activityContext.getString(R.string.pref_ocro_tokensecret), activityContext.getString(R.string.pref_ocro_tokenpublic), activityContext.getString(R.string.pref_temp_ocro_token_secret), activityContext.getString(R.string.pref_temp_ocro_token_public),
-                    activityContext.getString(R.string.pref_ocuk2_tokensecret), activityContext.getString(R.string.pref_ocuk2_tokenpublic), activityContext.getString(R.string.pref_temp_ocuk2_token_secret), activityContext.getString(R.string.pref_temp_ocuk2_token_public),
-                    activityContext.getString(R.string.pref_su_tokensecret), activityContext.getString(R.string.pref_su_tokenpublic), activityContext.getString(R.string.pref_temp_su_token_secret), activityContext.getString(R.string.pref_temp_su_token_public),
-                    activityContext.getString(R.string.pref_fakekey_geokrety_authorization)
-            );
+            ignoreKeys.addAll(Settings.getSensitivePreferenceKeys(activityContext));
         }
 
         final Uri backupFile = ContentStorage.get().create(backupDir, SETTINGS_FILENAME);
@@ -605,8 +651,9 @@ public class BackupUtils {
             files.add(fi.uri);
         }
 
-        Dialogs.messageNeutral(activityContext, title, msg, R.string.cache_share_field,
-            (dialog, which) -> ShareUtils.shareMultipleFiles(activityContext, files, R.string.init_backup_backup));
+        SimpleDialog.of(activityContext).setTitle(TextParam.text(title)).setMessage(TextParam.text(msg))
+            .setButtons(0, 0, R.string.cache_share_field)
+            .show(SimpleDialog.DO_NOTHING, null, (dialog, which) -> ShareUtils.shareMultipleFiles(activityContext, files, R.string.init_backup_backup));
     }
 
 
@@ -668,7 +715,7 @@ public class BackupUtils {
 
     @Nullable
     private static ArrayList<ContentStorage.FileInformation> getExistingBackupFoldersSorted() {
-        final ArrayList<ContentStorage.FileInformation> files = new ArrayList<>(ContentStorage.get().list(PersistableFolder.BACKUP.getFolder(), true));
+        final ArrayList<ContentStorage.FileInformation> files = new ArrayList<>(ContentStorage.get().list(PersistableFolder.BACKUP.getFolder(), true, false));
         CollectionUtils.filter(files, s -> s.isDirectory && s.name.matches("^[0-9]{4}-[0-9]{2}-[0-9]{2} (20|21|22|23|[01]\\d|\\d)((-[0-5]\\d){1,2})$"));
         return files.size() == 0 ? null : files;
     }

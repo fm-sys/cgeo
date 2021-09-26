@@ -7,6 +7,12 @@ import cgeo.geocaching.connector.LogResult;
 import cgeo.geocaching.connector.UserInfo;
 import cgeo.geocaching.connector.UserInfo.UserInfoStatus;
 import cgeo.geocaching.enumerations.StatusCode;
+import cgeo.geocaching.filters.core.BaseGeocacheFilter;
+import cgeo.geocaching.filters.core.DistanceGeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.NameGeocacheFilter;
+import cgeo.geocaching.filters.core.OriginGeocacheFilter;
+import cgeo.geocaching.filters.core.OwnerGeocacheFilter;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.log.LogType;
@@ -16,6 +22,7 @@ import cgeo.geocaching.network.Network;
 import cgeo.geocaching.network.OAuth;
 import cgeo.geocaching.network.OAuthTokens;
 import cgeo.geocaching.network.Parameters;
+import cgeo.geocaching.sensors.Sensors;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.utils.JsonUtils;
 import cgeo.geocaching.utils.Log;
@@ -29,6 +36,7 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -142,6 +150,33 @@ public class SuApi {
         return SuParser.parseCaches(result.data);
     }
 
+    @NonNull
+    public static List<Geocache> searchByFilter(@NonNull final GeocacheFilter filter, @NonNull final SuConnector connector) throws SuApiException {
+
+        //for now we have to assume that SUConnector supports only SINGLE criteria search
+
+        final List<BaseGeocacheFilter> filters = filter.getAndChainIfPossible();
+        final OriginGeocacheFilter of = GeocacheFilter.findInChain(filters, OriginGeocacheFilter.class);
+        if (of != null && !of.allowsCachesOf(connector)) {
+            return new ArrayList<>();
+        }
+        final DistanceGeocacheFilter df = GeocacheFilter.findInChain(filters, DistanceGeocacheFilter.class);
+        if (df != null) {
+            return searchByCenter(df.getEffectiveCoordinate(), df.getMaxRangeValue() == null ? 20f : df.getMaxRangeValue(), connector);
+        }
+        final NameGeocacheFilter nf = GeocacheFilter.findInChain(filters, NameGeocacheFilter.class);
+        if (nf != null && !StringUtils.isEmpty(nf.getStringFilter().getTextValue())) {
+            return searchByKeyword(nf.getStringFilter().getTextValue(), connector);
+        }
+        final OwnerGeocacheFilter ownf = GeocacheFilter.findInChain(filters, OwnerGeocacheFilter.class);
+        if (ownf != null && !StringUtils.isEmpty(ownf.getStringFilter().getTextValue())) {
+            return searchByOwner(ownf.getStringFilter().getTextValue(), connector);
+        }
+
+        //by default, search around current position
+        return searchByCenter(Sensors.getInstance().currentGeo().getCoords(), 20f, connector);
+    }
+
     private static String getSuLogType(final LogType logType) {
         switch (logType) {
             case FOUND_IT:
@@ -238,6 +273,22 @@ public class SuApi {
 
         cache.setOnWatchlist(watched);
         DataStore.saveChangedCache(cache);
+
+        return true;
+    }
+
+    public static boolean setIgnoreState(@NonNull final Geocache cache, final boolean ignored) {
+        final Parameters params = new Parameters("cacheID", cache.getCacheId());
+        params.add("ignored", ignored ? "true" : "false");
+
+        try {
+            postRequest(SuConnector.getInstance(), SuApiEndpoint.IGNORE, params);
+        } catch (final SuApiException e) {
+            return false;
+        }
+
+        //cache.setOnWatchlist(ignored);
+        //DataStore.saveChangedCache(cache);
 
         return true;
     }

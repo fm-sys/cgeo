@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal" >
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:gravity="left|center_horizontal"
+        android:layout_toLeftOf="@id/switchAB"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textSize="@dimen/textSize_toolbarPrimary"
+        android:textColor="@color/colorTextActionBar"
+        android:text="@string/menu_lists_pocket_queries" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switchAB"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:gravity="right|center_vertical"
+        android:textSize="@dimen/textSize_toolbarSecondary"
+        android:textColor="@color/colorTextActionBar"
+        android:text="@string/show_all"
+        tools:ignore="SpUsage" />
+</RelativeLayout>

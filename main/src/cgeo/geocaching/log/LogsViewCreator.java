@@ -3,8 +3,9 @@ package cgeo.geocaching.log;
 import cgeo.geocaching.ImagesActivity;
 import cgeo.geocaching.R;
 import cgeo.geocaching.activity.AbstractActionBarActivity;
+import cgeo.geocaching.activity.TabbedViewPagerFragment;
+import cgeo.geocaching.databinding.LogsPageBinding;
 import cgeo.geocaching.network.SmileyImage;
-import cgeo.geocaching.ui.AbstractCachingListViewPageViewCreator;
 import cgeo.geocaching.ui.AnchorAwareLinkMovementMethod;
 import cgeo.geocaching.ui.DecryptTextClickListener;
 import cgeo.geocaching.ui.FastScrollListener;
@@ -17,10 +18,11 @@ import cgeo.geocaching.utils.TextUtils;
 import cgeo.geocaching.utils.TranslationUtils;
 import cgeo.geocaching.utils.UnknownTagsHandler;
 
+import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -33,32 +35,31 @@ import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
-public abstract class LogsViewCreator extends AbstractCachingListViewPageViewCreator {
+public abstract class LogsViewCreator extends TabbedViewPagerFragment<LogsPageBinding> {
 
-    protected final AbstractActionBarActivity activity;
-
-    public LogsViewCreator(final AbstractActionBarActivity activity) {
-        this.activity = activity;
+    @Override
+    public LogsPageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+        return LogsPageBinding.inflate(inflater, container, false);
     }
 
     @Override
-    public ListView getDispatchedView(final ViewGroup parentView) {
+    public void setContent() {
         if (!isValid()) {
-            return null;
+            return;
         }
+        binding.getRoot().setVisibility(View.VISIBLE);
 
         final List<LogEntry> logs = getLogs();
 
-        view = (ListView) activity.getLayoutInflater().inflate(R.layout.logs_page, parentView, false);
         addHeaderView();
-        view.setAdapter(new ArrayAdapter<LogEntry>(activity, R.layout.logs_item, logs) {
+        binding.getRoot().setAdapter(new ArrayAdapter<LogEntry>(getActivity(), R.layout.logs_item, logs) {
 
             @Override
             @NonNull
             public View getView(final int position, final View convertView, @NonNull final ViewGroup parent) {
                 View rowView = convertView;
                 if (rowView == null) {
-                    rowView = activity.getLayoutInflater().inflate(R.layout.logs_item, parent, false);
+                    rowView = getActivity().getLayoutInflater().inflate(R.layout.logs_item, parent, false);
                 }
                 LogViewHolder holder = (LogViewHolder) rowView.getTag();
                 if (holder == null) {
@@ -73,9 +74,7 @@ public abstract class LogsViewCreator extends AbstractCachingListViewPageViewCre
                 return rowView;
             }
         });
-        view.setOnScrollListener(new FastScrollListener(view));
-
-        return view;
+        binding.getRoot().setOnScrollListener(new FastScrollListener(binding.getRoot()));
     }
 
     protected void fillViewHolder(@SuppressWarnings("unused") final View convertView, final LogViewHolder holder, final LogEntry log) {
@@ -104,7 +103,7 @@ public abstract class LogsViewCreator extends AbstractCachingListViewPageViewCre
         if (log.hasLogImages()) {
             holder.binding.logImages.setText(log.getImageTitles());
             holder.binding.logImages.setVisibility(View.VISIBLE);
-            holder.binding.logImages.setOnClickListener(v -> ImagesActivity.startActivity(activity, getGeocode(), new ArrayList<>(log.logImages)));
+            holder.binding.logImages.setOnClickListener(v -> ImagesActivity.startActivity(getActivity(), getGeocode(), new ArrayList<>(log.logImages)));
         } else {
             holder.binding.logImages.setVisibility(View.GONE);
         }
@@ -129,6 +128,7 @@ public abstract class LogsViewCreator extends AbstractCachingListViewPageViewCre
 
     protected View.OnClickListener createOnLogClickListener(final LogViewHolder holder, final LogEntry log) {
         return v -> {
+            final AbstractActionBarActivity activity = (AbstractActionBarActivity) getActivity();
             final String author = StringEscapeUtils.unescapeHtml4(log.author);
             final String title = activity.getString(R.string.cache_log_menu_popup_title, author);
 
@@ -138,17 +138,28 @@ public abstract class LogsViewCreator extends AbstractCachingListViewPageViewCre
                     .addItem(activity.getString(R.string.copy_to_clipboard), R.drawable.ic_menu_copy, i -> {
                         ClipboardUtils.copyToClipboard(holder.binding.log.getText().toString());
                         activity.showToast(activity.getString(R.string.clipboard_copy_ok));
-                    })
-                    .addItem(R.string.context_share_as_text, R.drawable.ic_menu_share, it ->
-                            ShareUtils.sharePlainText(activity, holder.binding.log.getText().toString()))
-                    .addItem(activity.getString(R.string.translate_to_sys_lang, Locale.getDefault().getDisplayLanguage()),
-                            R.drawable.ic_menu_translate, it -> TranslationUtils.startActivityTranslate(activity, Locale.getDefault().getLanguage(), HtmlUtils.extractText(log.log)));
-            final boolean localeIsEnglish = StringUtils.equals(Locale.getDefault().getLanguage(), Locale.ENGLISH.getLanguage());
+                    });
 
-            if (!localeIsEnglish) {
-                ctxMenu.addItem(R.string.translate_to_english, R.drawable.ic_menu_translate, it ->
-                        TranslationUtils.startActivityTranslate(activity, Locale.ENGLISH.getLanguage(), HtmlUtils.extractText(log.log)));
+            // translation
+            if (TranslationUtils.supportsInAppTranslationPopup()) {
+                ctxMenu.addItem(R.string.translate, R.drawable.ic_menu_translate, it ->
+                        TranslationUtils.startInAppTranslationPopup(activity, HtmlUtils.extractText(log.log)));
+            } else {
+                ctxMenu.addItem(activity.getString(R.string.translate_to_sys_lang, Locale.getDefault().getDisplayLanguage()),
+                        R.drawable.ic_menu_translate, it -> TranslationUtils.startActivityTranslate(activity, Locale.getDefault().getLanguage(), HtmlUtils.extractText(log.log)));
+
+                final boolean localeIsEnglish = StringUtils.equals(Locale.getDefault().getLanguage(), Locale.ENGLISH.getLanguage());
+                if (!localeIsEnglish) {
+                    ctxMenu.addItem(R.string.translate_to_english, R.drawable.ic_menu_translate, it ->
+                            TranslationUtils.startActivityTranslate(activity, Locale.ENGLISH.getLanguage(), HtmlUtils.extractText(log.log)));
+                }
             }
+
+            // share
+            ctxMenu.addItem(R.string.context_share_as_text, R.drawable.ic_menu_share, it ->
+                    ShareUtils.sharePlainText(activity, holder.binding.log.getText().toString()));
+
+            // subclass specific entries
             extendContextMenu(ctxMenu, log).show();
         };
 

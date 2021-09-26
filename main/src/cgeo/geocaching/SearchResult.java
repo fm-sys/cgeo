@@ -2,7 +2,6 @@ package cgeo.geocaching;
 
 import cgeo.geocaching.connector.IConnector;
 import cgeo.geocaching.connector.gc.GCLogin;
-import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.enumerations.LoadFlags.LoadFlag;
 import cgeo.geocaching.enumerations.LoadFlags.SaveFlag;
@@ -219,24 +218,14 @@ public class SearchResult implements Parcelable {
         this.totalCountGC = totalCountGC;
     }
 
-    public SearchResult filterSearchResults(final boolean excludeDisabled, final boolean excludeArchived, final CacheType cacheType) {
+    public SearchResult putInCacheAndLoadRating() {
         final SearchResult result = new SearchResult(this);
         result.geocodes.clear();
-        final List<Geocache> includedCaches = new ArrayList<>();
         final Set<Geocache> caches = DataStore.loadCaches(geocodes, LoadFlags.LOAD_CACHE_OR_DB);
-        int excluded = 0;
-        for (final Geocache cache : caches) {
-            // Is there any reason to exclude the cache from the list?
-            final boolean excludeCache = (excludeDisabled && cache.isDisabled()) || (excludeArchived && cache.isArchived()) || !cacheType.contains(cache);
-            if (excludeCache) {
-                excluded++;
-            } else {
-                includedCaches.add(cache);
-            }
-        }
+
+        final List<Geocache> includedCaches = new ArrayList<>(caches);
         result.addAndPutInCache(includedCaches);
-        // decrease maximum number of caches by filtered ones
-        result.setTotalCountGC(result.getTotalCountGC() - excluded);
+
         GCVote.loadRatings(includedCaches);
         return result;
     }
@@ -302,7 +291,9 @@ public class SearchResult implements Parcelable {
             url = other.url;
         }
         // copy the GC total search results number to be able to use "More caches" button
-        if (getTotalCountGC() == 0 && other.getTotalCountGC() != 0) {
+        // take over the larger number in order to make "more caches" work in case of cache filters (see #10567)
+        //   (otherwise a low find count of e.g. LabCaches under 20 will lead to "no more caches" shown if it is added "first")
+        if (getTotalCountGC() < other.getTotalCountGC()) {
             setViewstates(other.getViewstates());
             setTotalCountGC(other.getTotalCountGC());
         }

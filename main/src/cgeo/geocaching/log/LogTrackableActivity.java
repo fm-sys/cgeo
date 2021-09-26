@@ -28,6 +28,7 @@ import cgeo.geocaching.ui.DateTimeEditor;
 import cgeo.geocaching.ui.dialog.CoordinatesInputDialog;
 import cgeo.geocaching.ui.dialog.CoordinatesInputDialog.CoordinateUpdate;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.AsyncTaskWithProgress;
 import cgeo.geocaching.utils.Log;
@@ -35,7 +36,6 @@ import cgeo.geocaching.utils.Log;
 import android.R.layout;
 import android.R.string;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -49,6 +49,7 @@ import android.view.View.OnFocusChangeListener;
 import android.widget.CheckBox;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
 
@@ -129,7 +130,7 @@ public class LogTrackableActivity extends AbstractLoggingActivity implements Coo
         setThemeAndContentView(R.layout.logtrackable_activity);
         binding = LogtrackableActivityBinding.bind(findViewById(R.id.logtrackable_activity_viewroot));
 
-        date.init(findViewById(R.id.date), findViewById(R.id.time), getSupportFragmentManager());
+        date.init(findViewById(R.id.date), findViewById(R.id.time), null, getSupportFragmentManager());
 
         // get parameters
         final Bundle extras = getIntent().getExtras();
@@ -203,7 +204,7 @@ public class LogTrackableActivity extends AbstractLoggingActivity implements Coo
                     showProgress(false);
 
                     if (StringUtils.isNotBlank(geocode)) {
-                        showToast(res.getString(R.string.err_tb_find) + ' ' + geocode + '.');
+                        showToast(res.getString(R.string.err_tb_not_found, geocode));
                     } else {
                         showToast(res.getString(R.string.err_tb_find_that));
                     }
@@ -249,7 +250,8 @@ public class LogTrackableActivity extends AbstractLoggingActivity implements Coo
     @Override
     protected void requestKeyboardForLogging() {
         if (StringUtils.isBlank(binding.tracking.getText())) {
-            new Keyboard(this).show(binding.tracking);
+            Keyboard.show(this, binding.tracking);
+
         } else {
             super.requestKeyboardForLogging();
         }
@@ -328,26 +330,24 @@ public class LogTrackableActivity extends AbstractLoggingActivity implements Coo
 
         // show/hide Tracking Code Field for note type
         if (typeSelected != LogTypeTrackable.NOTE || loggingManager.isTrackingCodeNeededToPostNote()) {
-            binding.tracking.setVisibility(View.VISIBLE);
+            binding.trackingFrame.setVisibility(View.VISIBLE);
             // Request focus if field is empty
             if (StringUtils.isBlank(binding.tracking.getText())) {
                 binding.tracking.requestFocus();
             }
         } else {
-            binding.tracking.setVisibility(View.GONE);
+            binding.trackingFrame.setVisibility(View.GONE);
         }
 
         // show/hide Coordinate fields as Trackable needs
         if (LogTypeTrackable.isCoordinatesNeeded(typeSelected) && loggingManager.canLogCoordinates()) {
-            binding.geocode.setVisibility(View.VISIBLE);
-            binding.coordinates.setVisibility(View.VISIBLE);
+            binding.locationFrame.setVisibility(View.VISIBLE);
             // Request focus if field is empty
             if (StringUtils.isBlank(binding.geocode.getText())) {
                 binding.geocode.requestFocus();
             }
         } else {
-            binding.geocode.setVisibility(View.GONE);
-            binding.coordinates.setVisibility(View.GONE);
+            binding.locationFrame.setVisibility(View.GONE);
         }
     }
 
@@ -503,7 +503,8 @@ public class LogTrackableActivity extends AbstractLoggingActivity implements Coo
                 sendLog();
             } else {
                 // Redirect user to concerned connector settings
-                Dialogs.confirmYesNo(this, res.getString(R.string.settings_title_open_settings), res.getString(R.string.err_trackable_log_not_anonymous, trackable.getBrand().getLabel(), connector.getServiceTitle()), (dialog, which) -> {
+                //Dialogs.confirmYesNo(this, res.getString(R.string.settings_title_open_settings), res.getString(R.string.err_trackable_log_not_anonymous, trackable.getBrand().getLabel(), connector.getServiceTitle()), (dialog, which) -> {
+                SimpleDialog.of(this).setTitle(R.string.settings_title_open_settings).setMessage(R.string.err_trackable_log_not_anonymous, trackable.getBrand().getLabel(), connector.getServiceTitle()).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm((dialog, which) -> {
                     if (connector.getPreferenceActivity() > 0) {
                         SettingsActivity.openForScreen(connector.getPreferenceActivity(), LogTrackableActivity.this);
                     } else {

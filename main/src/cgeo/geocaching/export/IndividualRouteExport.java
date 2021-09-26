@@ -2,6 +2,7 @@ package cgeo.geocaching.export;
 
 import cgeo.geocaching.R;
 import cgeo.geocaching.activity.ActivityMixin;
+import cgeo.geocaching.databinding.GpxExportIndividualRouteDialogBinding;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.models.Route;
 import cgeo.geocaching.models.RouteSegment;
@@ -19,14 +20,14 @@ import cgeo.geocaching.utils.XmlUtils;
 import cgeo.org.kxml2.io.KXmlSerializer;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.net.Uri;
 import android.text.InputFilter;
-import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,10 +44,12 @@ import org.xmlpull.v1.XmlSerializer;
 public class IndividualRouteExport {
 
     private String filename;
+    private final boolean exportAsTrack;
 
-    public IndividualRouteExport(final Activity activity, final Route route) {
+    public IndividualRouteExport(final Activity activity, final Route route, final boolean exportAsTrack) {
 
-        filename = FileNameCreator.INDIVIDUAL_ROUTE_NOSUFFIX.createName(); //will not have a suffix
+        this.exportAsTrack = exportAsTrack;
+        filename = exportAsTrack ? FileNameCreator.INDIVIDUAL_TRACK_NOSUFFIX.createName() : FileNameCreator.INDIVIDUAL_ROUTE_NOSUFFIX.createName(); //will not have a suffix
 
         final InputFilter filter = (source, start, end, dest, dstart, dend) -> {
             for (int i = start; i < end; i++) {
@@ -60,17 +64,14 @@ public class IndividualRouteExport {
         final AlertDialog.Builder builder = Dialogs.newBuilder(activity);
         builder.setTitle(R.string.export_individualroute_title);
 
-        final View layout = View.inflate(activity, R.layout.gpx_export_individual_route_dialog, null);
-        builder.setView(layout);
+        final GpxExportIndividualRouteDialogBinding binding = GpxExportIndividualRouteDialogBinding.inflate(activity.getLayoutInflater());
+        builder.setView(binding.getRoot());
 
-        final EditText editFilename = layout.findViewById(R.id.filename);
+        final EditText editFilename = binding.filename;
         editFilename.setFilters(new InputFilter[] { filter });
         editFilename.setText(filename);
 
-        final ImageButton resetFilename = layout.findViewById(R.id.button_reset);
-        resetFilename.setOnClickListener(v -> editFilename.setText(""));
-
-        final TextView text = layout.findViewById(R.id.info);
+        final TextView text = binding.infoinclude.info;
         text.setText(activity.getString(R.string.export_confirm_message, PersistableFolder.GPX.toUserDisplayableValue(), filename + FileUtils.GPX_FILE_EXTENSION));
 
         builder
@@ -133,19 +134,28 @@ public class IndividualRouteExport {
                 XmlUtils.simpleText(gpx, NS_GPX, "time", timeInfo);
                 gpx.endTag(NS_GPX, "metadata");
 
-                gpx.startTag(NS_GPX, "rte");
+                gpx.startTag(NS_GPX, exportAsTrack ? "trk" : "rte");
                 XmlUtils.simpleText(gpx, NS_GPX, "name", "c:geo individual route " + timeInfo);
                 for (RouteSegment loc : trail) {
-                    gpx.startTag(null, "rtept");
-                    final Geopoint point = loc.getPoint();
-                    gpx.attribute(null, "lat", String.valueOf(point.getLatitude()));
-                    gpx.attribute(null, "lon", String.valueOf(point.getLongitude()));
-                    XmlUtils.simpleText(gpx, null, "name", loc.getItem().getIdentifier());
-                    gpx.endTag(null, "rtept");
+                    final String segmentName = loc.getItem().getIdentifier();
+                    if (exportAsTrack) {
+                        gpx.startTag(null, "trkseg");
+                        final ArrayList<Geopoint> points = loc.getPoints();
+                        // trkseg does not have a name entity, so we put the name into the last trkpt
+                        final int size = points.size();
+                        int current = 1;
+                        for (Geopoint point : points) {
+                            exportPoint(gpx, "trkpt", point, current < size ? null : segmentName);
+                            current++;
+                        }
+                        gpx.endTag(null, "trkseg");
+                    } else {
+                        exportPoint(gpx, "rtept", loc.getPoint(), segmentName);
+                    }
                     countExported++;
                     publishProgress(countExported);
                 }
-                gpx.endTag(NS_GPX, "rte");
+                gpx.endTag(NS_GPX, exportAsTrack ? "trk" : "rte");
                 gpx.endTag(NS_GPX, "gpx");
             } catch (final IOException e) {
                 Log.w("Could not write route to uri '" + uri + "'", e);
@@ -156,6 +166,16 @@ public class IndividualRouteExport {
                 IOUtils.closeQuietly(writer);
             }
             return uri;
+        }
+
+        private void exportPoint(final XmlSerializer gpx, final String tag, final Geopoint point, @Nullable final String name) throws IOException {
+            gpx.startTag(null, tag);
+            gpx.attribute(null, "lat", String.valueOf(point.getLatitude()));
+            gpx.attribute(null, "lon", String.valueOf(point.getLongitude()));
+            if (name != null) {
+                XmlUtils.simpleText(gpx, null, "name", name);
+            }
+            gpx.endTag(null, tag);
         }
 
         @Override

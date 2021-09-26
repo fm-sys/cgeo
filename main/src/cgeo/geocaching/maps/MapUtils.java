@@ -1,16 +1,24 @@
 package cgeo.geocaching.maps;
 
-import cgeo.geocaching.enumerations.CacheType;
+import cgeo.geocaching.CgeoApplication;
+import cgeo.geocaching.R;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.enumerations.WaypointType;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Waypoint;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.storage.extension.OneTimeDialogs;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.utils.FilterUtils;
 
 import android.app.Activity;
+import android.text.Html;
+import android.text.Spanned;
+
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,53 +32,60 @@ public class MapUtils {
     }
 
     // filter waypoints from owned caches or certain wp types if requested.
-    public static void filter(final Set<Waypoint> waypoints, final boolean checkOwnership) {
-        final boolean excludeMine = checkOwnership && Settings.isExcludeMyCaches();
+    public static void filter(final Set<Waypoint> waypoints, final GeocacheFilterContext filterContext) {
+
+        final GeocacheFilter filter = filterContext.get();
+
         final boolean excludeWpOriginal = Settings.isExcludeWpOriginal();
         final boolean excludeWpParking = Settings.isExcludeWpParking();
         final boolean excludeWpVisited = Settings.isExcludeWpVisited();
 
-        // filtering required?
-        if (!excludeMine && !excludeWpOriginal && !excludeWpParking && !excludeWpVisited) {
-            return;
-        }
         final List<Waypoint> removeList = new ArrayList<>();
         for (final Waypoint wp : waypoints) {
             final Geocache cache = DataStore.loadCache(wp.getGeocode(), LoadFlags.LOAD_CACHE_OR_DB);
             final WaypointType wpt = wp.getWaypointType();
-            if ((excludeMine && cache.isOwner()) || (excludeWpOriginal && wpt == WaypointType.ORIGINAL) || (excludeWpParking && wpt == WaypointType.PARKING) || (excludeWpVisited && wp.isVisited())) {
+            if (cache == null ||
+                !filter.filter(cache) ||
+                (excludeWpOriginal && wpt == WaypointType.ORIGINAL) ||
+                (excludeWpParking && wpt == WaypointType.PARKING) ||
+                (excludeWpVisited && wp.isVisited())) {
                 removeList.add(wp);
             }
         }
         waypoints.removeAll(removeList);
     }
 
-    // filter own/found/disabled caches if required
-    public static void filter(final Collection<Geocache> caches) {
-        final boolean excludeMine = Settings.isExcludeMyCaches();
-        final boolean excludeDisabled = Settings.isExcludeDisabledCaches();
-        final boolean excludeArchived = Settings.isExcludeArchivedCaches();
+    /** Applies given filter to cache list. Additionally, creates a second list additionally filtered by own/found/disabled caches if required */
+    public static void filter(final Collection<Geocache> caches, final GeocacheFilterContext filterContext) {
+        final GeocacheFilter filter = filterContext.get();
+        filter.filterList(caches);
+    }
 
-        final CacheType filterCacheType = Settings.getCacheType() == null ? CacheType.ALL : Settings.getCacheType();
+    public static void updateFilterBar(final Activity activity, final GeocacheFilterContext filterContext) {
+        FilterUtils.updateFilterBar(activity, getActiveMapFilterName(filterContext));
+    }
 
-        // filtering required?
-        if (!excludeMine && !excludeDisabled && !excludeArchived && filterCacheType.equals(CacheType.ALL)) {
-            return;
+    @Nullable
+    private static String getActiveMapFilterName(final GeocacheFilterContext filterContext) {
+        final GeocacheFilter filter = filterContext.get();
+        if (filter.isFiltering()) {
+            return filter.toUserDisplayableString();
         }
-        final List<Geocache> removeList = new ArrayList<>();
-        for (final Geocache cache : caches) {
-            if ((excludeMine && cache.isFound()) || (excludeMine && cache.isOwner()) || (excludeDisabled && cache.isDisabled()) || (excludeArchived && cache.isArchived()) ||
-                (!filterCacheType.equals(CacheType.ALL) && !filterCacheType.equals(cache.getType()))) {
-                removeList.add(cache);
-            }
-        }
-        caches.removeAll(removeList);
+        return null;
     }
 
     // one-time messages to be shown for maps
-    public static void showMapOneTimeMessages(final Activity activity) {
+    public static void showMapOneTimeMessages(final Activity activity, final MapMode mapMode) {
         Dialogs.basicOneTimeMessage(activity, OneTimeDialogs.DialogType.MAP_QUICK_SETTINGS);
         Dialogs.basicOneTimeMessage(activity, Settings.isLongTapOnMapActivated() ? OneTimeDialogs.DialogType.MAP_LONG_TAP_ENABLED : OneTimeDialogs.DialogType.MAP_LONG_TAP_DISABLED);
+        if (mapMode == MapMode.LIVE && !Settings.isLiveMap()) {
+            Dialogs.basicOneTimeMessage(activity, OneTimeDialogs.DialogType.MAP_LIVE_DISABLED);
+        }
     }
 
+    // workaround for colored ActionBar titles/subtitles
+    // @todo remove after switching map ActionBar to Toolbar
+    public static Spanned getColoredValue(final String value) {
+        return Html.fromHtml("<font color=\"" + String.format("#%06X", 0xFFFFFF & CgeoApplication.getInstance().getResources().getColor(R.color.colorTextActionBar)) + "\">" + value + "</font>");
+    }
 }

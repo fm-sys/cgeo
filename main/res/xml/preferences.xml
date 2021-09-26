@@ -20,7 +20,7 @@
                     <cgeo.geocaching.settings.CheckBoxWithPopupPreference
                         android:defaultValue="false"
                         android:key="@string/pref_connectorGCActive"
-                        android:title="@string/settings_activate_gc"
+                        android:title="@string/settings_service_activate"
                         app:text="@string/settings_gc_legal_note"
                         app:title="@string/settings_title_gc"
                         app:url="@string/settings_gc_legal_note_url"
@@ -64,6 +64,32 @@
             </PreferenceScreen>
 
             <PreferenceScreen
+                android:key="@string/preference_screen_lc"
+                android:title="@string/settings_title_lc" >
+
+                <PreferenceCategory android:title="@string/settings_settings"
+                    android:layout="@layout/preference_category" >
+                    <CheckBoxPreference
+                        android:defaultValue="true"
+                        android:key="@string/pref_connectorALActive"
+                        android:title="@string/settings_service_activate" />
+                    <cgeo.geocaching.settings.TextPreference
+                        android:layout="@layout/text_preference"
+                        android:text="@string/settings_lc_description" />
+                </PreferenceCategory>
+
+                <PreferenceCategory android:title="@string/settings_information"
+                    android:layout="@layout/preference_category" >
+                    <Preference
+                        android:key="@string/pref_fakekey_al_website"
+                        android:title="@string/settings_open_website" />
+                    <cgeo.geocaching.settings.CapabilitiesPreference
+                        android:title="@string/settings_features"
+                        app:connector="LC" />
+                </PreferenceCategory>
+            </PreferenceScreen>
+
+            <PreferenceScreen
                 android:key="@string/preference_screen_ocde"
                 android:title="@string/init_oc" >
                 <PreferenceCategory android:title="@string/settings_settings"
@@ -72,7 +98,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorOCActive"
                         android:summary="@string/init_summary_oc_de"
-                        android:title="@string/settings_activate_oc" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorOCActive"
                         android:layout="@layout/text_preference"
@@ -103,7 +129,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorOCPLActive"
                         android:summary="@string/init_summary_oc_pl"
-                        android:title="@string/settings_activate_oc_pl" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorOCPLActive"
                         android:layout="@layout/text_preference"
@@ -134,7 +160,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorOCNLActive"
                         android:summary="@string/init_summary_oc_nl"
-                        android:title="@string/settings_activate_oc_nl" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorOCNLActive"
                         android:layout="@layout/text_preference"
@@ -166,7 +192,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorOCUSActive"
                         android:summary="@string/init_summary_oc_us"
-                        android:title="@string/settings_activate_oc_us" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorOCUSActive"
                         android:layout="@layout/text_preference"
@@ -197,7 +223,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorOCROActive"
                         android:summary="@string/init_summary_oc_ro"
-                        android:title="@string/settings_activate_oc_ro" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorOCROActive"
                         android:layout="@layout/text_preference"
@@ -228,7 +254,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorOCUKActive"
                         android:summary="@string/init_summary_oc_uk"
-                        android:title="@string/settings_activate_oc_uk" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorOCUKActive"
                         android:layout="@layout/text_preference"
@@ -258,7 +284,7 @@
                     <CheckBoxPreference
                         android:defaultValue="false"
                         android:key="@string/pref_connectorECActive"
-                        android:title="@string/settings_activate_ec" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorECActive"
                         android:layout="@layout/text_preference"
@@ -302,7 +328,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorSUActive"
                         android:summary="@string/init_summary_su"
-                        android:title="@string/settings_activate_su" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorSUActive"
                         android:layout="@layout/text_preference"
@@ -367,7 +393,7 @@
                         android:defaultValue="false"
                         android:key="@string/pref_connectorGeokretyActive"
                         android:summary="@string/init_summary_geokrety"
-                        android:title="@string/settings_activate_geokrety" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_connectorGeokretyActive"
                         android:layout="@layout/text_preference"
@@ -429,7 +455,7 @@
                     <CheckBoxPreference
                         android:defaultValue="false"
                         android:key="@string/pref_twitter"
-                        android:title="@string/settings_activate_twitter" />
+                        android:title="@string/settings_service_activate" />
                     <cgeo.geocaching.settings.TextPreference
                         android:dependency="@string/pref_twitter"
                         android:layout="@layout/text_preference"
@@ -470,16 +496,13 @@
         android:key="@string/pref_appearance"
         android:title="@string/settings_title_appearance"
         android:summary="@string/settings_summary_appearance" >
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="@string/pref_skin"
-            android:summary="@string/init_summary_skin"
-            android:title="@string/init_skin" />
-        <CheckBoxPreference
-            android:defaultValue="true"
-            android:key="@string/pref_transparentBackground"
-            android:summary="@string/init_summary_transparentBackground"
-            android:title="@string/init_transparentBackground" />
+        <ListPreference
+            android:defaultValue="@string/pref_value_theme_dark"
+            android:entries="@array/settings_theme_entries"
+            android:entryValues="@array/pref_theme_values"
+            android:key="@string/pref_theme_setting"
+            android:title="@string/settings_theme_title"
+            android:summary="%s" />
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="@string/pref_showaddress"
@@ -530,24 +553,6 @@
             android:title="@string/init_customtabs_as_browser"
             android:summary="@string/init_summary_customtabs_as_browser" />
 
-        <PreferenceCategory android:title="@string/init_category_exclude"
-            android:layout="@layout/preference_category" >
-            <CheckBoxPreference
-                android:defaultValue="false"
-                android:key="@string/pref_excludemine"
-                android:summary="@string/init_summary_exclude"
-                android:title="@string/init_exclude" />
-            <CheckBoxPreference
-                android:defaultValue="false"
-                android:key="@string/pref_excludedisabled"
-                android:summary="@string/init_summary_disabled"
-                android:title="@string/init_disabled" />
-            <CheckBoxPreference
-                android:defaultValue="false"
-                android:key="@string/pref_excludearchived"
-                android:summary="@string/init_summary_archived"
-                android:title="@string/init_archived" />
-        </PreferenceCategory>
     </PreferenceScreen>
 
     <PreferenceScreen
@@ -571,13 +576,31 @@
                 android:text="@string/downloadmap_info"
                 android:title="@string/downloadmap_title"
                 app:urlButton="@string/downloadmap_choose" />
+
+            <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="@string/pref_mapAutoDownloads"
+                android:summary="@string/init_mapAutoDownloads_description"
+                android:title="@string/init_autoDownloads" />
+            <Preference
+                android:selectable="false"
+                android:summary="@string/init_updateinterval_description"
+                android:title="@string/init_updateinterval_title"
+                android:dependency="@string/pref_mapAutoDownloads" />
+            <cgeo.geocaching.settings.SeekbarPreference
+                android:key="@string/pref_mapAutoDownloadsInterval"
+                app:min="0"
+                app:max="@integer/map_updateinterval_max"
+                android:defaultValue="@integer/map_updateinterval_default"
+                android:dependency="@string/pref_mapAutoDownloads" />
+
             <Preference
                 android:key="@string/pref_persistablefolder_offlinemaps"
                 android:title="@string/init_map_directory_description" />
             <cgeo.geocaching.settings.InfoPreference
                 android:text="@string/settings_info_themes"
                 android:title="@string/settings_info_themes_title"
-                app:url="@string/manual_url_settings_themes"
+                app:url="@string/faq_url_settings_themes"
                 app:urlButton="@string/settings_goto_url_button" />
             <Preference
                 android:key="@string/pref_persistablefolder_offlinemapthemes"
@@ -642,26 +665,6 @@
                 app:min="100"
                 app:max="@integer/historytrack_length_max"
                 android:defaultValue="@integer/historytrack_length_default" />
-            <Preference
-                android:selectable="false"
-                android:summary="@string/init_brouterThreshold_description"
-                android:title="@string/init_brouterThreshold" />
-            <cgeo.geocaching.settings.ProximityPreference
-                android:key="@string/pref_brouterDistanceThreshold"
-                app:min="1"
-                app:max="@integer/brouter_threshold_max"
-                android:defaultValue="@integer/brouter_threshold_default"
-                app:highRes="false" />
-            <CheckBoxPreference
-                android:defaultValue="false"
-                android:key="@string/pref_brouterShowBothDistances"
-                android:summary="@string/init_summary_brouterShowBothDistances"
-                android:title="@string/init_brouterShowBothDistances" />
-            <CheckBoxPreference
-                android:defaultValue="false"
-                android:key="@string/pref_useInternalRouting"
-                android:summary="@string/init_summary_useInternalRouting"
-                android:title="@string/init_useInternalRouting" />
             <CheckBoxPreference
                 android:defaultValue="false"
                 android:key="@string/pref_bigSmileysOnMap"
@@ -820,7 +823,7 @@
         <PreferenceCategory android:title="@string/init_map_other"
             android:layout="@layout/preference_category">
             <CheckBoxPreference
-                android:defaultValue="true"
+                android:defaultValue="false"
                 android:key="@string/pref_map_osm_multithreaded"
                 android:summary="@string/init_summary_map_osm_multithreaded"
                 android:title="@string/init_map_osm_multithreaded" />
@@ -883,6 +886,16 @@
             android:title="@string/init_listdisplay"
             android:summary="@string/init_summary_listdisplay" />
 
+        <Preference
+            android:selectable="false"
+            android:summary="@string/init_summary_list_initial_load_limit"
+            android:title="@string/init_list_initial_load_limit" />
+        <cgeo.geocaching.settings.SeekbarPreference
+            android:key="@string/pref_list_initial_load_limit"
+            app:min="0"
+            app:max="@integer/list_load_limit_max"
+            android:defaultValue="@integer/list_load_limit_default" />
+
         <PreferenceCategory android:title="@string/settings_title_gpx"
             android:layout="@layout/preference_category" >
             <Preference
@@ -929,6 +942,72 @@
         android:icon="?attr/settings_arrow"
         android:title="@string/settings_title_navigation"
         android:summary="@string/settings_summary_navigation" >
+
+        <PreferenceCategory android:title="@string/settings_title_offline_routing" android:summary="@string/settings_summary_offline_routing"
+            android:layout="@layout/preference_category">
+            <Preference
+                android:selectable="false"
+                android:key="@string/pref_fakekey_brouterDistanceThresholdTitle"
+                android:summary="@string/init_brouterThreshold_description"
+                android:title="@string/init_brouterThreshold" />
+            <cgeo.geocaching.settings.ProximityPreference
+                android:key="@string/pref_brouterDistanceThreshold"
+                app:min="1"
+                app:max="@integer/brouter_threshold_max"
+                android:defaultValue="@integer/brouter_threshold_default"
+                app:highRes="false" />
+
+            <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="@string/pref_brouterShowBothDistances"
+                android:summary="@string/init_summary_brouterShowBothDistances"
+                android:title="@string/init_brouterShowBothDistances" />
+
+            <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="@string/pref_useInternalRouting"
+                android:summary="@string/init_summary_useInternalRouting"
+                android:title="@string/init_useInternalRouting" />
+
+            <Preference
+                android:key="@string/pref_persistablefolder_routingtiles"
+                android:title="@string/init_brouter_directory_description"
+                android:dependency="@string/pref_useInternalRouting" />
+
+            <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="@string/pref_brouterAutoTileDownloads"
+                android:summary="@string/init_brouterAutoTileDownloads_description"
+                android:dependency="@string/pref_useInternalRouting"
+                android:title="@string/init_autoDownloads" />
+
+            <Preference
+                android:selectable="false"
+                android:summary="@string/init_updateinterval_description"
+                android:title="@string/init_updateinterval_title"
+                android:dependency="@string/pref_brouterAutoTileDownloads" />
+            <cgeo.geocaching.settings.SeekbarPreference
+                android:key="@string/pref_brouterAutoTileDownloadsInterval"
+                app:min="0"
+                app:max="@integer/brouter_updateinterval_max"
+                android:defaultValue="@integer/brouter_updateinterval_default"
+                android:dependency="@string/pref_brouterAutoTileDownloads" />
+
+            <ListPreference
+                android:dialogTitle="@string/init_brouterProfileWalk"
+                android:key="@string/pref_brouterProfileWalk"
+                android:title="@string/init_brouterProfileWalk" />
+            <ListPreference
+                android:dialogTitle="@string/init_brouterProfileBike"
+                android:key="@string/pref_brouterProfileBike"
+                android:title="@string/init_brouterProfileBike" />
+            <ListPreference
+                android:defaultValue="car-eco.brf"
+                android:dialogTitle="@string/init_brouterProfileCar"
+                android:key="@string/pref_brouterProfileCar"
+                android:title="@string/init_brouterProfileCar" />
+
+        </PreferenceCategory>
 
         <PreferenceCategory android:title="@string/init_default_navigation_tool"
             android:layout="@layout/preference_category" >
@@ -985,11 +1064,6 @@
                     android:enabled="false"
                     android:key="@string/pref_navigation_menu_locus"
                     android:title="@string/caches_map_locus" />
-                <CheckBoxPreference
-                    android:defaultValue="true"
-                    android:enabled="false"
-                    android:key="@string/pref_navigation_menu_rmaps"
-                    android:title="@string/cache_menu_rmaps" />
                 <CheckBoxPreference
                     android:defaultValue="true"
                     android:enabled="false"
@@ -1133,6 +1207,10 @@
             <Preference
                 android:key="@string/pref_memory_dump"
                 android:title="@string/init_create_memory_dump"
+                android:layout="@layout/preference_button" />
+            <Preference
+                android:key="@string/pref_generate_infos_downloadmanager"
+                android:title="@string/about_system_write_infos_downloadmanager"
                 android:layout="@layout/preference_button" />
             <Preference
                 android:key="@string/pref_view_settings"

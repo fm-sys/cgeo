@@ -2,9 +2,11 @@ package cgeo.geocaching.connector;
 
 import cgeo.geocaching.R;
 import cgeo.geocaching.SearchResult;
+import cgeo.geocaching.connector.al.ALConnector;
 import cgeo.geocaching.connector.capability.ICredentials;
 import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.connector.capability.ISearchByCenter;
+import cgeo.geocaching.connector.capability.ISearchByFilter;
 import cgeo.geocaching.connector.capability.ISearchByFinder;
 import cgeo.geocaching.connector.capability.ISearchByKeyword;
 import cgeo.geocaching.connector.capability.ISearchByNextPage;
@@ -18,7 +20,6 @@ import cgeo.geocaching.connector.internal.InternalConnector;
 import cgeo.geocaching.connector.oc.OCApiConnector.ApiSupport;
 import cgeo.geocaching.connector.oc.OCApiLiveConnector;
 import cgeo.geocaching.connector.oc.OCCZConnector;
-import cgeo.geocaching.connector.oc.OCConnector;
 import cgeo.geocaching.connector.oc.OCDEConnector;
 import cgeo.geocaching.connector.su.SuConnector;
 import cgeo.geocaching.connector.tc.TerraCachingConnector;
@@ -31,13 +32,14 @@ import cgeo.geocaching.connector.trackable.TravelBugConnector;
 import cgeo.geocaching.connector.trackable.UnknownTrackableConnector;
 import cgeo.geocaching.connector.unknown.UnknownConnector;
 import cgeo.geocaching.connector.wm.WaymarkingConnector;
-import cgeo.geocaching.enumerations.CacheType;
+import cgeo.geocaching.filters.core.GeocacheFilterType;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Trackable;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.utils.AndroidRxUtils;
+import cgeo.geocaching.utils.functions.Func1;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -46,7 +48,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Observable;
@@ -59,11 +63,12 @@ public final class ConnectorFactory {
     @NonNull private static final Collection<IConnector> CONNECTORS = Collections.unmodifiableCollection(Arrays.<IConnector> asList(
             GCConnector.getInstance(),
             ECConnector.getInstance(),
+            ALConnector.getInstance(),
             new OCDEConnector(),
             new OCCZConnector(),
             new OCApiLiveConnector("opencache.uk", "opencache.uk", false, "OK", "CC BY-NC-SA 2.5",
                     R.string.oc_uk2_okapi_consumer_key, R.string.oc_uk2_okapi_consumer_secret,
-                    R.string.pref_connectorOCUKActive, R.string.pref_ocuk2_tokenpublic, R.string.pref_ocuk2_tokensecret, ApiSupport.current, "OC.UK"), new OCConnector("OpenCaching.NO/SE", "www.opencaching.se", false, "OS", "OC.NO"),
+                    R.string.pref_connectorOCUKActive, R.string.pref_ocuk2_tokenpublic, R.string.pref_ocuk2_tokensecret, ApiSupport.current, "OC.UK"),
             new OCApiLiveConnector("opencaching.nl", "www.opencaching.nl", false, "OB", "CC BY-SA 3.0",
                     R.string.oc_nl_okapi_consumer_key, R.string.oc_nl_okapi_consumer_secret,
                     R.string.pref_connectorOCNLActive, R.string.pref_ocnl_tokenpublic, R.string.pref_ocnl_tokensecret, ApiSupport.current, "OC.NL"),
@@ -113,6 +118,19 @@ public final class ConnectorFactory {
     @NonNull
     private static final Collection<ISearchByFinder> SEARCH_BY_FINDER_CONNECTORS = getMatchingConnectors(ISearchByFinder.class);
 
+    @NonNull
+    private static final Map<GeocacheFilterType, Collection<ISearchByFilter>> SEARCH_BY_FILTER_CONNECTOR_MAP = new HashMap<>();
+
+    static {
+        SEARCH_BY_FILTER_CONNECTOR_MAP.put(null, getMatchingConnectors(ISearchByFilter.class));
+        for (GeocacheFilterType filterCap : GeocacheFilterType.values()) {
+            final Collection<ISearchByFilter> connectors = getMatchingConnectors(ISearchByFilter.class, c -> c.getFilterCapabilities().contains(filterCap));
+            if (!connectors.isEmpty()) {
+                SEARCH_BY_FILTER_CONNECTOR_MAP.put(filterCap, connectors);
+            }
+        }
+    }
+
     private static boolean forceRelog = false; // c:geo needs to log into cache providers
 
     private ConnectorFactory() {
@@ -122,9 +140,15 @@ public final class ConnectorFactory {
     @NonNull
     @SuppressWarnings("unchecked")
     private static <T extends IConnector> Collection<T> getMatchingConnectors(final Class<T> clazz) {
+        return getMatchingConnectors(clazz, null);
+    }
+
+    @NonNull
+    @SuppressWarnings("unchecked")
+    private static <T extends IConnector> Collection<T> getMatchingConnectors(final Class<T> clazz, final Func1<T, Boolean> filter) {
         final List<T> matching = new ArrayList<>();
         for (final IConnector connector : CONNECTORS) {
-            if (clazz.isInstance(connector)) {
+            if (clazz.isInstance(connector) && (filter == null || filter.call((T) connector))) {
                 matching.add((T) connector);
             }
         }
@@ -159,6 +183,17 @@ public final class ConnectorFactory {
     @NonNull
     public static Collection<ISearchByFinder> getSearchByFinderConnectors() {
         return SEARCH_BY_FINDER_CONNECTORS;
+    }
+
+    @NonNull
+    public static Collection<ISearchByFilter> getSearchByFilterConnectors() {
+        return getSearchByFilterConnectors(null);
+    }
+
+    @NonNull
+    public static Collection<ISearchByFilter> getSearchByFilterConnectors(final GeocacheFilterType type) {
+        final Collection<ISearchByFilter> result = SEARCH_BY_FILTER_CONNECTOR_MAP.get(type);
+        return result == null ? Collections.emptyList() : result;
     }
 
     @NonNull
@@ -352,11 +387,6 @@ public final class ConnectorFactory {
      */
     @NonNull
     public static SearchResult searchByViewport(@NonNull final Viewport viewport) {
-        //shortcut: no need to search any server for "user-defined" caches
-        if (Settings.getCacheType() != null && Settings.getCacheType().equals(CacheType.USER_DEFINED)) {
-            return new SearchResult();
-        }
-
         return SearchResult.parallelCombineActive(searchByViewPortConns, connector -> connector.searchByViewport(viewport));
     }
 

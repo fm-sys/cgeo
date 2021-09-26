@@ -3,8 +3,11 @@ package cgeo.geocaching.apps.navi;
 import cgeo.geocaching.apps.navi.NavigationAppFactory.NavigationAppsEnum;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.ui.AbstractMenuActionProvider;
+import cgeo.geocaching.utils.Log;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
@@ -18,11 +21,23 @@ import androidx.core.view.MenuItemCompat;
 public class NavigationSelectionActionProvider extends AbstractMenuActionProvider {
 
     private Geocache geocache;
-    private final Context context;
+    private Activity activity;
 
+    /** Constructor MUST (!) be of type Context, NOT Activity! Otherwise it can't be instantiated by Android infrastructure. See #11251 */
     public NavigationSelectionActionProvider(final Context context) {
         super(context);
-        this.context = context;
+
+        //try to extract an Activity from given Context
+        Context baseContext = context;
+        while (baseContext instanceof ContextWrapper && !(baseContext instanceof Activity)) {
+            baseContext = ((ContextWrapper) baseContext).getBaseContext();
+        }
+        this.activity = baseContext instanceof Activity ? (Activity) baseContext : null;
+        if (this.activity == null) {
+            Log.w("NavigationSelectionActionProvider called with Non-Activity-class: " +
+                (context == null ? "null" : context.getClass().getName()) + "/" +
+                (baseContext == null ? "null" : baseContext.getClass().getName()));
+        }
     }
 
     public void setTarget(final Geocache cache) {
@@ -40,9 +55,9 @@ public class NavigationSelectionActionProvider extends AbstractMenuActionProvide
                 continue;
             }
             final CacheNavigationApp cacheApp = (CacheNavigationApp) app.app;
-            if (app.app.isEnabled(geocache)) {
+            if (app.app.isEnabled(geocache) && this.activity != null) {
                 subMenu.add(Menu.NONE, app.id, Menu.NONE, app.app.getName()).setOnMenuItemClickListener(item -> {
-                    cacheApp.navigate(context, geocache);
+                    cacheApp.navigate(activity, geocache);
                     return true;
                 });
             }

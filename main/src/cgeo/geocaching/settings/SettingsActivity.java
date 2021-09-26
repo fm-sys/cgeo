@@ -5,26 +5,31 @@ import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
 import cgeo.geocaching.apps.navi.NavigationAppFactory;
 import cgeo.geocaching.apps.navi.NavigationAppFactory.NavigationAppsEnum;
+import cgeo.geocaching.brouter.BRouterConstants;
+import cgeo.geocaching.brouter.util.DefaultFilesUtils;
 import cgeo.geocaching.connector.ConnectorFactory;
+import cgeo.geocaching.connector.al.ALConnector;
 import cgeo.geocaching.connector.capability.ICredentials;
 import cgeo.geocaching.connector.ec.ECConnector;
 import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.connector.su.SuConnector;
-import cgeo.geocaching.downloader.MapDownloaderUtils;
 import cgeo.geocaching.gcvote.GCVote;
 import cgeo.geocaching.maps.MapProviderFactory;
 import cgeo.geocaching.maps.interfaces.MapSource;
 import cgeo.geocaching.maps.mapsforge.v6.RenderThemeHelper;
+import cgeo.geocaching.maps.routing.RoutingMode;
 import cgeo.geocaching.network.AndroidBeam;
 import cgeo.geocaching.playservices.GooglePlayServices;
 import cgeo.geocaching.sensors.OrientationProvider;
 import cgeo.geocaching.sensors.RotationProvider;
 import cgeo.geocaching.sensors.Sensors;
+import cgeo.geocaching.storage.ContentStorage;
 import cgeo.geocaching.storage.ContentStorageActivityHelper;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.storage.LocalStorage;
 import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.ApplicationSettings;
 import cgeo.geocaching.utils.BackupUtils;
@@ -36,12 +41,13 @@ import cgeo.geocaching.utils.ProcessUtils;
 import cgeo.geocaching.utils.ShareUtils;
 
 import android.R.string;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.backup.BackupManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
@@ -50,15 +56,20 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 
 import androidx.annotation.AnyRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -87,15 +98,28 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
     public static final int NO_RESTART_NEEDED = 1;
     public static final int RESTART_NEEDED = 2;
 
-    private final BackupUtils backupUtils = new BackupUtils(SettingsActivity.this);
+    public static final String STATE_CSAH = "csah";
+    public static final String STATE_BACKUPUTILS = "backuputils";
 
-    private final ContentStorageActivityHelper contentStorageHelper = new ContentStorageActivityHelper(this);
+    private BackupUtils backupUtils = null;
+
+    private ContentStorageActivityHelper contentStorageHelper = null;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         ApplicationSettings.setLocale(this);
-        setTheme(Settings.isLightSkin() ? R.style.settings_light : R.style.settings);
+        setTheme(Settings.isLightSkin(this) ? R.style.settings_light : R.style.settings);
         super.onCreate(savedInstanceState);
+
+        backupUtils = new BackupUtils(SettingsActivity.this, savedInstanceState == null ? null : savedInstanceState.getBundle(STATE_BACKUPUTILS));
+
+        this.contentStorageHelper = new ContentStorageActivityHelper(this, savedInstanceState == null ? null : savedInstanceState.getBundle(STATE_CSAH))
+            .addSelectActionCallback(ContentStorageActivityHelper.SelectAction.SELECT_FOLDER_PERSISTED, PersistableFolder.class, folder ->  {
+                getPreference(folder.getPrefKeyId()).setSummary(folder.toUserDisplayableValue());
+                if (PersistableFolder.OFFLINE_MAP_THEMES.equals(folder)) {
+                    RenderThemeHelper.resynchronizeOrDeleteMapThemeFolder();
+                }
+            });
 
         initDeviceSpecificPreferences();
         initUnitPreferences();
@@ -107,6 +131,45 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         AndroidBeam.disable(this);
 
         setResult(NO_RESTART_NEEDED);
+    }
+
+    // set up toolbar for settings' main screen
+    @Override
+    protected void onPostCreate(final Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        addToolbar((LinearLayout) findViewById(android.R.id.list).getParent().getParent().getParent(), getString(R.string.settings_titlebar), v -> finish());
+    }
+
+    // set up toolbar for nested preference screen
+    @SuppressWarnings("deprecation")
+    @Override
+    public boolean onPreferenceTreeClick(final PreferenceScreen preferenceScreen, final Preference preference) {
+        super.onPreferenceTreeClick(preferenceScreen, preference);
+
+        // If the user has clicked on a preference screen, set up toolbar
+        if (preference instanceof PreferenceScreen) {
+            final Dialog dialog = ((PreferenceScreen) preference).getDialog();
+            final View temp = (View) dialog.findViewById(android.R.id.list).getParent();
+            addToolbar((LinearLayout) (Build.VERSION.SDK_INT < Build.VERSION_CODES.N ? temp : temp.getParent()), preference.getTitle(), v -> dialog.dismiss());
+        }
+        return false;
+    }
+
+    private void addToolbar(final LinearLayout root, final CharSequence title, final View.OnClickListener onClickListener) {
+        final Toolbar bar = (Toolbar) LayoutInflater.from(this).inflate(R.layout.settings_toolbar, root, false);
+        root.addView(bar, 0); // insert at top
+        bar.setTitle(title);
+        bar.setNavigationOnClickListener(onClickListener);
+        // @todo Remove next two lines after switching to AppCompatActitivy
+        bar.setTitleTextColor(getResources().getColor(R.color.colorTextActionBar));
+        bar.setBackgroundColor(getResources().getColor(R.color.colorBackgroundActionBar));
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull final Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putBundle(STATE_CSAH, contentStorageHelper.getState());
+        savedInstanceState.putBundle(STATE_BACKUPUTILS, backupUtils.getState());
     }
 
     private void openInitialScreen(final int initialScreen) {
@@ -132,12 +195,14 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
     }
 
     private void initPreferences() {
+        initAppearancePreferences();
         initMapSourcePreference();
         initExtCgeoDirPreference();
         initDefaultNavigationPreferences();
         initBackupButtons();
         initDbLocationPreference();
         initMapPreferences();
+        initOfflineRoutingPreferences();
         initGeoDirPreferences();
         initDebugPreference();
         initForceOrientationSensorPreference();
@@ -162,7 +227,6 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
 
         //PublicFolder initialization
         initPublicFolders(PersistableFolder.values());
-
     }
 
     /**
@@ -182,6 +246,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         }
         pref.setEntries(entries);
         pref.setEntryValues(values);
+        pref.setOnPreferenceChangeListener(this);
     }
 
     private void initNavigationMenuPreferences() {
@@ -220,6 +285,10 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         setWebsite(R.string.pref_fakekey_ec_website, ECConnector.getInstance().getHost());
         getPreference(R.string.preference_screen_ec).setSummary(getServiceSummary(Settings.isECConnectorActive()));
 
+        getPreference(R.string.pref_connectorALActive).setOnPreferenceChangeListener(this);
+        setWebsite(R.string.pref_fakekey_al_website, ALConnector.getInstance().getHost());
+        initLCServicePreference(Settings.isGCConnectorActive());
+
         getPreference(R.string.pref_connectorSUActive).setOnPreferenceChangeListener(this);
         setWebsite(R.string.pref_fakekey_su_website, SuConnector.getInstance().getHost());
         getPreference(R.string.preference_screen_su).setSummary(getServiceSummary(Settings.isSUConnectorActive()));
@@ -235,6 +304,26 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
 
         setWebsite(R.string.pref_fakekey_sendtocgeo_website, "send2.cgeo.org");
         getPreference(R.string.preference_screen_sendtocgeo).setSummary(getServiceSummary(Settings.isRegisteredForSend2cgeo()));
+    }
+
+    private void initLCServicePreference(final boolean gcConnectorActive) {
+        final boolean isActiveGCPM = gcConnectorActive && Settings.isGCPremiumMember();
+        getPreference(R.string.preference_screen_lc).setSummary(getLcServiceSummary(Settings.isALConnectorActive(), gcConnectorActive));
+        if (isActiveGCPM) {
+            getPreference(R.string.pref_connectorALActive).setEnabled(true);
+        }
+    }
+
+    private String getLcServiceSummary(final boolean lcConnectorActive, final boolean gcConnectorActive) {
+        if (!lcConnectorActive) {
+            return StringUtils.EMPTY;
+        }
+
+        //lc service is set to active by user. Check whether it can actually be actived due to GC conditions
+        final int lcStatusTextId = gcConnectorActive && Settings.isGCPremiumMember() ?
+            R.string.settings_service_active : R.string.settings_service_active_unavailable;
+
+        return CgeoApplication.getInstance().getString(lcStatusTextId);
     }
 
     private void setWebsite(final int preferenceKey, final String urlOrHost) {
@@ -325,7 +414,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
                 return usedBytes < freeSpaces.get(position);
             }
         }, selectedDirIndex, (dialog, itemId) -> {
-            Dialogs.confirm(SettingsActivity.this, R.string.confirm_data_dir_move_title, R.string.confirm_data_dir_move, (dialog1, which) -> {
+            SimpleDialog.of(SettingsActivity.this).setTitle(R.string.confirm_data_dir_move_title).setMessage(R.string.confirm_data_dir_move).confirm((dialog1, which) -> {
                 final File dir = extDirs.get(itemId);
                 if (!StringUtils.equals(currentExtDir, dir.getAbsolutePath())) {
                     LocalStorage.changeExternalPrivateCgeoDir(SettingsActivity.this, dir.getAbsolutePath());
@@ -384,12 +473,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
 
             bindSummaryToValue(pref, folder.toUserDisplayableValue());
             pref.setOnPreferenceClickListener(p -> {
-                contentStorageHelper.selectPersistableFolder(folder, f -> {
-                    p.setSummary(f.toUserDisplayableValue());
-                    if (PersistableFolder.OFFLINE_MAP_THEMES.equals(f)) {
-                        RenderThemeHelper.resynchronizeOrDeleteMapThemeFolder();
-                    }
-                });
+                contentStorageHelper.selectPersistableFolder(folder);
                 return false;
             });
             folder.registerChangeListener(this, f -> pref.setSummary(f.toUserDisplayableValue()));
@@ -410,6 +494,21 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         }
     }
 
+    private void initAppearancePreferences() {
+        final Preference themePref = getPreference(R.string.pref_theme_setting);
+        themePref.setOnPreferenceChangeListener((Preference preference, Object newValue) -> {
+            final Settings.DarkModeSetting darkTheme = Settings.DarkModeSetting.valueOf((String) newValue);
+            Settings.setAppTheme(darkTheme);
+
+            // simulate previous view stack hierarchy
+            startActivity(new Intent(this, SettingsActivity.class));
+            openForScreen(R.string.pref_appearance, this);
+            finish();
+
+            return true;
+        });
+    }
+
     private void initBackupButtons() {
 
         final Preference backup = getPreference(R.string.pref_fakekey_preference_backup);
@@ -420,13 +519,13 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
 
         final Preference restore = getPreference(R.string.pref_fakekey_preference_restore);
         restore.setOnPreferenceClickListener(preference -> {
-            backupUtils.restore(BackupUtils.newestBackupFolder(), contentStorageHelper);
+            backupUtils.restore(BackupUtils.newestBackupFolder());
             return true;
         });
 
         final Preference restoreFromDir = getPreference(R.string.pref_fakekey_preference_restore_dirselect);
         restoreFromDir.setOnPreferenceClickListener(preference -> {
-            backupUtils.selectBackupDirIntent(contentStorageHelper);
+            backupUtils.selectBackupDirIntent();
             return true;
         });
 
@@ -434,7 +533,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         loginData.setOnPreferenceClickListener(preference -> {
             if (Settings.getBackupLoginData()) {
                 loginData.setChecked(false);
-                Dialogs.confirm(SettingsActivity.this, R.string.init_backup_settings_logins, R.string.init_backup_settings_backup_full_confirm, (dialog, which) -> loginData.setChecked(true));
+                SimpleDialog.of(SettingsActivity.this).setTitle(R.string.init_backup_settings_logins).setMessage(R.string.init_backup_settings_backup_full_confirm).confirm((dialog, which) -> loginData.setChecked(true));
             }
             return true;
         });
@@ -470,6 +569,10 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
             DebugUtils.createLogcat(SettingsActivity.this);
             return true;
         });
+        getPreference(R.string.pref_generate_infos_downloadmanager).setOnPreferenceClickListener(preference -> {
+            DebugUtils.dumpDownloadmanagerInfos(SettingsActivity.this);
+            return true;
+        });
         getPreference(R.string.pref_view_settings).setOnPreferenceClickListener(preference -> {
             startActivity(new Intent(this, ViewSettingsActivity.class));
             return true;
@@ -481,7 +584,6 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         // will get the appropriate ones.
         Settings.setUseHardwareAcceleration(Settings.useHardwareAcceleration());
         Settings.setUseGooglePlayServices(Settings.useGooglePlayServices());
-        Settings.setIsTransparentBackground(Settings.isTransparentBackground());
     }
 
     private static void initUnitPreferences() {
@@ -545,6 +647,57 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
             RenderThemeHelper.changeSyncSetting(this, (newValue instanceof Boolean) ? ((Boolean) newValue).booleanValue() : false, changedValue -> {
                 ((CheckBoxPreference) getPreference(R.string.pref_renderthemefolder_synctolocal)).setChecked(changedValue);
         }));
+    }
+
+    private void initOfflineRoutingPreferences() {
+        DefaultFilesUtils.checkDefaultFiles();
+        getPreference(R.string.pref_useInternalRouting).setOnPreferenceChangeListener((preference, newValue) -> {
+            updateRoutingPrefs(!Settings.useInternalRouting());
+            return true;
+        });
+        updateRoutingPrefs(Settings.useInternalRouting());
+        updateRoutingProfilesPrefs();
+    }
+
+    private void updateRoutingProfilesPrefs() {
+        final ArrayList<String> profiles = new ArrayList<>();
+        final List<ContentStorage.FileInformation> files = ContentStorage.get().list(PersistableFolder.ROUTING_BASE);
+        for (ContentStorage.FileInformation file : files) {
+            if (file.name.endsWith(BRouterConstants.BROUTER_PROFILE_FILEEXTENSION)) {
+                profiles.add(file.name);
+            }
+        }
+        final CharSequence[] entries = profiles.toArray(new CharSequence[0]);
+        final CharSequence[] values = profiles.toArray(new CharSequence[0]);
+        updateRoutingProfilePref(R.string.pref_brouterProfileWalk, RoutingMode.WALK, entries, values);
+        updateRoutingProfilePref(R.string.pref_brouterProfileBike, RoutingMode.BIKE, entries, values);
+        updateRoutingProfilePref(R.string.pref_brouterProfileCar, RoutingMode.CAR, entries, values);
+    }
+
+    private void updateRoutingProfilePref(@StringRes final int prefId, final RoutingMode mode, final CharSequence[] entries, final CharSequence[] values) {
+        final String current = Settings.getRoutingProfile(mode);
+        final ListPreference pref = (ListPreference) getPreference(prefId);
+        pref.setEntries(entries);
+        pref.setEntryValues(values);
+        pref.setSummary(current);
+        if (current != null) {
+            for (int i = 0; i < entries.length; i++) {
+                if (current.contentEquals(entries[i])) {
+                    pref.setValueIndex(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void updateRoutingPrefs(final boolean useInternalRouting) {
+        final boolean anyRoutingAvailable = useInternalRouting || ProcessUtils.isInstalled(getString(R.string.package_brouter));
+        getPreference(R.string.pref_fakekey_brouterDistanceThresholdTitle).setEnabled(anyRoutingAvailable);
+        getPreference(R.string.pref_brouterDistanceThreshold).setEnabled(anyRoutingAvailable);
+        getPreference(R.string.pref_brouterShowBothDistances).setEnabled(anyRoutingAvailable);
+        getPreference(R.string.pref_brouterProfileWalk).setEnabled(useInternalRouting);
+        getPreference(R.string.pref_brouterProfileBike).setEnabled(useInternalRouting);
+        getPreference(R.string.pref_brouterProfileCar).setEnabled(useInternalRouting);
     }
 
     private void initGeoDirPreferences() {
@@ -710,8 +863,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
         if (contentStorageHelper.onActivityResult(requestCode, resultCode, data)) {
             return;
         }
-
-        if (MapDownloaderUtils.onActivityResult(this, requestCode, resultCode, data)) {
+        if (backupUtils.onActivityResult(requestCode, resultCode, data)) {
             return;
         }
 
@@ -743,6 +895,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
                 setConnectedUsernameTitle(requestCode, GCConnector.getInstance());
                 redrawScreen(R.string.preference_screen_gc);
                 initBasicMemberPreferences();
+                initLCServicePreference(Settings.isGCConnectorActive());
                 break;
             case R.string.pref_fakekey_ec_authorization:
                 setAuthTitle(requestCode, ECConnector.getInstance());
@@ -811,6 +964,7 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
                 || isPreference(preference, R.string.pref_connectorOCUKActive)
                 || isPreference(preference, R.string.pref_connectorGCActive)
                 || isPreference(preference, R.string.pref_connectorECActive)
+                || isPreference(preference, R.string.pref_connectorALActive)
                 || isPreference(preference, R.string.pref_connectorSUActive)) {
             // update summary
             final boolean boolVal = (Boolean) value;
@@ -820,8 +974,12 @@ public class SettingsActivity extends PreferenceActivity implements Preference.O
                 preference.getPreferenceManager().findPreference(getKey(prefKey.prefScreenId)).setSummary(summary);
             } else if (isPreference(preference, R.string.pref_connectorGCActive)) {
                 preference.getPreferenceManager().findPreference(getKey(R.string.preference_screen_gc)).setSummary(summary);
+                initLCServicePreference(boolVal);
             } else if (isPreference(preference, R.string.pref_connectorECActive)) {
                 preference.getPreferenceManager().findPreference(getKey(R.string.preference_screen_ec)).setSummary(summary);
+            } else if (isPreference(preference, R.string.pref_connectorALActive)) {
+                preference.getPreferenceManager().findPreference(getKey(R.string.preference_screen_lc)).setSummary(getLcServiceSummary(boolVal, Settings.isGCConnectorActive()));
+                setResult(RESTART_NEEDED);
             } else if (isPreference(preference, R.string.pref_connectorSUActive)) {
                 preference.getPreferenceManager().findPreference(getKey(R.string.preference_screen_su)).setSummary(summary);
             }

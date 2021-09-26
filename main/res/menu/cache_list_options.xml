@@ -6,11 +6,11 @@
         android:id="@+id/menu_show_on_map"
         android:icon="@drawable/ic_menu_mapmode"
         android:title="@string/caches_on_map"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="ifRoom|withText"/>
     <item
         android:id="@+id/menu_filter"
         android:icon="@drawable/ic_menu_filter"
-        android:title="@string/caches_filter"
+        android:title="@string/caches_filter_menuitem"
         app:showAsAction="ifRoom|withText"/>
     <item
         android:id="@+id/menu_sort"
@@ -21,12 +21,12 @@
         app:showAsAction="ifRoom|withText"/>
     <item
         android:id="@+id/menu_switch_select_mode"
-        android:icon="@drawable/ic_menu_agenda"
+        android:icon="@drawable/ic_menu_select_start"
         android:title="@string/caches_select_mode"
         app:showAsAction="ifRoom|withText"/>
     <item
         android:id="@+id/menu_invert_selection"
-        android:icon="@drawable/ic_menu_mark"
+        android:icon="@drawable/ic_menu_invert"
         android:title="@string/caches_select_invert"
         app:showAsAction="ifRoom|withText"/>
     <item
@@ -69,6 +69,10 @@
                 android:title="@string/caches_delete_events"
                 android:enabled="false"
                 app:showAsAction="never|withText"/>
+            <item
+                android:id="@+id/menu_upload_bookmarklist"
+                android:title="@string/caches_upload_bookmarklist"
+                app:showAsAction="ifRoom|withText"/>
             <item
                 android:id="@+id/menu_upload_modifiedcoords"
                 android:title="@string/caches_upload_modifiedcoords"
@@ -120,6 +124,12 @@
                 android:id="@+id/menu_set_listmarker"
                 android:title="@string/caches_set_listmarker"
                 app:showAsAction="never|withText">
+            </item>
+            <item
+                android:id="@+id/menu_set_askfordeletion"
+                android:title="@string/caches_askdeletion"
+                app:showAsAction="never"
+                android:visible="false">
             </item>
         </menu>
     </item>

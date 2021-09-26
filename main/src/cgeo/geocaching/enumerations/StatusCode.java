@@ -15,6 +15,7 @@ public enum StatusCode {
     LOGIN_CAPTCHA_ERROR(R.string.err_captcha),
     CONNECTION_FAILED(R.string.err_server),
     CONNECTION_FAILED_EC(R.string.err_server_ec),
+    CONNECTION_FAILED_LC(R.string.err_server_lc),
     CONNECTION_FAILED_SU(R.string.err_server_su),
     CONNECTION_FAILED_GK(R.string.err_server_gk),
     NO_LOGIN_INFO_STORED(R.string.err_login),
@@ -35,7 +36,7 @@ public enum StatusCode {
     LOGIMAGE_POST_ERROR(R.string.err_logimage_post_failed);
 
     @StringRes
-    private final int errorString;
+    public final int errorString;
 
     StatusCode(@StringRes final int errorString) {
         this.errorString = errorString;

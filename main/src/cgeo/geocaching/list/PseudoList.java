@@ -38,7 +38,7 @@ public abstract class PseudoList extends AbstractList {
     public static final AbstractList HISTORY_LIST = new PseudoList(HISTORY_LIST_ID, R.string.menu_history) {
         @Override
         public int getNumberOfCaches() {
-            return DataStore.getAllHistoryCachesCount();
+            return DataStore.getAllStoredCachesCount(HISTORY_LIST_ID);
         }
     };
 

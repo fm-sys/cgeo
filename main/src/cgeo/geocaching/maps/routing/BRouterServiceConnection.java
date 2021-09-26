@@ -1,49 +1,34 @@
 package cgeo.geocaching.maps.routing;
 
-import cgeo.geocaching.brouter.IBRouterService;
-
 import android.content.ComponentName;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 
 import androidx.annotation.Nullable;
 
-public class BRouterServiceConnection implements ServiceConnection {
-    private IBRouterService brouterService;
-    private Runnable onServiceConnectedCallback = null;
+import btools.routingapp.IBRouterService;
+
+public class BRouterServiceConnection extends AbstractServiceConnection {
 
     BRouterServiceConnection (final @Nullable Runnable onServiceConnectedCallback) {
-        this.onServiceConnectedCallback = onServiceConnectedCallback;
+        super(onServiceConnectedCallback);
     }
 
     @Override
     public void onServiceConnected(final ComponentName className, final IBinder service) {
-        brouterService = IBRouterService.Stub.asInterface(service);
-        if (null != onServiceConnectedCallback) {
-            onServiceConnectedCallback.run();
-        }
+        super.onServiceConnected(className, service);
+        routingService = IBRouterService.Stub.asInterface(service);
     }
 
     @Override
-    public void onServiceDisconnected(final ComponentName className) {
-        brouterService = null;
-        this.onServiceConnectedCallback = null;
-    }
-
-    public boolean isConnected() {
-        return brouterService != null;
-    }
-
-    @Nullable
     public String getTrackFromParams(final Bundle params) {
         if (!isConnected()) {
             return null;
         }
 
         try {
-            return brouterService.getTrackFromParams(params);
+            return ((IBRouterService) routingService).getTrackFromParams(params);
         } catch (final RemoteException e) {
             return null;
         }

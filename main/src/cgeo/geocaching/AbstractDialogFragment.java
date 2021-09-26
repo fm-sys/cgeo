@@ -2,6 +2,7 @@ package cgeo.geocaching;
 
 import cgeo.geocaching.activity.AbstractActivity;
 import cgeo.geocaching.activity.ActivityMixin;
+import cgeo.geocaching.activity.INavigationSource;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Units;
@@ -23,22 +24,21 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.PopupMenu;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.DialogFragment;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 
-public abstract class AbstractDialogFragment extends DialogFragment implements CacheMenuHandler.ActivityInterface, PopupMenu.OnMenuItemClickListener, MenuItem.OnMenuItemClickListener {
+public abstract class AbstractDialogFragment extends DialogFragment implements CacheMenuHandler.ActivityInterface, INavigationSource {
     public static final int RESULT_CODE_SET_TARGET = Activity.RESULT_FIRST_USER;
     public static final int REQUEST_CODE_TARGET_INFO = 1;
     protected static final String GEOCODE_ARG = "GEOCODE";
@@ -73,51 +73,14 @@ public abstract class AbstractDialogFragment extends DialogFragment implements C
     }
 
     protected void initCustomActionBar(final View v) {
-        final ImageView defaultNavigationImageView = v.findViewById(R.id.defaultNavigation);
-        defaultNavigationImageView.setOnLongClickListener(v12 -> {
-            startDefaultNavigation2();
-            return true;
-        });
-        defaultNavigationImageView.setOnClickListener(v1 -> navigateTo());
-
-        final View setAsTargetView = v.findViewById(R.id.setAsTarget);
-        final View setAsTargetSep = v.findViewById(R.id.setAsTargetSep);
-        if (getActivity().getCallingActivity() != null) {
-            setAsTargetView.setVisibility(View.VISIBLE);
-            setAsTargetSep.setVisibility(View.VISIBLE);
-            setAsTargetView.setOnClickListener(v13 -> setAsTarget());
-        } else {
-            setAsTargetView.setVisibility(View.GONE);
-            setAsTargetSep.setVisibility(View.GONE);
-        }
-
-        final View overflowActionBar = v.findViewById(R.id.overflowActionBar);
-        overflowActionBar.setOnClickListener(this::showPopup);
-    }
-
-    public final void setTitle(final CharSequence title) {
-        final View view = getView();
-        assert view != null;
-        final TextView titleview = view.findViewById(R.id.actionbar_title);
-        if (titleview != null) {
-            titleview.setText(title);
-        }
+        final Toolbar toolbar = (Toolbar) v.findViewById(R.id.toolbar);
+        ((AppCompatActivity) requireActivity()).setSupportActionBar(toolbar);
     }
 
     @Override
     public void onStart() {
         super.onStart();
         geocode = getArguments().getString(GEOCODE_ARG);
-    }
-
-
-    protected void showPopup(final View view) {
-        final android.widget.PopupMenu popupMenu = new android.widget.PopupMenu(getActivity(), view);
-        CacheMenuHandler.addMenuItems(new MenuInflater(getActivity()), popupMenu.getMenu(), cache, true);
-        popupMenu.setOnMenuItemClickListener(
-                AbstractDialogFragment.this::onMenuItemClick
-        );
-        popupMenu.show();
     }
 
     protected void init() {
@@ -155,14 +118,17 @@ public abstract class AbstractDialogFragment extends DialogFragment implements C
         super.onPause();
     }
 
-    protected final void addCacheDetails() {
+    protected final void addCacheDetails(final boolean showGeocode) {
         assert cache != null;
+
         // cache type
         final String cacheType = cache.getType().getL10n();
         final String cacheSize = cache.showSize() ? " (" + cache.getSize().getL10n() + ")" : "";
         details.add(R.string.cache_type, cacheType + cacheSize);
 
-        details.add(R.string.cache_geocode, cache.getGeocode());
+        if (showGeocode) {
+            details.add(R.string.cache_geocode, cache.getShortGeocode());
+        }
         details.addCacheState(cache);
 
         cacheDistance = details.addDistance(cache, cacheDistance);
@@ -186,6 +152,9 @@ public abstract class AbstractDialogFragment extends DialogFragment implements C
                 details.add(R.string.cache_favorite, res.getString(R.string.favorite_count, favCount));
             }
         }
+
+        // Latest logs
+        details.addLatestLogs(cache);
 
         // more details
         final View view = getView();
@@ -226,34 +195,20 @@ public abstract class AbstractDialogFragment extends DialogFragment implements C
     @Override
     public void onCreateOptionsMenu(@NonNull final Menu menu, @NonNull final MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        CacheMenuHandler.addMenuItems(inflater, menu, cache, false);
+        CacheMenuHandler.addMenuItems(inflater, menu, cache, true);
 
-    }
-
-    @Override
-    public void onCreateContextMenu(@NonNull final ContextMenu menu, @NonNull final View v, final ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        CacheMenuHandler.addMenuItems(new MenuInflater(getActivity()), menu, cache, false);
-        for (int i = 0; i < menu.size(); i++) {
-            final MenuItem m = menu.getItem(i);
-            m.setOnMenuItemClickListener(this);
+        if (requireActivity().getCallingActivity() != null) {
+            menu.findItem(R.id.menu_target).setVisible(true);
         }
     }
 
     @Override
-    public boolean onContextItemSelected(@NonNull final MenuItem item) {
-        return onOptionsItemSelected(item);
-    }
-
-
-    @Override
-    public boolean onMenuItemClick(final MenuItem menuItem) {
-        return onOptionsItemSelected(menuItem);
-    }
-
-    @Override
     public boolean onOptionsItemSelected(@NonNull final MenuItem item) {
-        if (CacheMenuHandler.onMenuItemSelected(item, this, cache)) {
+        if (item.getItemId() == R.id.menu_target) {
+            setAsTarget();
+            return true;
+        }
+        if (CacheMenuHandler.onMenuItemSelected(item, this, cache, this::init, true)) {
             return true;
         }
         if (LoggingUI.onMenuItemSelected(item, getActivity(), cache, dialog -> init())) {
@@ -278,7 +233,10 @@ public abstract class AbstractDialogFragment extends DialogFragment implements C
 
     protected abstract TargetInfo getTargetInfo();
 
-    protected abstract void startDefaultNavigation2();
+    @Override
+    public void navigateTo() {
+        startDefaultNavigation();
+    }
 
     @Override
     public void cachesAround() {

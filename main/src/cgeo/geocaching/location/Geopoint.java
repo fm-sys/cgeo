@@ -21,6 +21,12 @@ import org.apache.commons.lang3.StringUtils;
  * Abstraction of geographic point. This class is immutable.
  */
 public final class Geopoint implements ICoordinates, Parcelable {
+
+    public enum LatLon {
+        LAT,
+        LON
+    }
+
     /**
      * Reusable default object
      */
@@ -51,6 +57,7 @@ public final class Geopoint implements ICoordinates, Parcelable {
      * @param lonE6 longitude in microdegrees
      * @param dummy ignored parameter
      */
+    @SuppressWarnings("unused")
     private Geopoint(final int latE6, final int lonE6, final Object dummy) {
         latitudeE6 = latE6;
         longitudeE6 = lonE6;
@@ -91,7 +98,7 @@ public final class Geopoint implements ICoordinates, Parcelable {
      * @param loc
      *            the Location to clone
      */
-    public Geopoint(final Location loc) {
+    public Geopoint(@NonNull final Location loc) {
         this(loc.getLatitude(), loc.getLongitude());
     }
 
@@ -101,7 +108,7 @@ public final class Geopoint implements ICoordinates, Parcelable {
      * @param in
      *            a Parcel to read the saved data from
      */
-    public Geopoint(final Parcel in) {
+    public Geopoint(@NonNull final Parcel in) {
         latitudeE6 = in.readInt();
         longitudeE6 = in.readInt();
     }
@@ -181,7 +188,10 @@ public final class Geopoint implements ICoordinates, Parcelable {
      * @throws GeopointException
      *             if there is an error in distance calculation
      */
-    public float distanceTo(@NonNull final ICoordinates point) {
+    public float distanceTo(final ICoordinates point) {
+        if (point == null) {
+            return 0.0f;
+        }
         final Geopoint otherCoords = point.getCoords();
         final GeodesicData g = Geodesic.WGS84.Inverse(getLatitude(), getLongitude(), otherCoords.getLatitude(), otherCoords.getLongitude(),
                 GeodesicMask.DISTANCE);
@@ -287,9 +297,9 @@ public final class Geopoint implements ICoordinates, Parcelable {
             resource = R.string.err_parse_lat_lon;
         }
 
-        public ParseException(final String msg, final GeopointParser.LatLon faulty) {
+        public ParseException(final String msg, final Geopoint.LatLon faulty) {
             super(msg);
-            resource = faulty == GeopointParser.LatLon.LAT ? R.string.err_parse_lat : R.string.err_parse_lon;
+            resource = faulty == Geopoint.LatLon.LAT ? R.string.err_parse_lat : R.string.err_parse_lon;
         }
     }
 
@@ -611,5 +621,4 @@ public final class Geopoint implements ICoordinates, Parcelable {
     public static boolean equalsFormatted(final Geopoint p1, final Geopoint p2, final GeopointFormatter.Format format) {
         return p1 == null ? p2 == null : p2 != null && p1.format(format).equals(p2.format(format));
     }
-
 }

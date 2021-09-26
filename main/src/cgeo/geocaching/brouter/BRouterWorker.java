@@ -7,15 +7,13 @@ import cgeo.geocaching.brouter.core.RoutingEngine;
 import cgeo.geocaching.utils.Log;
 
 import android.os.Bundle;
-import android.os.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BRouterWorker {
     // public String baseDir;
-    public String segmentDir;
-    public String profileName;
+    public String profileFilename;
     public String rawTrackPath;
     public List<OsmNodeNamed> waypoints;
     public List<OsmNodeNamed> nogoList;
@@ -29,7 +27,7 @@ public class BRouterWorker {
 
         final RoutingContext rc = new RoutingContext();
         rc.rawTrackPath = rawTrackPath;
-        rc.profileFilename = Environment.getExternalStorageDirectory().getAbsolutePath() + "/cgeo/routing/" + profileName + BRouterConstants.BROUTER_PROFILE_FILEEXTENSION;  // @todo: migrate to SAF
+        rc.profileFilename = profileFilename;
 
         final String tiFormat = params.getString("turnInstructionFormat");
         if (tiFormat != null) {
@@ -50,8 +48,7 @@ public class BRouterWorker {
 
         waypoints = readPositions(params);
 
-        final RoutingEngine cr = new RoutingEngine(null, null, segmentDir, waypoints, rc);
-        cr.quite = true;
+        final RoutingEngine cr = new RoutingEngine(waypoints, rc);
         cr.doRun(maxRunningTime);
 
         // store new reference track if any

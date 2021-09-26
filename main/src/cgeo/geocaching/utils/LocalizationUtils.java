@@ -6,10 +6,17 @@ import cgeo.geocaching.storage.Folder;
 import cgeo.geocaching.storage.PersistableFolder;
 
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.net.Uri;
 
+import androidx.annotation.ArrayRes;
+import androidx.annotation.NonNull;
 import androidx.annotation.PluralsRes;
 import androidx.annotation.StringRes;
+
+import java.util.IllegalFormatException;
+import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -38,10 +45,18 @@ public final class LocalizationUtils {
     }
 
     public static String getStringWithFallback(@StringRes final int resId, final String fallback, final Object ... params) {
-        if (APPLICATION_CONTEXT == null) {
-            return "(NoCtx)" + (fallback == null ? "" : fallback) + "[" + StringUtils.join(params, ";") + "]";
+        if ((APPLICATION_CONTEXT == null || resId == 0) && fallback == null) {
+            return "(NoCtx/NoResId/NoFallback)[" + StringUtils.join(params, ";") + "]";
         }
-        return APPLICATION_CONTEXT.getString(resId, params);
+        try {
+            if (resId == 0 || APPLICATION_CONTEXT == null) {
+                return String.format(fallback, params);
+            }
+            return APPLICATION_CONTEXT.getString(resId, params);
+        } catch (IllegalFormatException | Resources.NotFoundException e) {
+            Log.w("Problem trying to format '" + resId + "/" + fallback + "' with [" + StringUtils.join(params, ";") + "]", e);
+            return (fallback == null ? "" : fallback) + ":" + StringUtils.join(params, ";");
+        }
     }
 
     public static String getPlural(@PluralsRes final int pluralId, final int quantity) {
@@ -52,7 +67,21 @@ public final class LocalizationUtils {
         if (APPLICATION_CONTEXT == null) {
             return quantity + " " + fallback;
         }
-        return CgeoApplication.getInstance().getApplicationContext().getResources().getQuantityString(pluralId, quantity, quantity);
+        return APPLICATION_CONTEXT.getResources().getQuantityString(pluralId, quantity, quantity);
+    }
+
+    public static String[] getStringArray(@ArrayRes final int arrayId, final String ... fallback) {
+        if (APPLICATION_CONTEXT == null) {
+            return fallback == null ? new String[0] : fallback;
+        }
+        return APPLICATION_CONTEXT.getResources().getStringArray(arrayId);
+    }
+
+    public static int[] getIntArray(@ArrayRes final int arrayId, final int ... fallback) {
+        if (APPLICATION_CONTEXT == null) {
+            return fallback == null ? new int[0] : fallback;
+        }
+        return APPLICATION_CONTEXT.getResources().getIntArray(arrayId);
     }
 
     /**
@@ -93,6 +122,17 @@ public final class LocalizationUtils {
         return new ImmutablePair<>(getStringWithFallback(messageId, fallback, paramsForUser), getStringWithFallback(messageId, fallback, paramsForLog));
     }
 
+    @NonNull
+    public static String getEnglishString(final Context context, @StringRes final int resId) {
+        final Configuration configuration = getEnglishConfiguration(context);
+        return context.createConfigurationContext(configuration).getResources().getString(resId);
+    }
 
+    @NonNull
+    private static Configuration getEnglishConfiguration(final Context context) {
+        final Configuration configuration = new Configuration(context.getResources().getConfiguration());
+        configuration.setLocale(new Locale("en"));
+        return configuration;
+    }
 
 }

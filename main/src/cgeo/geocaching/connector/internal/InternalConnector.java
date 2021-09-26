@@ -3,22 +3,29 @@ package cgeo.geocaching.connector.internal;
 import cgeo.geocaching.CacheDetailActivity;
 import cgeo.geocaching.R;
 import cgeo.geocaching.SearchResult;
+import cgeo.geocaching.activity.Keyboard;
 import cgeo.geocaching.connector.AbstractConnector;
 import cgeo.geocaching.connector.capability.ISearchByGeocode;
+import cgeo.geocaching.databinding.DialogTitleButtonButtonBinding;
+import cgeo.geocaching.databinding.UdcCreateBinding;
+import cgeo.geocaching.enumerations.CacheListType;
 import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.enumerations.StatusCode;
 import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.models.Geocache;
+import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.ui.dialog.Dialogs;
 import cgeo.geocaching.utils.DisposableHandler;
+import cgeo.geocaching.utils.EmojiUtils;
 import cgeo.geocaching.utils.Log;
+import cgeo.geocaching.utils.MapMarkerUtils;
 
 import android.content.Context;
-import android.text.InputType;
-import android.widget.EditText;
+import android.view.LayoutInflater;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,7 +35,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.google.android.material.button.MaterialButton;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class InternalConnector extends AbstractConnector implements ISearchByGeocode {
 
@@ -111,9 +120,31 @@ public class InternalConnector extends AbstractConnector implements ISearchByGeo
         return PATTERN_GEOCODE.matcher(geocode).matches();
     }
 
+    @NotNull
     @Override
-    public int getCacheMapMarkerId(final boolean disabled) {
-        return disabled ? R.drawable.marker_disabled_oc : R.drawable.marker_oc;
+    public String[] getGeocodeSqlLikeExpressions() {
+        return new String[]{PREFIX + "%"};
+    }
+
+
+    @Override
+    public int getCacheMapMarkerId() {
+        return R.drawable.marker_other;
+    }
+
+    @Override
+    public int getCacheMapMarkerBackgroundId() {
+        return R.drawable.background_other;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerId() {
+        return R.drawable.dot_marker_other;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerBackgroundId() {
+        return R.drawable.dot_background_other;
     }
 
     @Override
@@ -124,6 +155,11 @@ public class InternalConnector extends AbstractConnector implements ISearchByGeo
 
     @Override
     public boolean supportsDescriptionchange() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsSettingFoundState() {
         return true;
     }
 
@@ -170,10 +206,11 @@ public class InternalConnector extends AbstractConnector implements ISearchByGeo
      * @param id            internal (numeric) id of the cache
      * @param name          cache's name (or null for default name)
      * @param description   cache's description (or null for default description)
+     * @param assignedEmoji cache's assigned emoji (or 0 for default cache type icon)
      * @param geopoint      cache's current location (or null if none)
      * @param listId        cache list's id, may be NEW_LIST
      */
-    protected static void assertCacheExists(final Context context, final long id, @Nullable final String name, @Nullable final String description, @Nullable final Geopoint geopoint, final int listId) {
+    protected static void assertCacheExists(final Context context, final long id, @Nullable final String name, @Nullable final String description, final int assignedEmoji, @Nullable final Geopoint geopoint, final int listId) {
         final String geocode = geocodeFromId(id);
         if (DataStore.loadCache(geocode, LoadFlags.LOAD_CACHE_OR_DB) == null) {
 
@@ -188,6 +225,7 @@ public class InternalConnector extends AbstractConnector implements ISearchByGeo
             cache.setName(name == null ? String.format(context.getString(R.string.internal_cache_default_name), id) : name);
             cache.setOwnerDisplayName(context.getString(R.string.internal_cache_default_owner));
             cache.setDescription(description == null ? context.getString(R.string.internal_cache_default_description) : description);
+            cache.setAssignedEmoji(assignedEmoji);
             cache.setDetailed(true);
             cache.setType(CacheType.USER_DEFINED);
             final Set<Integer> lists = new HashSet<>(1);
@@ -213,7 +251,7 @@ public class InternalConnector extends AbstractConnector implements ISearchByGeo
      * @param context   context in which this function gets called
      */
     public static void assertHistoryCacheExists(final Context context) {
-        assertCacheExists(context, ID_HISTORY_CACHE, context.getString(R.string.internal_goto_targets_title), context.getString(R.string.internal_goto_targets_description), null, UDC_LIST);
+        assertCacheExists(context, ID_HISTORY_CACHE, context.getString(R.string.internal_goto_targets_title), context.getString(R.string.internal_goto_targets_description), 0, null, UDC_LIST);
     }
 
     /**
@@ -221,35 +259,57 @@ public class InternalConnector extends AbstractConnector implements ISearchByGeo
      * @param context       context in which this function gets called
      * @param name          cache's name (or null for default name)
      * @param description   cache's description (or null for default description)
+     * @param assignedEmoji cache's assigned emoji (or 0 for default cache type icon)
      * @param geopoint      cache's current location (or null if none)
      * @param listId        cache list's id
      * @return geocode      geocode of the newly created cache
      */
-    public static String createCache(final Context context, @Nullable final String name, @Nullable final String description, @Nullable final Geopoint geopoint, final int listId) {
-        final long newId = DataStore.incSequenceInternalCache();
-        assertCacheExists(context, newId, name, description, geopoint, listId);
+    public static String createCache(final Context context, @Nullable final String name, @Nullable final String description, final int assignedEmoji, @Nullable final Geopoint geopoint, final int listId) {
+        final long newId = DataStore.getNextAvailableInternalCacheId();
+        assertCacheExists(context, newId, name, description, assignedEmoji, geopoint, listId);
         return geocodeFromId(newId);
     }
 
     /**
      * asks user for cache name and creates a new cache if name has been entered
      * @param geopoint      cache's current location (or null if none)
-     * @param listId        cache list's id
+     * @param listId        cache list's id (either InternalConnector.UDC_LIST or interpreted as offline list id)
+     * @param askUser       false: store in given list / true: ask for list & default list (if offline list given)
+     * default list is InternalConnector.UDC_LIST
      */
-    public static void interactiveCreateCache(final Context context, final Geopoint geopoint, final int listId) {
-        final EditText editText = new EditText(context);
-        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL);
-        editText.setText("");
+    public static void interactiveCreateCache(final Context context, final Geopoint geopoint, final int listId, final boolean askUser) {
+        final boolean showStoreInCurrentList = askUser && ((listId == StoredList.STANDARD_LIST_ID || listId >= DataStore.customListIdOffset));
+
+        final Geocache temporaryCache = new Geocache();
+        temporaryCache.setType(CacheType.USER_DEFINED);
+
+        final UdcCreateBinding binding = UdcCreateBinding.inflate(LayoutInflater.from(context));
+        binding.name.setText("");
+        binding.givenList.setVisibility(showStoreInCurrentList ? View.VISIBLE : View.GONE);
+        binding.givenList.setChecked(Settings.getCreateUDCuseGivenList());
+
+        final DialogTitleButtonButtonBinding titleViewBinding = DialogTitleButtonButtonBinding.inflate(LayoutInflater.from(context));
+        titleViewBinding.dialogTitleTitle.setText(R.string.create_internal_cache);
+        final MaterialButton dialogButton = (MaterialButton) titleViewBinding.dialogButtonRight;
+        dialogButton.setVisibility(View.VISIBLE);
+        dialogButton.setIcon(MapMarkerUtils.getCacheMarker(context.getResources(), temporaryCache, CacheListType.OFFLINE).getDrawable());
+        dialogButton.setIconTint(null);
+        dialogButton.setOnClickListener(v -> EmojiUtils.selectEmojiPopup(context, temporaryCache.getAssignedEmoji(), temporaryCache.getType().markerId, assignedEmoji -> {
+            temporaryCache.setAssignedEmoji(assignedEmoji);
+            dialogButton.setIcon(MapMarkerUtils.getCacheMarker(context.getResources(), temporaryCache, CacheListType.OFFLINE).getDrawable());
+        }));
 
         Dialogs.newBuilder(context)
-            .setTitle(R.string.create_internal_cache)
-            .setView(editText)
+            .setCustomTitle(titleViewBinding.getRoot())
+            .setView(binding.getRoot())
             .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                final String geocode = createCache(context, editText.getText().toString(), null, geopoint, listId);
+                final boolean useGivenList = binding.givenList.isChecked();
+                Settings.setCreateUDCuseGivenList(useGivenList);
+                final String geocode = createCache(context, binding.name.getText().toString(), null, temporaryCache.getAssignedEmoji(), geopoint, showStoreInCurrentList && !useGivenList ? InternalConnector.UDC_LIST : listId);
                 CacheDetailActivity.startActivity(context, geocode);
             })
-            .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> { })
-            .show()
-        ;
+            .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> dialog.cancel())
+            .show();
+        Keyboard.show(context, binding.name);
     }
 }

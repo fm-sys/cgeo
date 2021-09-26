@@ -4,8 +4,8 @@ import cgeo.geocaching.connector.ConnectorFactory;
 import cgeo.geocaching.connector.IConnector;
 import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.databinding.InstallWizardBinding;
-import cgeo.geocaching.downloader.MapDownloadSelectorActivity;
-import cgeo.geocaching.downloader.MapDownloaderUtils;
+import cgeo.geocaching.downloader.DownloadSelectorActivity;
+import cgeo.geocaching.maps.routing.Routing;
 import cgeo.geocaching.permission.PermissionGrantedCallback;
 import cgeo.geocaching.permission.PermissionHandler;
 import cgeo.geocaching.permission.PermissionRequestContext;
@@ -18,9 +18,8 @@ import cgeo.geocaching.storage.ContentStorageActivityHelper;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.storage.LocalStorage;
 import cgeo.geocaching.storage.PersistableFolder;
-import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.BackupUtils;
-import cgeo.geocaching.utils.ProcessUtils;
 
 import android.Manifest;
 import android.content.Context;
@@ -29,6 +28,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -36,6 +36,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -44,6 +45,8 @@ public class InstallWizardActivity extends AppCompatActivity {
 
     public static final String BUNDLE_MODE = "wizardmode";
     private static final String BUNDLE_STEP = "step";
+    private static final String BUNDLE_CSAH = "csah";
+    private static final String BUNDLE_BACKUPUTILS = "backuputils";
 
     public enum WizardMode {
         WIZARDMODE_DEFAULT(0),
@@ -60,7 +63,7 @@ public class InstallWizardActivity extends AppCompatActivity {
     private enum WizardStep {
         WIZARD_START,
         WIZARD_PERMISSIONS, WIZARD_PERMISSIONS_STORAGE, WIZARD_PERMISSIONS_LOCATION,
-        WIZARD_PERMISSIONS_BASEFOLDER, WIZARD_PERMISSIONS_MAPFOLDER, WIZARD_PERMISSIONS_MAPTHEMEFOLDER, WIZARD_PERMISSIONS_GPXFOLDER,
+        WIZARD_PERMISSIONS_BASEFOLDER, WIZARD_PERMISSIONS_MAPFOLDER, WIZARD_PERMISSIONS_MAPTHEMEFOLDER, WIZARD_PERMISSIONS_GPXFOLDER, WIZARD_PERMISSIONS_BROUTERTILESFOLDER,
         WIZARD_PLATFORMS,
         WIZARD_ADVANCED,
         WIZARD_END
@@ -70,6 +73,7 @@ public class InstallWizardActivity extends AppCompatActivity {
     private WizardStep step = WizardStep.WIZARD_START;
     private boolean forceSkipButton = false;
     private ContentStorageActivityHelper contentStorageActivityHelper = null;
+    private BackupUtils backupUtils;
 
     private static final int REQUEST_CODE_WIZARD_GC = 0x7167;
 
@@ -88,11 +92,17 @@ public class InstallWizardActivity extends AppCompatActivity {
     private Button prev = null;
     private Button skip = null;
     private Button next = null;
+    private Button nextOutlined = null;
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTheme(R.style.dark);
+
+        // window without actionbar for a cleaner look
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+        setTheme(R.style.NoActionbarTheme);
+
+        backupUtils = new BackupUtils(this, savedInstanceState == null ? null : savedInstanceState.getBundle(BUNDLE_BACKUPUTILS));
         if (savedInstanceState != null) {
             step = WizardStep.values()[savedInstanceState.getInt(BUNDLE_STEP)];
             mode = WizardMode.values()[savedInstanceState.getInt(BUNDLE_MODE)];
@@ -116,6 +126,33 @@ public class InstallWizardActivity extends AppCompatActivity {
         prev = binding.wizardPrev;
         skip = binding.wizardSkip;
         next = binding.wizardNext;
+        nextOutlined = binding.wizardNextOutlined;
+
+        this.contentStorageActivityHelper = new ContentStorageActivityHelper(this, savedInstanceState == null ? null : savedInstanceState.getBundle(BUNDLE_CSAH))
+            .addSelectActionCallback(ContentStorageActivityHelper.SelectAction.SELECT_FOLDER_PERSISTED, PersistableFolder.class, pf -> {
+                final boolean needsMigration;
+                switch (pf) {
+                    case GPX:
+                        needsMigration = gpxFolderNeedsMigration();
+                        break;
+                    case BASE:
+                        needsMigration = !ContentStorageActivityHelper.baseFolderIsSet();
+                        break;
+                    case OFFLINE_MAPS:
+                        needsMigration = mapFolderNeedsMigration();
+                        break;
+                    case OFFLINE_MAP_THEMES:
+                        needsMigration = mapThemeFolderNeedsMigration();
+                        break;
+                    case ROUTING_TILES:
+                        needsMigration = broutertilesFolderNeedsMigration();
+                        break;
+                    default:
+                        needsMigration = false;
+                        break;
+                }
+                onReturnFromFolderMigration(!needsMigration);
+            });
 
         updateDialog();
     }
@@ -140,34 +177,34 @@ public class InstallWizardActivity extends AppCompatActivity {
                 break;
             }
             case WIZARD_PERMISSIONS_STORAGE:
-                title.setText(R.string.wizard_permissions_title);
+                title.setText(R.string.wizard_status_storage_permission);
                 text.setText(R.string.storage_permission_request_explanation);
                 setNavigation(this::gotoPrevious, 0, null, 0, this::requestStorage, 0);
                 break;
             case WIZARD_PERMISSIONS_LOCATION:
-                title.setText(R.string.wizard_permissions_title);
+                title.setText(R.string.wizard_status_location_permission);
                 text.setText(R.string.location_permission_request_explanation);
                 setNavigation(this::gotoPrevious, 0, null, 0, this::requestLocation, 0);
                 break;
             case WIZARD_PERMISSIONS_BASEFOLDER:
-                setFolderTitle(PersistableFolder.BASE);
-                text.setText(R.string.wizard_basefolder_request_explanation);
+                setFolderInfo(PersistableFolder.BASE, R.string.wizard_basefolder_request_explanation, false);
                 setNavigation(this::gotoPrevious, 0, forceSkipButton ? this::gotoNext : null, 0, this::requestBasefolder, 0);
                 break;
             case WIZARD_PERMISSIONS_MAPFOLDER:
-                setFolderTitle(PersistableFolder.OFFLINE_MAPS);
-                text.setText(R.string.wizard_mapfolder_request_explanation);
+                setFolderInfo(PersistableFolder.OFFLINE_MAPS, R.string.wizard_mapfolder_request_explanation, true);
                 setNavigation(this::gotoPrevious, 0, forceSkipButton ? this::gotoNext : null, 0, this::requestMapfolder, 0);
                 break;
             case WIZARD_PERMISSIONS_MAPTHEMEFOLDER:
-                setFolderTitle(PersistableFolder.OFFLINE_MAP_THEMES);
-                text.setText(R.string.wizard_mapthemesfolder_request_explanation);
+                setFolderInfo(PersistableFolder.OFFLINE_MAP_THEMES, R.string.wizard_mapthemesfolder_request_explanation, true);
                 setNavigation(this::gotoPrevious, 0, forceSkipButton ? this::gotoNext : null, 0, this::requestMapthemefolder, 0);
                 break;
             case WIZARD_PERMISSIONS_GPXFOLDER:
-                setFolderTitle(PersistableFolder.GPX);
-                text.setText(R.string.wizard_gpxfolder_request_explanation);
+                setFolderInfo(PersistableFolder.GPX, R.string.wizard_gpxfolder_request_explanation, true);
                 setNavigation(this::gotoPrevious, 0, forceSkipButton ? this::gotoNext : null, 0, this::requestGpxfolder, 0);
+                break;
+            case WIZARD_PERMISSIONS_BROUTERTILESFOLDER:
+                setFolderInfo(PersistableFolder.ROUTING_TILES, R.string.wizard_broutertilesfolder_request_explanation, true);
+                setNavigation(this::gotoPrevious, 0, forceSkipButton ? this::gotoNext : null, 0, this::requestBroutertilesfolder, 0);
                 break;
             case WIZARD_PLATFORMS:
                 title.setText(R.string.wizard_platforms_title);
@@ -188,20 +225,23 @@ public class InstallWizardActivity extends AppCompatActivity {
                 setNavigation(this::gotoPrevious, 0, null, 0, this::gotoNext, R.string.skip);
                 setButton(button1, R.string.wizard_advanced_offlinemaps_label, v -> {
                     setButtonToDone();
-                    startActivityForResult(new Intent(this, MapDownloadSelectorActivity.class), MapDownloaderUtils.REQUEST_CODE);
+                    startActivity(new Intent(this, DownloadSelectorActivity.class));
                 }, button1Info, R.string.wizard_advanced_offlinemaps_info);
-                setButton(button2, R.string.wizard_advanced_brouter_label, v -> {
-                    setButtonToDone();
-                    ProcessUtils.openMarket(this, getString(R.string.package_brouter));
-                }, button2Info, R.string.wizard_advanced_brouter_info);
+                if (!Routing.isAvailable()) {
+                    setButton(button2, R.string.wizard_advanced_routing_label, v -> {
+                        setButtonToDone();
+                        Settings.setUseInternalRouting(true);
+                        Settings.setBrouterAutoTileDownloads(true);
+                        setButton(button2, 0, null, button2Info, 0);
+                    }, button2Info, R.string.wizard_advanced_routing_info);
+                }
                 setButton(button3, R.string.wizard_advanced_restore_label, v -> {
                     setButtonToDone();
                     DataStore.resetNewlyCreatedDatabase();
-                    final BackupUtils backupUtils = new BackupUtils(this);
                     if (BackupUtils.hasBackup(BackupUtils.newestBackupFolder())) {
-                        backupUtils.restore(BackupUtils.newestBackupFolder(), getContentStorageHelper());
+                        backupUtils.restore(BackupUtils.newestBackupFolder());
                     } else {
-                        backupUtils.selectBackupDirIntent(getContentStorageHelper());
+                        backupUtils.selectBackupDirIntent();
                     }
                 }, button3Info, R.string.wizard_advanced_restore_info);
                 break;
@@ -263,12 +303,21 @@ public class InstallWizardActivity extends AppCompatActivity {
             skip.setText(skipLabelRes == 0 ? R.string.skip : skipLabelRes);
             skip.setOnClickListener(v -> listenerSkip.run());
         }
+
+        final boolean useNextOutlinedButton = nextLabelRes == R.string.skip;
         if (listenerNext == null) {
             next.setVisibility(View.GONE);
+            nextOutlined.setVisibility(View.GONE);
         } else {
-            next.setVisibility(View.VISIBLE);
-            next.setText(nextLabelRes == 0 ? R.string.next : nextLabelRes);
-            next.setOnClickListener(v -> listenerNext.run());
+            next.setVisibility(useNextOutlinedButton ? View.GONE : View.VISIBLE);
+            nextOutlined.setVisibility(useNextOutlinedButton ? View.VISIBLE : View.GONE);
+            if (useNextOutlinedButton) {
+                nextOutlined.setText(nextLabelRes);
+                nextOutlined.setOnClickListener(v -> listenerNext.run());
+            } else {
+                next.setText(nextLabelRes == 0 ? R.string.next : nextLabelRes);
+                next.setOnClickListener(v -> listenerNext.run());
+            }
         }
     }
 
@@ -323,13 +372,14 @@ public class InstallWizardActivity extends AppCompatActivity {
             || (step == WizardStep.WIZARD_PERMISSIONS_MAPFOLDER && !mapFolderNeedsMigration())
             || (step == WizardStep.WIZARD_PERMISSIONS_MAPTHEMEFOLDER && !mapThemeFolderNeedsMigration())
             || (step == WizardStep.WIZARD_PERMISSIONS_GPXFOLDER && !gpxFolderNeedsMigration())
+            || (step == WizardStep.WIZARD_PERMISSIONS_BROUTERTILESFOLDER && !broutertilesFolderNeedsMigration())
             || (step == WizardStep.WIZARD_PLATFORMS && mode == WizardMode.WIZARDMODE_MIGRATION)
             || (step == WizardStep.WIZARD_ADVANCED && mode == WizardMode.WIZARDMODE_MIGRATION)
             ;
     }
 
     private void skipWizard() {
-        Dialogs.confirmPositiveNegativeNeutral(this, getString(R.string.wizard), getString(R.string.wizard_skip_wizard_warning), getString(android.R.string.ok), getString(R.string.back), "", (dialog, which) -> finishWizard(), (dialog, which) -> updateDialog(), null);
+        SimpleDialog.of(this).setTitle(R.string.wizard).setMessage(R.string.wizard_skip_wizard_warning).setButtons(0, R.string.back).confirm((dialog, which) -> finishWizard(), (dialog, which) -> updateDialog());
     }
 
     private void finishWizard() {
@@ -348,7 +398,7 @@ public class InstallWizardActivity extends AppCompatActivity {
     }
 
     public static boolean needsFolderMigration() {
-        return mapFolderNeedsMigration() || mapThemeFolderNeedsMigration() || gpxFolderNeedsMigration();
+        return mapFolderNeedsMigration() || mapThemeFolderNeedsMigration() || gpxFolderNeedsMigration() || broutertilesFolderNeedsMigration();
     }
 
     // -------------------------------------------------------------------
@@ -383,30 +433,27 @@ public class InstallWizardActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         gotoNext();
     }
 
     // -------------------------------------------------------------------
     // Android SAF-based permissions related methods
 
-    private void setFolderTitle(final PersistableFolder folder) {
+    private void setFolderInfo(final PersistableFolder folder, @StringRes final int info, final boolean addSelectOrCreateInfo) {
         title.setText(String.format(getString(R.string.wizard_permissions_folder_title), getString(folder.getNameKeyId())));
+        final String temp = getString(info) + (addSelectOrCreateInfo ? " " + getString(R.string.wizard_select_or_create) : "");
+        text.setText(temp);
     }
 
     private void requestBasefolder() {
         forceSkipButton = false;
         if (!ContentStorageActivityHelper.baseFolderIsSet()) {
             prepareFolderDefaultValues();
-            getContentStorageHelper().migratePersistableFolder(PersistableFolder.BASE, folder -> onReturnFromFolderMigration(ContentStorageActivityHelper.baseFolderIsSet()));
+            this.contentStorageActivityHelper.migratePersistableFolder(PersistableFolder.BASE);
         }
     }
 
-    private ContentStorageActivityHelper getContentStorageHelper() {
-        if (contentStorageActivityHelper == null) {
-            contentStorageActivityHelper = new ContentStorageActivityHelper(this);
-        }
-        return contentStorageActivityHelper;
-    }
 
     private void onReturnFromFolderMigration(final boolean resultOk) {
         if (resultOk) {
@@ -425,7 +472,7 @@ public class InstallWizardActivity extends AppCompatActivity {
         forceSkipButton = false;
         if (mapFolderNeedsMigration()) {
             prepareFolderDefaultValues();
-            getContentStorageHelper().migratePersistableFolder(PersistableFolder.OFFLINE_MAPS, v -> onReturnFromFolderMigration(!mapFolderNeedsMigration()));
+            this.contentStorageActivityHelper.migratePersistableFolder(PersistableFolder.OFFLINE_MAPS);
         }
     }
 
@@ -437,7 +484,7 @@ public class InstallWizardActivity extends AppCompatActivity {
         forceSkipButton = false;
         if (mapThemeFolderNeedsMigration()) {
             prepareFolderDefaultValues();
-            getContentStorageHelper().migratePersistableFolder(PersistableFolder.OFFLINE_MAP_THEMES, v -> onReturnFromFolderMigration(!mapThemeFolderNeedsMigration()));
+            this.contentStorageActivityHelper.migratePersistableFolder(PersistableFolder.OFFLINE_MAP_THEMES);
         }
     }
 
@@ -449,7 +496,19 @@ public class InstallWizardActivity extends AppCompatActivity {
         forceSkipButton = false;
         if (gpxFolderNeedsMigration()) {
             prepareFolderDefaultValues();
-            getContentStorageHelper().migratePersistableFolder(PersistableFolder.GPX, v -> onReturnFromFolderMigration(!gpxFolderNeedsMigration()));
+            this.contentStorageActivityHelper.migratePersistableFolder(PersistableFolder.GPX);
+        }
+    }
+
+    private static boolean broutertilesFolderNeedsMigration() {
+        return Settings.isBrouterAutoTileDownloads() && PersistableFolder.ROUTING_TILES.isLegacy() && Routing.isExternalRoutingInstalled();
+    }
+
+    private void requestBroutertilesfolder() {
+        forceSkipButton = false;
+        if (broutertilesFolderNeedsMigration()) {
+            prepareFolderDefaultValues();
+            this.contentStorageActivityHelper.migratePersistableFolder(PersistableFolder.ROUTING_TILES);
         }
     }
 
@@ -480,6 +539,8 @@ public class InstallWizardActivity extends AppCompatActivity {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putInt(BUNDLE_MODE, mode.id);
         savedInstanceState.putInt(BUNDLE_STEP, step.ordinal());
+        savedInstanceState.putBundle(BUNDLE_CSAH, contentStorageActivityHelper.getState());
+        savedInstanceState.putBundle(BUNDLE_BACKUPUTILS, backupUtils.getState());
     }
 
     @Override
@@ -489,13 +550,16 @@ public class InstallWizardActivity extends AppCompatActivity {
             if (!hasValidGCCredentials()) {
                 Toast.makeText(this, R.string.err_auth_process, Toast.LENGTH_SHORT).show();
             } else {
-                Dialogs.confirm(this, R.string.settings_title_gc, R.string.settings_gc_legal_note, android.R.string.ok, (dialog, which) -> {
+                SimpleDialog.of(this).setTitle(R.string.settings_title_gc).setMessage(R.string.settings_gc_legal_note).confirm((dialog, which) -> {
                     Settings.setGCConnectorActive(true);
                     gotoNext();
-                }, dialog -> { });
+                }, (dialog, i) -> { });
             }
-        } else if (contentStorageActivityHelper == null || !contentStorageActivityHelper.onActivityResult(requestCode, resultCode, data)) {
-            MapDownloaderUtils.onActivityResult(this, requestCode, resultCode, data);
+            return;
         }
+        if ((contentStorageActivityHelper == null || !contentStorageActivityHelper.onActivityResult(requestCode, resultCode, data))) {
+            return;
+        }
+        backupUtils.onActivityResult(requestCode, resultCode, data);
     }
 }

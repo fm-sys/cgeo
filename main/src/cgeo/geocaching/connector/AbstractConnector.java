@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class AbstractConnector implements IConnector {
 
@@ -51,6 +52,12 @@ public abstract class AbstractConnector implements IConnector {
             }
         }
         return strippedList;
+    }
+
+    @NotNull
+    @Override
+    public String[] getGeocodeSqlLikeExpressions() {
+        return new String[]{"%"}; //will match everything
     }
 
     @Override
@@ -104,6 +111,16 @@ public abstract class AbstractConnector implements IConnector {
     }
 
     @Override
+    public String getExtraDescription() {
+        return "";
+    }
+
+    @Override
+    public boolean supportsSettingFoundState() {
+        return false;
+    }
+
+    @Override
     @NonNull
     public String getLicenseText(@NonNull final Geocache cache) {
         return StringUtils.EMPTY;
@@ -121,12 +138,6 @@ public abstract class AbstractConnector implements IConnector {
     public boolean isZippedGPXFile(@NonNull final String fileName) {
         // don't accept any file by default
         return false;
-    }
-
-    @Override
-    public boolean isReliableLatLon(final boolean cacheHasReliableLatLon) {
-        // let every cache have reliable coordinates by default
-        return true;
     }
 
     @Override
@@ -189,8 +200,23 @@ public abstract class AbstractConnector implements IConnector {
     }
 
     @Override
-    public int getCacheMapMarkerId(final boolean disabled) {
-        return disabled ? R.drawable.marker_disabled_other : R.drawable.marker_other;
+    public int getCacheMapMarkerId() {
+        return R.drawable.marker_other;
+    }
+
+    @Override
+    public int getCacheMapMarkerBackgroundId() {
+        return R.drawable.background_other;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerId() {
+        return R.drawable.dot_marker_other;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerBackgroundId() {
+        return R.drawable.dot_background_other;
     }
 
     @Override
@@ -290,12 +316,9 @@ public abstract class AbstractConnector implements IConnector {
         final List<UserAction> actions = getDefaultUserActions();
 
         if (this instanceof ISearchByOwner) {
-            actions.add(new UserAction(R.string.user_menu_view_hidden, context -> CacheListActivity.startActivityOwner(context.getContext(), context.userName)));
+            actions.add(new UserAction(R.string.user_menu_view_hidden, R.drawable.ic_menu_myplaces, context -> CacheListActivity.startActivityOwner(context.getContext(), context.userName)));
         }
 
-        if (this instanceof ISearchByFinder) {
-            actions.add(new UserAction(R.string.user_menu_view_found, context -> CacheListActivity.startActivityFinder(context.getContext(), context.userName)));
-        }
         actions.add(new UserAction(R.string.copy_to_clipboard, R.drawable.ic_menu_copy, context -> {
             ClipboardUtils.copyToClipboard(context.userName);
             ActivityMixin.showToast(context.getContext(), R.string.clipboard_copy_ok);
@@ -328,4 +351,20 @@ public abstract class AbstractConnector implements IConnector {
     public String getCreateAccountUrl() {
         return null;
     }
+
+    @Override
+    public boolean equals(@Nullable final Object obj) {
+        if (!(obj instanceof AbstractConnector)) {
+            return false;
+        }
+
+        return ((AbstractConnector) obj).getName().equals(this.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+
 }

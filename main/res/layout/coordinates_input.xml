@@ -19,9 +19,10 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:shrinkColumns="1,3,5,7"
-        android:stretchColumns="0,1,3,5,7" >
+        android:stretchColumns="0,1,3,5,7">
 
-        <TableRow android:id="@+id/latRow" >
+        <TableRow android:id="@+id/latRow"
+            android:layout_margin="6dp">
 
             <Button
                 android:id="@+id/ButtonLat"
@@ -34,13 +35,14 @@
                 android:layout_marginRight="2dp"
                 android:gravity="right"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_degrees"
                 android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/LatSeparator1"
                 android:text="°"
-                android:textSize="22sp"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:layout_marginRight="1dp"
                 tools:ignore="HardcodedText" />
 
@@ -51,13 +53,14 @@
                 android:layout_marginRight="2dp"
                 android:gravity="right"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_minutes"
                 android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/LatSeparator2"
                 android:text=","
-                android:textSize="22sp"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:layout_marginRight="1dp"
                 tools:ignore="HardcodedText" />
 
@@ -66,15 +69,16 @@
                 style="@style/edittext_full"
                 android:layout_marginLeft="2dp"
                 android:layout_marginRight="2dp"
-                android:gravity="right"
+                android:gravity="left"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_seconds"
                 android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/LatSeparator3"
                 android:text=","
-                android:textSize="22sp"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:layout_marginRight="1dp"
                 tools:ignore="HardcodedText" />
 
@@ -83,7 +87,9 @@
                 style="@style/edittext_full"
                 android:layout_marginLeft="2dp"
                 android:layout_marginRight="2dp"
+                android:gravity="left"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_fraction"
                 android:selectAllOnFocus="true" />
             <TextView
@@ -94,7 +100,8 @@
 
             </TableRow>
 
-        <TableRow android:id="@+id/lonRow" >
+        <TableRow android:id="@+id/lonRow"
+            android:layout_margin="6dp">
 
             <Button
                 android:id="@+id/ButtonLon"
@@ -107,13 +114,14 @@
                 android:layout_marginRight="2dp"
                 android:gravity="right"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_degrees"
                 android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/LonSeparator1"
                 android:text="°"
-                android:textSize="22sp"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:layout_marginRight="1dp"
                 tools:ignore="HardcodedText" />
 
@@ -124,13 +132,14 @@
                 android:layout_marginRight="2dp"
                 android:gravity="right"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_minutes"
                 android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/LonSeparator2"
                 android:text=","
-                android:textSize="22sp"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:layout_marginRight="1dp"
                 tools:ignore="HardcodedText" />
 
@@ -139,15 +148,16 @@
                 style="@style/edittext_full"
                 android:layout_marginLeft="2dp"
                 android:layout_marginRight="2dp"
-                android:gravity="right"
+                android:gravity="left"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_seconds"
                 android:selectAllOnFocus="true" />
 
             <TextView
                 android:id="@+id/LonSeparator3"
                 android:text=","
-                android:textSize="22sp"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:layout_marginRight="1dp"
                 tools:ignore="HardcodedText" />
 
@@ -156,26 +166,28 @@
                 style="@style/edittext_full"
                 android:layout_marginLeft="2dp"
                 android:layout_marginRight="2dp"
+                android:gravity="left"
                 android:inputType="number"
+                android:textSize="@dimen/textSize_inputCoords"
                 android:hint="@string/cc_hint_fraction"
                 android:selectAllOnFocus="true" />
         </TableRow>
     </TableLayout>
 
-    <EditText
-        android:id="@+id/latitude"
-        style="@style/edittext_full"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textNoSuggestions"
-        android:hint="@string/latitude" />
+    <com.google.android.material.textfield.TextInputLayout android:id="@+id/latitudeFrame" style="@style/textinput_edittext_singleline">
+        <EditText
+            android:id="@+id/latitude"
+            style="@style/textinput_embedded"
+            android:inputType="textNoSuggestions"
+            android:hint="@string/latitude" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-    <EditText
-        android:id="@+id/longitude"
-        style="@style/edittext_full"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textNoSuggestions"
-        android:hint="@string/longitude" />
+    <com.google.android.material.textfield.TextInputLayout android:id="@+id/longitudeFrame" style="@style/textinput_edittext_singleline">
+        <EditText
+            android:id="@+id/longitude"
+            style="@style/textinput_embedded"
+            android:inputType="textNoSuggestions"
+            android:hint="@string/longitude" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 </merge>

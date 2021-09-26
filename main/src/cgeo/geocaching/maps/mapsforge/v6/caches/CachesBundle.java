@@ -2,14 +2,19 @@ package cgeo.geocaching.maps.mapsforge.v6.caches;
 
 import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.enumerations.WaypointType;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.location.WaypointDistanceInfo;
+import cgeo.geocaching.maps.MapOptions;
 import cgeo.geocaching.maps.mapsforge.v6.MapHandlers;
 import cgeo.geocaching.maps.mapsforge.v6.MfMapView;
 import cgeo.geocaching.maps.mapsforge.v6.NewMap;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.utils.CompactIconModeUtils;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +29,7 @@ import org.mapsforge.map.layer.LayerManager;
 public class CachesBundle {
 
     private static final int CIRCLES_SEPARATOR = 0;
-    private static final int WP_SEPERATOR = 1;
+    private static final int WP_SEPARATOR = 1;
     private static final int BASE_SEPARATOR = 2;
     private static final int STORED_SEPARATOR = 3;
     private static final int LIVE_SEPARATOR = 4;
@@ -41,7 +46,7 @@ public class CachesBundle {
     private static final int INITIAL_ENTRY_COUNT = 200;
     private final Set<GeoEntry> geoEntries = Collections.synchronizedSet(new GeoEntrySet(INITIAL_ENTRY_COUNT));
 
-    private final WaypointsOverlay wpOverlay;
+    private WaypointsOverlay wpOverlay;
     private AbstractCachesOverlay baseOverlay;
     private AbstractCachesOverlay storedOverlay;
     private LiveCachesOverlay liveOverlay;
@@ -75,7 +80,7 @@ public class CachesBundle {
         this.separators.add(separator5);
         this.mapView.getLayerManager().getLayers().add(separator5);
 
-        this.wpOverlay = new WaypointsOverlay(map, WP_OVERLAY_ID, this.geoEntries, this, separators.get(WP_SEPERATOR), this.mapHandlers);
+        this.wpOverlay = new WaypointsOverlay(map, WP_OVERLAY_ID, this.geoEntries, this, separators.get(WP_SEPARATOR), this.mapHandlers);
     }
 
     /**
@@ -111,16 +116,17 @@ public class CachesBundle {
      * @param mapView      the map view this bundle is displayed on
      * @param mapHandlers  the handlers of the map to send events to
      */
-    public CachesBundle(final NewMap map, final Geopoint coords, final WaypointType waypointType, final MfMapView mapView, final MapHandlers mapHandlers) {
+    public CachesBundle(final NewMap map, final Geopoint coords, final WaypointType waypointType, final MfMapView mapView, final MapHandlers mapHandlers, @Nullable final String geocode) {
         this(map, mapView, mapHandlers);
-        this.baseOverlay = new SinglePointOverlay(map, coords, waypointType, BASE_OVERLAY_ID, this.geoEntries, this, separators.get(BASE_SEPARATOR), this.mapHandlers);
+        this.baseOverlay = new SinglePointOverlay(map, coords, waypointType, BASE_OVERLAY_ID, this.geoEntries, this, separators.get(BASE_SEPARATOR), this.mapHandlers, geocode);
     }
 
-    public void handleLiveLayers(final NewMap map, final boolean enable) {
-        if (enable) {
+    public void handleLiveLayers(final NewMap map, @NonNull final MapOptions mapOptions) {
+
+        if (mapOptions.isLiveEnabled) {
             if (this.liveOverlay == null) {
                 final SeparatorLayer separator2 = this.separators.get(LIVE_SEPARATOR);
-                this.liveOverlay = new LiveCachesOverlay(map, LIVE_OVERLAY_ID, this.geoEntries, this, separator2, this.mapHandlers);
+                this.liveOverlay = new LiveCachesOverlay(map, LIVE_OVERLAY_ID, this.geoEntries, this, separator2, this.mapHandlers, mapOptions.filterContext);
             }
         } else {
             // Disable only download, keep stored caches
@@ -136,13 +142,13 @@ public class CachesBundle {
      *
      * @param enable true - enable stored layer, false - leave untouched
      */
-    public void enableStoredLayers(final NewMap map, final boolean enable) {
-        if (!enable || this.storedOverlay != null) {
+    public void handleStoredLayers(final NewMap map, @NonNull final MapOptions mapOptions) {
+        if (!mapOptions.isStoredEnabled || this.storedOverlay != null) {
             return;
         }
 
         final SeparatorLayer separator1 = this.separators.get(STORED_SEPARATOR);
-        this.storedOverlay = new StoredCachesOverlay(map, STORED_OVERLAY_ID, this.geoEntries, this, separator1, this.mapHandlers);
+        this.storedOverlay = new StoredCachesOverlay(map, STORED_OVERLAY_ID, this.geoEntries, this, separator1, this.mapHandlers, mapOptions.filterContext);
     }
 
     public void onDestroy() {
@@ -157,6 +163,10 @@ public class CachesBundle {
         if (this.liveOverlay != null) {
             this.liveOverlay.onDestroy();
             this.liveOverlay = null;
+        }
+        if (this.wpOverlay != null) {
+            this.wpOverlay.onDestroy();
+            this.wpOverlay = null;
         }
         for (final SeparatorLayer layer : this.separators) {
             this.mapView.getLayerManager().getLayers().remove(layer);
@@ -282,6 +292,21 @@ public class CachesBundle {
         }
     }
 
+    public void setFilterContext(final GeocacheFilterContext filterContext) {
+        if (wpOverlay != null) {
+            wpOverlay.setFilterContext(filterContext);
+        }
+        if (baseOverlay != null) {
+            baseOverlay.setFilterContext(filterContext);
+        }
+        if (storedOverlay != null) {
+            storedOverlay.setFilterContext(filterContext);
+        }
+        if (liveOverlay != null) {
+            liveOverlay.setFilterContext(filterContext);
+        }
+    }
+
     public boolean isDownloading() {
         return liveOverlay != null && liveOverlay.isDownloading();
     }
@@ -324,7 +349,7 @@ public class CachesBundle {
 
     public WaypointDistanceInfo getClosestDistanceInM(final Geopoint coord) {
         WaypointDistanceInfo info = new WaypointDistanceInfo("", 50000000);
-        WaypointDistanceInfo temp = info;
+        WaypointDistanceInfo temp;
         if (baseOverlay != null) {
             temp = baseOverlay.getClosestDistanceInM(coord);
             if (temp.meters > 0 && temp.meters < info.meters) {

@@ -2,7 +2,9 @@ package cgeo.geocaching.maps;
 
 import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.enumerations.WaypointType;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.location.Geopoint;
+import cgeo.geocaching.models.Waypoint;
 import cgeo.geocaching.settings.Settings;
 
 import android.app.Activity;
@@ -35,6 +37,10 @@ public final class DefaultMap {
         new MapOptions(coords, type, title).startIntent(fromActivity, cls);
     }
 
+    public static void startActivityCoords(final Context fromActivity, final Class<?> cls, final Waypoint waypoint) {
+        new MapOptions(waypoint.getCoords(), waypoint.getWaypointType(), waypoint.getName(), waypoint.getGeocode()).startIntent(fromActivity, cls);
+    }
+
     public static void startActivityCoords(final Activity fromActivity, final Geopoint coords, final WaypointType type, final String title) {
         startActivityCoords(fromActivity, getDefaultMapClass(), coords, type, title);
     }
@@ -44,19 +50,24 @@ public final class DefaultMap {
     }
 
     public static void startActivityGeoCode(final Context fromActivity, final Class<?> cls, final String geocode) {
-        new MapOptions(geocode).startIntent(fromActivity, cls);
+        final MapOptions mo = new MapOptions(geocode);
+        mo.filterContext = new GeocacheFilterContext(GeocacheFilterContext.FilterType.TRANSIENT);
+        mo.startIntent(fromActivity, cls);
     }
 
     public static void startActivityGeoCode(final Activity fromActivity, final String geocode) {
         startActivityGeoCode(fromActivity, getDefaultMapClass(), geocode);
     }
 
-    public static void startActivitySearch(final Activity fromActivity, final Class<?> cls, final SearchResult search, final String title) {
-        new MapOptions(search, title).startIntent(fromActivity, cls);
+    public static void startActivitySearch(final Activity fromActivity, final Class<?> cls, final SearchResult search, final String title, final int fromList) {
+        new MapOptions(search, title, fromList).startIntent(fromActivity, cls);
     }
 
-    public static void startActivitySearch(final Activity fromActivity, final SearchResult search, final String title) {
-        startActivitySearch(fromActivity, getDefaultMapClass(), search, title);
+    public static void startActivitySearch(final Activity fromActivity, final SearchResult search, final String title, final int fromList) {
+        final MapOptions mo = new MapOptions(search, title, fromList);
+        mo.filterContext = new GeocacheFilterContext(GeocacheFilterContext.FilterType.TRANSIENT);
+        mo.startIntent(fromActivity, getDefaultMapClass());
     }
+
 
 }

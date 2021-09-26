@@ -19,7 +19,7 @@ if (isContinuousIntegrationServer()) {
 }
 
 android {
-    compileSdkVersion 29 // TODO SAF: leave at 29 until done, change to 30 when done
+    compileSdkVersion 30
 
     compileOptions {
         // use the diamond operator and some other goodies in Android
@@ -30,7 +30,7 @@ android {
     defaultConfig {
         minSdkVersion 21
         //noinspection OldTargetApi
-        targetSdkVersion 29 // TODO SAF: leave at 29 until done, change to 30 when done
+        targetSdkVersion 30
         versionName versionNameFromDate()
         versionCode versionCodeFromDate(0)
 
@@ -78,6 +78,12 @@ android {
 
             // code coverage
             testCoverageEnabled isContinuousIntegrationServer()
+
+            // replace in AndroidManifest.xml
+            manifestPlaceholders = [
+                appIcon:      "@mipmap/ic_launcher_debug",
+                appIconRound: "@mipmap/ic_launcher_debug_round"
+            ]
         }
         nightly {
             def nightlyName = System.getenv('NB') // NB, NB1, ...
@@ -85,6 +91,10 @@ android {
             signingConfig signingConfigs.release
             // use release version of source code library dependencies
             matchingFallbacks = ['release']
+            manifestPlaceholders = [
+                appIcon:      "@mipmap/ic_launcher_nightly",
+                appIconRound: "@mipmap/ic_launcher_nightly_round"
+            ]
         }
         rc {
             def rcName = System.getenv('RC') // RC, RC1, RC2 ...
@@ -92,14 +102,26 @@ android {
             signingConfig signingConfigs.release
             // use release version of source code library dependencies
             matchingFallbacks = ['release']
+            manifestPlaceholders = [
+                appIcon:      "@mipmap/ic_launcher_rc",
+                appIconRound: "@mipmap/ic_launcher_rc_round"
+            ]
         }
         legacy {
             signingConfig signingConfigs.release
             // use release version of source code library dependencies
             matchingFallbacks = ['release']
+            manifestPlaceholders = [
+                appIcon:      "@mipmap/ic_launcher",
+                appIconRound: "@mipmap/ic_launcher_round"
+            ]
         }
         release {
             signingConfig signingConfigs.release
+            manifestPlaceholders = [
+                appIcon:      "@mipmap/ic_launcher",
+                appIconRound: "@mipmap/ic_launcher_round"
+            ]
         }
     }
 
@@ -165,13 +187,6 @@ android {
 
         // ExtraTranslation - old translation will be deleted by the next crowdin import
         disable 'ExtraTranslation'
-
-        // deactivate this rule only on CI
-        // see https://github.com/cgeo/cgeo/issues/9224
-        // Resource IDs will be non-final in Android Gradle Plugin version 5.0
-        if (isContinuousIntegrationServer()) {
-            disable 'NonConstantResourceId'
-        }
     }
 
     packagingOptions {
@@ -280,13 +295,13 @@ dependencies {
 
     // SpotBugs (successor of FindBugs)
     implementation 'net.jcip:jcip-annotations:1.0'
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.2.1'
+    implementation 'com.github.spotbugs:spotbugs-annotations:4.4.1'
 
     // GeographicLib
-    implementation 'net.sf.geographiclib:GeographicLib-Java:1.51'
+    implementation 'net.sf.geographiclib:GeographicLib-Java:1.52'
 
     // Jackson XML processing
-    def jacksonVersion = '2.12.2'
+    def jacksonVersion = '2.12.5'
     implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
@@ -298,27 +313,30 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
 
     // Leak Canary, memory leak detection
-    def leakCanaryVersion = '2.6'
+    def leakCanaryVersion = '2.7'
     debugImplementation "com.squareup.leakcanary:leakcanary-android:$leakCanaryVersion"
     implementation "com.squareup.leakcanary:plumber-android:$leakCanaryVersion"
 
     // Locus Maps integration
-    implementation "com.asamm:locus-api-android:0.9.28"
+    implementation "com.asamm:locus-api-android:0.9.32"
 
     // Mapsforge new version
-    def mapsforgeVersion = '9cdb3396fa'
-    implementation "com.github.mapsforge.mapsforge:mapsforge-core:$mapsforgeVersion"
-    implementation "com.github.mapsforge.mapsforge:mapsforge-map:$mapsforgeVersion"
-    implementation "com.github.mapsforge.mapsforge:mapsforge-map-android:$mapsforgeVersion"
-    implementation "com.github.mapsforge.mapsforge:mapsforge-map-reader:$mapsforgeVersion"
-    implementation "com.github.mapsforge.mapsforge:mapsforge-themes:$mapsforgeVersion"
-/* previous declaration - version 0.15.0
+    def mapsforgeVersion = '0.16.0'
     implementation "org.mapsforge:mapsforge-core:$mapsforgeVersion"
     implementation "org.mapsforge:mapsforge-map:$mapsforgeVersion"
     implementation "org.mapsforge:mapsforge-map-android:$mapsforgeVersion"
     implementation "org.mapsforge:mapsforge-map-reader:$mapsforgeVersion"
     implementation "org.mapsforge:mapsforge-themes:$mapsforgeVersion"
-*/
+
+    /* use following declaration type if a specific build is needed
+    def mapsforgeVersion = '905e9d48bb' // master as of 31.3.21, see https://jitpack.io/#mapsforge/mapsforge
+    implementation "com.github.mapsforge.mapsforge:mapsforge-core:$mapsforgeVersion"
+    implementation "com.github.mapsforge.mapsforge:mapsforge-map:$mapsforgeVersion"
+    implementation "com.github.mapsforge.mapsforge:mapsforge-map-android:$mapsforgeVersion"
+    implementation "com.github.mapsforge.mapsforge:mapsforge-map-reader:$mapsforgeVersion"
+    implementation "com.github.mapsforge.mapsforge:mapsforge-themes:$mapsforgeVersion"
+    */
+
     configurations {
         all*.exclude group: 'net.sf.kxml', module: 'kxml2' // duplicate XmlPullParser class
     }
@@ -330,49 +348,49 @@ dependencies {
     implementation project(":mapswithme-api")
 
     // Metadata Extractor, EXIF location extraction from images
-    implementation 'com.drewnoakes:metadata-extractor:2.15.0'
+    implementation 'com.drewnoakes:metadata-extractor:2.16.0'
 
     implementation 'com.squareup.okhttp3:okhttp:4.9.1'
 
     // Play Services
-    implementation 'com.google.android.gms:play-services-location:17.1.0'
-    implementation 'com.google.android.gms:play-services-maps:17.0.0'
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
+    implementation 'com.google.android.gms:play-services-maps:17.0.1'
     // somehow there is a transitive play service dependency which we don't want
     configurations.all*.exclude module: "play-services-measurement"
 
     // Support Library Design
-    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'com.google.android.material:material:1.4.0'
 
     // ProcessPhoenix, reliable process restart
-    implementation 'com.jakewharton:process-phoenix:2.0.0'
+    // implementation 'com.jakewharton:process-phoenix:2.0.0'
 
     // RxJava
-    implementation 'io.reactivex.rxjava3:rxjava:3.0.11'
+    implementation 'io.reactivex.rxjava3:rxjava:3.0.13'
     implementation "io.reactivex.rxjava3:rxandroid:3.0.0"
 
     // Support Library AppCompat
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
 
     // Support Library core (used for eg. HtmlCompat)
-    implementation 'androidx.core:core:1.3.2'
+    implementation 'androidx.core:core:1.6.0'
 
     // Support Library ExifInterface
-    implementation 'androidx.exifinterface:exifinterface:1.3.2'
+    implementation 'androidx.exifinterface:exifinterface:1.3.3'
 
     // Support Library GridLayout used by the coordinate calculator
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
 
     // Support Library RecyclerView
-    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
 
     // Support Annotations. use same version for the main app and the test app
-    def annotationVersion = '1.1.0'
+    def annotationVersion = '1.2.0'
     implementation "androidx.annotation:annotation:$annotationVersion"
     androidTestImplementation "androidx.annotation:annotation:$annotationVersion"
 
     // Testing Support Libraries
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
     // Drag n drop for listview
     implementation 'asia.ivity.android:drag-sort-listview:1.0'
@@ -380,25 +398,17 @@ dependencies {
     // needed for chrome custom tabs
     implementation 'androidx.browser:browser:1.3.0'
 
-    // ViewPagerIndicator, view pager titles for cache details and similar view pager based activities
-    //             url 'https://dl.bintray.com/alexeydanilov/maven'
-    // this is a fork of the original viewpager library
-    implementation 'com.viewpagerindicator:viewpagerindicator:2.4.3'
-
     // Zxing barcode reader integration
     implementation 'com.google.zxing:android-integration:3.3.0'
+
+    // MarkDown view
+    implementation 'io.noties.markwon:core:4.6.2'
 }
 
-/*
- * un-mocking of Android classes that don't depend on the Android device, but are portable Java only, like SparseArray
- */
+// un-mocking of Android classes that don't depend on the Android device, but are portable Java only, like SparseArray
 apply plugin: 'de.mobilej.unmock'
 
-
-/*
- * verify existence of the necessary keys for compilation, instead of waiting for a compile error
- */
-
+// verify existence of the necessary keys for compilation, instead of waiting for a compile error
 project.afterEvaluate{
     preBuild.dependsOn("verifyCgeoKeys")
 }
@@ -430,31 +440,24 @@ tasks.register('verifyCgeoKeys') {
     }
 }
 
-
-/*
- * version number from the current date, plus an offset defined by the build type (to define which versions overwrite each other)
- */
+// version number from the current date, plus an offset defined by the build type (to define which versions overwrite each other)
 static def versionCodeFromDate(offset) {
     def date = new Date()
     def formattedDate = date.format('yyyyMMdd')
     return Integer.valueOf(formattedDate) + offset
 }
 
-/*
- * version name based on current date
- */
+// version name based on current date
 static def versionNameFromDate() {
     def date = new Date()
     def formattedDate = date.format('yyyy.MM.dd')
     return formattedDate
 }
 
+// get the most recent git commit ID in long and short form
 class GitCommit {
     static String commitId
 
-    /*
-     * get the most recent git commit ID
-     */
     static String current() {
         if (commitId == null) {
             Process p = ['git', 'rev-parse', 'HEAD'].execute()
@@ -471,16 +474,12 @@ class GitCommit {
     }
 }
 
-/*
- * check whether this is a local build or a CI server build
- */
+// check whether this is a local build or a CI server build
 static def isContinuousIntegrationServer() {
     return System.getenv('BUILD_NUMBER') != null
 }
 
-/*
- * have a run task for our builds to launch the app directly from gradle
- */
+// have a run task for our builds to launch the app directly from gradle
 android.applicationVariants.all { variant ->
     if (variant.installProvider) {
         tasks.register("run${variant.name.capitalize()}") {
@@ -521,7 +520,6 @@ tasks.create('testDebug') {
 /*
  * signing of release APK, use a properties file like in templates/private.properties
  */
-
 // dynamically load the signing values from private.properties
 File privatePropertiesFile = rootProject.file('private.properties')
 if (privatePropertiesFile.exists()) {
@@ -600,11 +598,18 @@ tasks.whenTaskAdded { theTask ->
  */
 apply plugin: 'checkstyle'
 
+checkstyle {
+    // assign the checkstyle version explicitly here and in .idea/checkstyle-idea.xml
+    toolVersion = '8.44'
+
+    configDirectory = rootProject.projectDir
+    configFile = rootProject.file("checkstyle.xml")
+}
+
 tasks.register('checkstyle', Checkstyle) {
     group 'verification'
     description 'Check code standard'
 
-    configFile file("${project.rootDir}/checkstyle.xml")
     source 'src'
     source '../tests/src'
     source '../tests/src-android'
@@ -615,30 +620,4 @@ tasks.register('checkstyle', Checkstyle) {
 
 tasks.named('check') {
     dependsOn tasks.named('checkstyle')
-}
-
-
-/*
- * Ribbonizer, adds ribbons to launcher icon of debug builds
- * https://github.com/gfx/gradle-android-ribbonizer-plugin
- * works fine until android 7.1, see https://github.com/cgeo/cgeo/issues/8896
- */
-apply plugin: 'com.github.gfx.ribbonizer'
-
-ribbonizer {
-    // use blue ribbon instead of default green
-    builder { variant, iconFile ->
-        def filter = customColorRibbonFilter(variant, iconFile, "#0000FF")
-        if (variant.buildType.name == "debug") {
-            return filter
-        } else if (variant.buildType.name == "nightly") {
-            return filter
-        } else if (variant.buildType.name == "rc") {
-            filter.label = "beta"
-            return filter
-        }
-    }
-
-    // force specific variants to be ribbonized
-    forcedVariantsNames "basicNightly", "basicRc"
 }

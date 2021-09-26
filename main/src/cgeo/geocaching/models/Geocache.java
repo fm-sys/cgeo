@@ -8,7 +8,6 @@ import cgeo.geocaching.connector.ConnectorFactory;
 import cgeo.geocaching.connector.IConnector;
 import cgeo.geocaching.connector.ILoggingManager;
 import cgeo.geocaching.connector.capability.IFavoriteCapability;
-import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.connector.capability.ISearchByCenter;
 import cgeo.geocaching.connector.capability.ISearchByGeocode;
 import cgeo.geocaching.connector.capability.WatchListCapability;
@@ -51,6 +50,8 @@ import cgeo.geocaching.utils.LazyInitializedList;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.MatcherWrapper;
 import cgeo.geocaching.utils.ShareUtils;
+import cgeo.geocaching.utils.functions.Func1;
+import static cgeo.geocaching.utils.Formatter.generateShortGeocode;
 
 import android.app.Activity;
 import android.content.Context;
@@ -89,6 +90,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
+
 /**
  * Internal representation of a "cache"
  */
@@ -113,6 +115,7 @@ public class Geocache implements IWaypoint {
 
     @Nullable
     private Date hidden = null;
+    private Date lastFound = null;
     /**
      * lazy initialized
      */
@@ -127,7 +130,6 @@ public class Geocache implements IWaypoint {
      */
     private String location = null;
     private UncertainProperty<Geopoint> coords = new UncertainProperty<>(null);
-    private boolean reliableLatLon = false;
     private final PersonalNote personalNote = new PersonalNote();
     /**
      * lazy initialized
@@ -150,8 +152,8 @@ public class Geocache implements IWaypoint {
     // FIXME: this makes no sense to favor this over the other. 0 should not be a special case here as it is
     // in the range of acceptable values. This is probably the case at other places (rating etc.) too.
     private int votes = 0;
-    private float myVote = 0; // valid ratings are larger than zero
-    private int inventoryItems = 0;
+    private float myVote = 0.0f; // valid ratings are larger than zero
+    private int inventoryItems = -1;
     private final LazyInitializedList<String> attributes = new LazyInitializedList<String>() {
         @Override
         public List<String> call() {
@@ -168,7 +170,7 @@ public class Geocache implements IWaypoint {
 
     private List<Trackable> inventory = null;
     private Map<LogType, Integer> logCounts = new EnumMap<>(LogType.class);
-    private boolean userModifiedCoords = false;
+    private Boolean userModifiedCoords = null;
     // temporary values
     private boolean statusChecked = false;
     private String directionImg = "";
@@ -217,13 +219,14 @@ public class Geocache implements IWaypoint {
         }
 
         updated = System.currentTimeMillis();
+        //storageLocation.addAll(other.getStorageLocation()); // seems correct but has side effects / failing tests
+
         // if parsed cache is not yet detailed and stored is, the information of
         // the parsed cache will be overwritten
         if (!detailed && other.detailed) {
             detailed = true;
             detailedUpdate = other.detailedUpdate;
             // boolean values must be enumerated here. Other types are assigned outside this if-statement
-            reliableLatLon = other.reliableLatLon;
             finalDefined = other.finalDefined;
 
             if (StringUtils.isBlank(getHint())) {
@@ -289,6 +292,9 @@ public class Geocache implements IWaypoint {
         if (hidden == null) {
             hidden = other.hidden;
         }
+        if (lastFound == null) {
+            lastFound = other.lastFound;
+        }
         if (size == CacheSize.UNKNOWN) {
             size = other.size;
         }
@@ -346,7 +352,11 @@ public class Geocache implements IWaypoint {
             logCounts = other.logCounts;
         }
 
-        if (!userModifiedCoords && other.hasUserModifiedCoords()) {
+        if (userModifiedCoords == null) {
+            userModifiedCoords = other.userModifiedCoords;
+        }
+
+        if (!hasUserModifiedCoords() && other.hasUserModifiedCoords()) {
             final Waypoint original = other.getOriginalWaypoint();
             if (original != null) {
                 original.setCoords(getCoords());
@@ -356,10 +366,8 @@ public class Geocache implements IWaypoint {
             coords = UncertainProperty.getMergedProperty(coords, other.coords);
         }
         // if cache has ORIGINAL type waypoint ... it is considered that it has modified coordinates, otherwise not
-        userModifiedCoords = getOriginalWaypoint() != null;
-
-        if (!reliableLatLon) {
-            reliableLatLon = other.reliableLatLon;
+        if (getOriginalWaypoint() != null) {
+            userModifiedCoords = true;
         }
 
         if (!preventWaypointsFromNote) {
@@ -378,8 +386,15 @@ public class Geocache implements IWaypoint {
      * Returns the Original Waypoint if exists
      */
     public Waypoint getOriginalWaypoint() {
+        return getFirstMatchingWaypoint(wpt -> wpt.getWaypointType() == WaypointType.ORIGINAL);
+    }
+
+    /**
+     * Returns the first found Waypoint matching the given condition
+     */
+    private Waypoint getFirstMatchingWaypoint(final Func1<Waypoint, Boolean> condition) {
         for (final Waypoint wpt : waypoints) {
-            if (wpt.getWaypointType() == WaypointType.ORIGINAL) {
+            if (wpt != null && condition.call(wpt)) {
                 return wpt;
             }
         }
@@ -406,7 +421,6 @@ public class Geocache implements IWaypoint {
                 difficulty == other.difficulty &&
                 terrain == other.terrain &&
                 UncertainProperty.equalValues(coords, other.coords) &&
-                reliableLatLon == other.reliableLatLon &&
                 Objects.equals(disabled, other.disabled) &&
                 Objects.equals(archived, other.archived) &&
                 Objects.equals(lists, other.lists) &&
@@ -420,6 +434,7 @@ public class Geocache implements IWaypoint {
                 favoritePoints == other.favoritePoints &&
                 Objects.equals(onWatchlist, other.onWatchlist) &&
                 Objects.equals(hidden, other.hidden) &&
+                Objects.equals(lastFound, other.lastFound) &&
                 StringUtils.equalsIgnoreCase(guid, other.guid) &&
                 StringUtils.equalsIgnoreCase(getHint(), other.getHint()) &&
                 StringUtils.equalsIgnoreCase(cacheId, other.cacheId) &&
@@ -599,7 +614,7 @@ public class Geocache implements IWaypoint {
     }
 
     public boolean supportsRefresh() {
-        return getConnector() instanceof ISearchByGeocode && getConnector() instanceof ILogin;
+        return getConnector() instanceof ISearchByGeocode && !InternalConnector.getInstance().equals(getConnector());
     }
 
     public boolean supportsWatchList() {
@@ -639,6 +654,11 @@ public class Geocache implements IWaypoint {
         return geocode;
     }
 
+    @NonNull
+    public String getShortGeocode() {
+       return generateShortGeocode(geocode);
+    }
+
     /**
      * @return displayed owner, might differ from the real owner
      */
@@ -669,6 +689,11 @@ public class Geocache implements IWaypoint {
 
     public boolean isPremiumMembersOnly() {
         return BooleanUtils.isTrue(premiumMembersOnly);
+    }
+
+    @Nullable
+    public Boolean isPremiumMembersOnlyRaw() {
+        return premiumMembersOnly;
     }
 
     public void setPremiumMembersOnly(final boolean members) {
@@ -806,6 +831,10 @@ public class Geocache implements IWaypoint {
         return getConnector().supportsDescriptionchange();
     }
 
+    public boolean supportsSettingFoundState() {
+        return getConnector().supportsSettingFoundState();
+    }
+
     private String getShareSubject() {
         final StringBuilder subject = new StringBuilder("Geocache ");
         subject.append(geocode);
@@ -820,7 +849,7 @@ public class Geocache implements IWaypoint {
     }
 
     public boolean canShareLog(final LogEntry logEntry) {
-        return !StringUtils.isBlank(getConnector().getCacheLogUrl(this, logEntry));
+        return StringUtils.isNotBlank(getConnector().getCacheLogUrl(this, logEntry));
     }
 
     public String getServiceSpecificLogId(final LogEntry logEntry) {
@@ -865,6 +894,11 @@ public class Geocache implements IWaypoint {
         return BooleanUtils.isTrue(favorite);
     }
 
+    @Nullable
+    public Boolean isFavoriteRaw() {
+        return favorite;
+    }
+
     public void setFavorite(final boolean favorite) {
         this.favorite = favorite;
     }
@@ -873,6 +907,22 @@ public class Geocache implements IWaypoint {
     public Date getHiddenDate() {
         if (hidden != null) {
             return new Date(hidden.getTime());
+        }
+        return null;
+    }
+
+    @Nullable
+    public Date getLastFound() {
+        if (lastFound == null && inDatabase()) {
+            for (LogEntry logEntry : getLogs()) {
+                if (logEntry.logType.isFoundLog()) {
+                    lastFound = new Date(logEntry.date);
+                    break;
+                }
+            }
+        }
+        if (lastFound != null) {
+            return new Date(lastFound.getTime());
         }
         return null;
     }
@@ -898,6 +948,9 @@ public class Geocache implements IWaypoint {
      * @return a statistic how often the caches has been found, disabled, archived etc.
      */
     public Map<LogType, Integer> getLogCounts() {
+        if (logCounts.isEmpty() && inDatabase()) {
+            setLogCounts(DataStore.loadLogCounts(getGeocode()));
+        }
         return logCounts;
     }
 
@@ -979,6 +1032,10 @@ public class Geocache implements IWaypoint {
         this.hidden = hidden != null ? new Date(hidden.getTime()) : null;
     }
 
+    public void setLastFound(@Nullable final Date lastFound) {
+        this.lastFound = lastFound != null ? new Date(lastFound.getTime()) : null;
+    }
+
     public Float getDirection() {
         return direction;
     }
@@ -1016,17 +1073,6 @@ public class Geocache implements IWaypoint {
      */
     public void setCoords(final Geopoint coords, final int zoomlevel) {
         this.coords = new UncertainProperty<>(coords, zoomlevel);
-    }
-
-    /**
-     * @return true if the coordinates are from the cache details page and the user has been logged in
-     */
-    public boolean isReliableLatLon() {
-        return getConnector().isReliableLatLon(reliableLatLon);
-    }
-
-    public void setReliableLatLon(final boolean reliableLatLon) {
-        this.reliableLatLon = reliableLatLon;
     }
 
     public void setShortDescription(final String shortdesc) {
@@ -1068,7 +1114,11 @@ public class Geocache implements IWaypoint {
      * @return the inventory size
      */
     public int getInventoryItems() {
-        return inventoryItems;
+        return Math.max(inventoryItems, 0);
+    }
+
+    public boolean hasInventoryItemsSet() {
+        return inventoryItems >= 0;
     }
 
     /**
@@ -1166,6 +1216,11 @@ public class Geocache implements IWaypoint {
         return BooleanUtils.isTrue(onWatchlist);
     }
 
+    @Nullable
+    public Boolean isOnWatchlistRaw() {
+        return onWatchlist;
+    }
+
     public void setOnWatchlist(final boolean onWatchlist) {
         this.onWatchlist = onWatchlist;
     }
@@ -1232,7 +1287,9 @@ public class Geocache implements IWaypoint {
      */
     @NonNull
     public List<LogEntry> getLogs() {
-        return inDatabase() ? DataStore.loadLogs(geocode) : Collections.emptyList();
+        //if a cache was freshly loaded from server, it may not have the "logs" flag although logs exist in local db.
+        return DataStore.loadLogs(geocode);
+        //return inDatabase() ? DataStore.loadLogs(geocode) : Collections.emptyList();
     }
 
     /**
@@ -1485,16 +1542,15 @@ public class Geocache implements IWaypoint {
      * Reset {@code finalDefined} based on current list of stored waypoints
      */
     private void resetFinalDefined() {
-        finalDefined = false;
-        for (final Waypoint wp : waypoints) {
-            if (wp.isFinalWithCoords()) {
-                finalDefined = true;
-                break;
-            }
-        }
+        finalDefined = getFirstMatchingWaypoint(Waypoint::isFinalWithCoords) != null;
     }
 
     public boolean hasUserModifiedCoords() {
+        return BooleanUtils.isTrue(userModifiedCoords);
+    }
+
+    @Nullable
+    public Boolean getUserModifiedCoordsRaw() {
         return userModifiedCoords;
     }
 
@@ -1585,6 +1641,7 @@ public class Geocache implements IWaypoint {
      *            the id of the waypoint to look for
      * @return waypoint or {@code null}
      */
+    @Nullable
     public Waypoint getWaypointById(final int id) {
         for (final Waypoint waypoint : waypoints) {
             if (waypoint.getId() == id) {
@@ -1601,6 +1658,7 @@ public class Geocache implements IWaypoint {
      *            the prefix of the waypoint to look for
      * @return waypoint or {@code null}
      */
+    @Nullable
     public Waypoint getWaypointByPrefix(final String prefix) {
         for (final Waypoint waypoint : waypoints) {
             if (waypoint.getPrefix().equals(prefix)) {
@@ -1629,7 +1687,8 @@ public class Geocache implements IWaypoint {
     public boolean addWaypointsFromText(@Nullable final String text, final boolean updateDb, @NonNull final String namePrefix, final boolean forceExtraction) {
         boolean changed = false;
         if (forceExtraction || !preventWaypointsFromNote) {
-            for (final Waypoint parsedWaypoint : Waypoint.parseWaypoints(StringUtils.defaultString(text), namePrefix)) {
+            final WaypointParser waypointParser = new WaypointParser(namePrefix);
+            for (final Waypoint parsedWaypoint : waypointParser.parseWaypoints(StringUtils.defaultString(text))) {
                 final Waypoint existingWaypoint = findWaypoint(parsedWaypoint);
                 if (null == existingWaypoint) {
                     //add as new waypoint
@@ -1647,12 +1706,13 @@ public class Geocache implements IWaypoint {
         return changed;
     }
 
-    private Waypoint findWaypoint(final Waypoint searchWp) {
+    @Nullable
+    private Waypoint findWaypoint(@NonNull final Waypoint searchWp) {
         //try to match prefix
-        final String prefix = searchWp.getPrefix();
-        if (null != prefix) {
+        final String searchWpPrefix = searchWp.getPrefix();
+        if (StringUtils.isNotBlank(searchWpPrefix)) {
             for (final Waypoint waypoint : waypoints) {
-                if (!StringUtils.isBlank(prefix) && !StringUtils.isBlank(waypoint.getPrefix()) && prefix.equals(waypoint.getPrefix())) {
+                if (searchWpPrefix.equals(waypoint.getPrefix())) {
                     return waypoint;
                 }
             }
@@ -1660,23 +1720,27 @@ public class Geocache implements IWaypoint {
         }
 
         //try to match coordinate
-        final Geopoint point = searchWp.getCoords();
-        if (null != point) {
+        final Geopoint searchWpPoint = searchWp.getCoords();
+        if (null != searchWpPoint) {
             for (final Waypoint waypoint : waypoints) {
                 // waypoint can have no coords such as a Final set by cache owner
                 final Geopoint coords = waypoint.getCoords();
-                if (coords != null && coords.equalsDecMinute(point)) {
+                if (coords != null && coords.equalsDecMinute(searchWpPoint)) {
                     return waypoint;
                 }
             }
-            return null;
         }
 
-        //try to match name if prefix and coords are null
+        //try to match name if prefix is empty and coords are not equal.
+        //But only, if coordinates of waypoint can be updated, otherwise create a new waypoint
+        //(it's not a bug, it's a feature - otherwise the coordinates gets lost)
         final String searchWpName = searchWp.getName();
-        if (!StringUtils.isBlank(searchWpName)) {
+        final String searchWpType = searchWp.getWaypointType().getL10n();
+        if (StringUtils.isNotBlank(searchWpName)) {
             for (final Waypoint waypoint : waypoints) {
-                if (searchWpName.equals(waypoint.getName()) && searchWp.getWaypointType().getL10n().equals(waypoint.getWaypointType().getL10n())) {
+                final Geopoint point = waypoint.getCoords();
+                final boolean canChangeCoordinates = null == searchWpPoint || null == point;
+                if (canChangeCoordinates && searchWpName.equals(waypoint.getName()) && searchWpType.equals(waypoint.getWaypointType().getL10n())) {
                     return waypoint;
                 }
             }
@@ -1878,7 +1942,8 @@ public class Geocache implements IWaypoint {
         }
     }
 
-    public static SearchResult searchByGeocode(final String geocode, final String guid, final boolean forceReload, final DisposableHandler handler) {
+    @Nullable
+    public static SearchResult searchByGeocode(@Nullable final String geocode, @Nullable final String guid, final boolean forceReload, @Nullable final DisposableHandler handler) {
         if (StringUtils.isBlank(geocode) && StringUtils.isBlank(guid)) {
             Log.e("Geocache.searchByGeocode: No geocode nor guid given");
             return null;
@@ -1998,7 +2063,19 @@ public class Geocache implements IWaypoint {
     }
 
     public int getMapMarkerId() {
-        return getConnector().getCacheMapMarkerId(isDisabled() || isArchived());
+        return getConnector().getCacheMapMarkerId();
+    }
+
+    public int getMapMarkerBackgroundId() {
+        return getConnector().getCacheMapMarkerBackgroundId();
+    }
+
+    public int getMapDotMarkerId() {
+        return getConnector().getCacheMapDotMarkerId();
+    }
+
+    public int getMapDotMarkerBackgroundId() {
+        return getConnector().getCacheMapDotMarkerBackgroundId();
     }
 
     public boolean isLogPasswordRequired() {
@@ -2031,9 +2108,6 @@ public class Geocache implements IWaypoint {
      * TODO: 0 should be a valid value, maybe need to return -1 if the number is not known
      */
     public int getFindsCount() {
-        if (getLogCounts().isEmpty()) {
-            setLogCounts(inDatabase() ? DataStore.loadLogCounts(getGeocode()) : Collections.emptyMap());
-        }
         int sumFound = 0;
         for (final Entry<LogType, Integer> logCount : getLogCounts().entrySet()) {
             if (logCount.getKey().isFoundLog()) {
@@ -2047,7 +2121,7 @@ public class Geocache implements IWaypoint {
     }
 
     public boolean applyDistanceRule() {
-        return (getType().applyDistanceRule() || hasUserModifiedCoords()) && getConnector() == GCConnector.getInstance();
+        return (getType().applyDistanceRule() || hasUserModifiedCoords()) && (getConnector() == GCConnector.getInstance() || getConnector() == InternalConnector.getInstance());
     }
 
     @NonNull
@@ -2096,6 +2170,7 @@ public class Geocache implements IWaypoint {
         ActivityMixin.showToast(activity, StringUtils.defaultIfBlank(hint, activity.getString(R.string.cache_hint_not_available)));
     }
 
+    @NonNull
     public GeoitemRef getGeoitemRef() {
         return new GeoitemRef(getGeocode(), getCoordType(), getGeocode(), 0, getName(), getType().markerId);
     }

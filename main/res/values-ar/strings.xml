@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
     <!-- basics -->
     <string name="cache">المخبئ</string>
     <string name="detail">التفاصيل</string>
@@ -165,7 +167,6 @@
     <string name="err_tb_display">c:geo لا يمكنه عرض أمتعة السفر التي تريدها. هل هي حقا أمتعة سفر؟</string>
     <string name="err_tb_details_open">c:geo لا يمكنه فتح تفاصيل أمتعة السفر.</string>
     <string name="err_tb_not_loggable">أمتعة السفر هذه غير قابل للتسجيل.</string>
-    <string name="err_tb_find">c:geo لا يستطيع العثور على أمتعة السفر</string>
     <string name="err_tb_find_that">c:geo لا يستطيع العثور على أمتعة السفر تلك.</string>
     <string name="err_waypoint_cache_unknown">c:geo لا يعرف ماهو المخبئ الذي تريد أن تضيف له إحداثية طريق.</string>
     <string name="err_waypoint_add_failed">c:geo فشل في إضافة إحداثية طريق.</string>
@@ -237,7 +238,6 @@
     <string name="menu_history">التأريخ</string>
     <string name="menu_filter">فلتر</string>
     <string name="menu_scan_geo">نسخ الكود المخبئ</string>
-    <string name="menu_pocket_queries">الاستفسارات</string>
     <string name="menu_scan_description">c:geo يمكنه نسخ كود المخبآت التي على كل كود QR. التطبيق المطلوب ليس مثبة. هل تريد فتح متجر جوجل لتقوم بتثبيته؟</string>
     <!-- main screen -->
     <string name="live_map_button">خريطة على نات</string>
@@ -282,8 +282,6 @@
     <string name="caches_select_mode_exit">إنهاء الوضع المحدد</string>
     <string name="caches_select_invert">إعكس التحديد</string>
     <string name="caches_nearby">قريب</string>
-    <string name="caches_remove_all">إزالة الكل</string>
-    <string name="caches_remove_selected">إزالة المحدد</string>
     <string name="caches_delete_events">إزالة الأحداث الماضية</string>
     <string name="caches_refresh_selected">عمل تحديث للتحديد</string>
     <string name="caches_refresh_all">تحديث الكل</string>
@@ -292,24 +290,7 @@
     <string name="caches_copy_selected">نسخ التحديد</string>
     <string name="caches_copy_all">نسخ الكل</string>
     <string name="caches_map_locus_export">التصدير إلى Locus</string>
-    <string name="caches_filter">فلتر</string>
     <string name="caches_filter_title">تصفية حسب</string>
-    <string name="caches_filter_size">الحجم</string>
-    <string name="caches_filter_type">النوع</string>
-    <string name="caches_filter_track">بواسطة أمتعة السفر</string>
-    <string name="caches_filter_clear">مسح الفلاتر</string>
-    <string name="caches_filter_modified">مع إحدثيات معدلة</string>
-    <string name="caches_filter_offline_log">مع تسجيل الزيارة في وضع عدم الاتصال</string>
-    <string name="caches_filter_origin">الأصل</string>
-    <string name="caches_filter_distance">المسافة</string>
-    <string name="caches_filter_personal_note">مع ملاحظة شخصية</string>
-    <string name="caches_filter_popularity">المفضلات</string>
-    <string name="caches_filter_popularity_ratio">المفضلات [%]</string>
-    <string name="caches_filter_personal_data">مع البيانات الشخصية</string>
-    <string name="caches_filter_rating">مع التصنيف</string>
-    <string name="caches_filter_own_rating">مع التصنيف الخاص</string>
-    <string name="caches_filter_multi_listing">جدولة متعددة مع وضعية مختلفة</string>
-    <string name="caches_filter_missing_gcvote">العثور على مخبآت غير مصوت عليها</string>
     <string name="caches_removing_from_history">إزالة من التأريخ&#8230;</string>
     <string name="caches_clear_offlinelogs">مسح تسجيل الزيارة في وضع عدم الاتصال</string>
     <string name="caches_clear_offlinelogs_message">هل تريد مسح تسجيل الزيارات في وضع عدم الاتصال؟</string>
@@ -335,6 +316,7 @@
     <string name="list_dialog_rename_title">أعد تسمية القائمة</string>
     <string name="list_dialog_rename">أعد تسمية</string>
     <string name="list_not_available">القائمة لم تعد متوفرة، الانتقال إلى القائمة الموحدة</string>
+    <!-- caches lists filter -->
     <!-- about -->
     <string name="about_version">الإصدار</string>
     <string name="about_changelog">سجل التغييرات</string>
@@ -368,43 +350,32 @@
     <string name="settings_data_dir_item">%1$s (مجاناً %2$s)</string>
     <string name="confirm_data_dir_move">نقل بيانات العلبة المخبئة قد يستغرق وقتاً طويلاً، يعتم الأمر على جهازك و كمية البيانات.</string>
     <string name="settings_title_basicmembers">خيارات للاعضاء العاديين</string>
-    <string name="settings_title_navigation">الملاحة</string>
-    <string name="settings_summary_navigation">اختر طريقة الملاحة المفضلة و اختر تطبيقات خارجية الملاحة.</string>
     <string name="settings_title_system">النظام</string>
     <string name="settings_title_navigation_menu">الملاحة</string>
     <string name="settings_category_browser">المتصفح</string>
     <string name="settings_category_social">وسائل التواصل الإجتماعي</string>
     <string name="settings_category_logging_other">خيارات أخر ى لتسجيل الزيارات</string>
     <string name="settings_goto_url_button">المزيد &#8230;</string>
-    <string name="settings_activate_gc">تنشيط</string>
-    <string name="settings_activate_ec">تنشيط</string>
+    <string name="settings_service_activate">تنشيط</string>
     <string name="settings_gc_legal_note">مع استخدام خدمات geocaching.com أنت توافق على شروط استخدام Groundspeak.</string>
     <string name="settings_authorize">الترخيص لـ c:geo</string>
     <string name="settings_gc_description">ترخيض لـ c:geo باستخدام geocaching.com للبحث عن المخبئ.</string>
     <string name="settings_ec_description">ترخيض لـ c:geo باستخدام extremcaching.com للبحث عن المخبآت و الوصول/تصفية للمخبآت الخاص بك.</string>
     <string name="settings_su_description">ترخيص لـ c:geo باستخدام geocaching.su للبحث عن المخبآت.</string>
-    <string name="settings_activate_oc">تنشيط</string>
     <string name="init_summary_oc_de">تحميل المخبآت من opencaching.de</string>
     <string name="init_oc_de_description">الترخيص لـ c:geo باستخدام opencaching.de للبحث عن المخبآت و الوصول أو تصفية المخبآت التي عثرت عليها.</string>
-    <string name="settings_activate_oc_pl">تنشيط</string>
     <string name="init_summary_oc_pl">تحميل المخبآت من opencaching.pl</string>
     <string name="init_oc_pl_description">الترخيص لـ c:geo باستخدام opencaching.pl للبحث عن المخبآت و الوصول أو تصفية المخبآت التي عثرت عليها.</string>
-    <string name="settings_activate_oc_nl">تنشيط</string>
     <string name="init_summary_oc_nl">تحميل المخبآت من opencaching.nl</string>
     <string name="init_oc_nl_description">الترخيص لـ c:geo باستخدام opencaching.nl للبحث عن المخبآت و الوصول أو تصفية المخبآت التي عثرت عليها.</string>
-    <string name="settings_activate_oc_us">تنشيط</string>
     <string name="init_summary_oc_us">تحميل المخبآت من opencaching.us</string>
     <string name="init_oc_us_description">الترخيص لـ c:geo باستخدام opencaching.nl للبحث عن المخبآت و الوصول أو تصفية المخبآت التي عثرت عليها.</string>
-    <string name="settings_activate_oc_ro">تنشيط</string>
     <string name="init_summary_oc_ro">تحميل المخبآت من opencaching.ro</string>
     <string name="init_oc_ro_description">قم بالترخيص لـ c:geo باستخدام opencaching.ro للبحث عن المخبآت و الوصول/تصفية مخبآتك التي تم العثور عليها.</string>
-    <string name="settings_activate_oc_uk">تنشيط</string>
     <string name="init_summary_oc_uk">تحميل المخبآت من opencaching.uk</string>
     <string name="init_oc_uk_description">ترخيص لـ c:geo باستخدام opencache.uk للبحث عن المخبآت و الوصول/تصفية مخبآتك التي تم العثور عليها.</string>
     <string name="init_summary_su">تحميل المخبآت من opencaching.su</string>
-    <string name="settings_activate_su">تنشيط</string>
     <string name="init_gcvote_password_description">لتكون قادر على تقييم مخبئ، تحتاج إلى اتباع الإرشادات التي تظهر في GCvote.com و إدخال كلمة المرور الخاص بك في GCvote، هنا.</string>
-    <string name="settings_activate_twitter">تنشيط</string>
     <string name="init_login_popup">تسجيل الدخول</string>
     <string name="init_login_popup_working">جاري تسجيل الدخول&#8230;</string>
     <string name="init_login_popup_ok">تم تسجيل الدخول</string>
@@ -433,16 +404,10 @@
     <string name="init_summary_friends_and_own_logs_wanted">عرض صفحة السجل الإضافي الخاص بتسجيل الزيارات الخاصة بك و بأصدقائك</string>
     <string name="init_openlastdetailspage">صفحة التفاصيل الأخيرة</string>
     <string name="init_summary_openlastdetailspage">افتح التفاصيل باستخدام آخر صفحة مستخدمة</string>
-    <string name="init_skin">خلفية فاتحة اللون</string>
-    <string name="init_summary_skin">استخدم خلفية فاتحة اللون (يتطلب إعادة التشغيل)</string>
     <string name="init_address">عرض العنوان</string>
     <string name="init_summary_address">عرض العنوان بدلاً من الإحدثيات على الشاشة الرئسية</string>
-    <string name="init_exclude">استبعاد الخاصة والمكتسبة</string>
-    <string name="init_summary_exclude">استبعاد المخبآت التي تملكها أو التي عثرت عليها</string>
     <string name="init_showwaypoints">عرض إحداثية الطريق</string>
     <string name="init_showwaypoint_description">إذا تم عرض كمية أقل من المخبآت على الخريطة، يتم عرض إحدثيات الطريق الخاصة بهم إضافة إلى ذلك.</string>
-    <string name="init_disabled">الاستبعاد معطل</string>
-    <string name="init_summary_disabled">استبعاد المخبآت معطل</string>
     <string name="init_save_log_img">حفظ الصور</string>
     <string name="init_summary_save_log_img">حفظ الصور من تسجيل الزيارات</string>
     <string name="init_units">استخدم وحدات القياس الإمبراطورية</string>
@@ -452,13 +417,13 @@
     <string name="init_choose_list">اطلب القائمة</string>
     <string name="init_summary_choose_list">اسأل أي قائمة لتخزين المخبآت</string>
     <string name="init_livelist">عرض الاتجاه</string>
+    <!-- app theme -->
     <!-- backup / restore -->
     <string name="init_backup_backup">النسخ الاحتياطي</string>
     <string name="init_backup_running">إنشاء نسخ إحتياطي لبيانات المخبئ&#8230;</string>
     <string name="init_backup_restore">إستعادة</string>
     <string name="init_backup_success">تم بنجاح نسخ بيانات c:geo إلى:</string>
     <string name="init_backup_failed">فشل في النسخ الاحتياطي لبيانات c:geo.</string>
-    <string name="init_backup_unnecessary">البيانات فارغة، ليس ضروري عمل نسخ احتياطي.</string>
     <string name="init_backup_no_backup_available">لا يتوفر ملف النسخ الاحتياطي.</string>
     <string name="init_restore_success">اكتملت الاستعادة.</string>
     <string name="init_restore_running">استعادة بيانات المخبئ&#8230;</string>
@@ -548,7 +513,7 @@
     <string name="sendToCgeo_download_fail">c:geo فشل في تحميل المخبآت. بسبب عدم وجود اتصال بالإنترنات أو يوجد مشكل في send2cgeo.</string>
     <string name="sendToCgeo_no_registration">c:geo فشل في تحميل المخبآت. انتهت مدة التسجيل في send2cgeo. الرجاء التسجيل في الإعدادات.</string>
     <!-- Content Storage -->
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <!-- FolderUtils: async processing -->
     <!-- FolderUtils: copy/move -->
     <!-- auth generic -->
@@ -580,13 +545,11 @@
     <!-- days remaining -->
     <string name="last_day_available">آخر يوم متاح</string>
     <string name="cache_offline_refresh">تحديث</string>
-    <string name="cache_offline_drop">إزالة</string>
     <string name="cache_offline_store">تخزين</string>
     <string name="cache_offline_stored">مخزن في الجهاز</string>
     <string name="cache_offline_not_ready">غير متاح في وضع عدم الاتصال</string>
     <string name="cache_offline_time_mins_few">منذ دقائق</string>
     <string name="cache_premium">برميوم</string>
-    <string name="cache_attributes">السمات</string>
     <string name="cache_inventory">المخزون</string>
     <string name="cache_log_images_title">صور تسجيل الزيارات</string>
     <string name="cache_log_image_default_title">صورة</string>
@@ -675,14 +638,9 @@
     <string name="cache_status_offline_log">تسجيل الزيارة محفوظ</string>
     <string name="cache_status_found">تم العثور عليه</string>
     <string name="cache_not_status_found">لم يتم العثور عليه</string>
-    <string name="cache_never_found">لم يتم العثور عليه أبداً</string>
-    <string name="cache_found_last_30_days">تم العثور على آخر 30 يوما</string>
     <string name="cache_status_archived">تم أرشفته</string>
     <string name="cache_status_disabled">معطل</string>
     <string name="cache_status_premium">أعضاء برميوم فقط</string>
-    <string name="cache_status_not_premium">لكافة الأعضاء</string>
-    <string name="cache_status_stored">تم تخزينه</string>
-    <string name="cache_status_not_stored">لم يتم تخزينه</string>
     <string name="cache_geocode">كود المخبئ</string>
     <string name="cache_name">الاسم</string>
     <string name="cache_type">النوع</string>
@@ -698,7 +656,6 @@
     <string name="cache_event">التاريخ</string>
     <string name="cache_location">الموقع</string>
     <string name="cache_coordinates">الإحداثيات</string>
-    <string name="cache_calculator">العداد</string>
     <string name="cache_coordinates_original">الإحدثيات الأصلية</string>
     <string name="cache_spoiler_images_title">الصور المفسدة</string>
     <string name="cache_log_types">أنوع تسجيل الزيارات</string>
@@ -782,7 +739,6 @@
     <string name="map_map">خريطة</string>
     <string name="map_live">خريطة على نات</string>
     <string name="map_view_map">عرض الخريطة</string>
-    <string name="map_show_circles">إظهار الدوائر</string>
     <string name="map_theme_select">حدد ثيم الخريطة</string>
     <string name="map_live_enable">تمكين عرض مباشر</string>
     <string name="map_live_disable">تعطيل العرض المباشر</string>
@@ -799,8 +755,6 @@
     <string name="search_kw">الكلمات المفتاحية</string>
     <string name="search_kw_prefill">كلمة مفتاحية</string>
     <string name="search_kw_button">البحث بواسطة الكلمة المفتاحية</string>
-    <string name="search_fbu_prefill">اسم المستخدم</string>
-    <string name="search_fbu_button">البحث بواسطة اسم المستخدم</string>
     <string name="search_hbu_prefill">المالك</string>
     <string name="search_hbu_button">البحث بواسطة اسم المالك</string>
     <string name="search_tb">أمتعة السفر</string>
@@ -810,7 +764,6 @@
     <string name="search_address_result">الأماكن المعثور عليها</string>
     <string name="search_own_caches">البحث عن المخبآت الخاص بي</string>
     <string name="search_pocket_title">الاستفسارات</string>
-    <string name="search_pocket_loading">تحميل قائمة الاستفسارات</string>
     <!-- trackable -->
     <string name="trackable">أمتعة السفر</string>
     <string name="trackable_details_loading">تحميل تفاصيل أمتعة السفر&#8230;</string>
@@ -846,7 +799,6 @@
     <!-- user -->
     <string name="user_menu_title">حول</string>
     <string name="user_menu_view_hidden">مخبآت مخفية</string>
-    <string name="user_menu_view_found">مخبآت تم العثور عليها</string>
     <string name="user_menu_open_browser">فتح الصفحة الشخصية في المتصفح</string>
     <string name="user_menu_send_message">إرسال رسالة</string>
     <string name="user_menu_open_contact">فتح بطاقة جهة الاتصال</string>
@@ -873,7 +825,6 @@
     <string name="helper_gpsstatus_description">يمكنك استخدام الرادار في هذا التطبيق بالاشتراك مع c:geo. و سوف يوفر لك معلومات أخرى متعلقة GPS.</string>
     <string name="helper_bluetoothgps_description">يتيح لك استخدام مستقبل GPS خارجي للحصول على بيانات مواقع أكثر دقة، و يمكنك من توفير استهلاك بطاريتك.</string>
     <string name="helper_barcode_description">هناك مواقع و برامج تjتيح عرض كود المخبئ مثل كود QR، مثل هذا التطبيق. و بهذا c:geo يمكنه قراءة كود المخبئ مباشرة من شاشة حاسوبك.</string>
-    <string name="helper_pocketquery_description">يسمح بإنشاء و تحميل الاستفسارات التي تتمحور حول موقعك الحالي أو النقط المحددة في الخريطة. يتطلب حساب برميوم في Geocaching.com.</string>
     <string name="helper_google_translate_title">ترجمة جوجل</string>
     <string name="helper_google_translate_description">إذا قمت بتحميل حزم الترجمة في تطبيق ترجمة جوجل،عندها يمكنك ترجمة تفاصيل المخبئ في c:geo و ذالك من خلال الضغط مطولاً على نص وصف المخبئ (بدون الاتصال بالانترنات).</string>
     <string name="helper_where_you_go_description">WhereYouGo تتيج تشغيل و البحث عن المخبىت من نوع Wherigo. و c:geo يمكنه أن يقوم إلى التحميل التلقائي للخراطيش داخل هذا التطبيق.</string>
@@ -1131,9 +1082,6 @@
     <string name="about_twitter">هل يجب على <b>c:geo</b> أن ينشر تغريدة جديدة في كل مرة تقوم فيها بتسجيل زيارة لمخبئ ما؟</string>
     <string name="faq_title">الأسئلة الشائعة</string>
     <!-- status (used via string based resource loading) -->
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">التغييرات الأخيرة على geocaching.com أدت إلى تعطيل c:geo.\nنحن نعمل على ذالك، تحقق مرة أخرى قريباً.</string>
-    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">التغييرات الأخيرة على geocaching.com أدت إلى تعطيل ميزة الخريطة التي على النات.\nنحن نعمل على ذالك، تحقق مرة أخرى قريباً.</string>
-    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">geocaching.com تحت الصيانة الآن.\n قد تواجه بعض المشاكل المختلفة.</string>
     <!-- text-to-speech for compass view -->
     <string name="tts_service">بوصلة متحدثة</string>
     <string name="tts_started">بدأت التحدث</string>
@@ -1147,7 +1095,6 @@
     <string name="tts_oclock">%s ساعة</string>
     <!-- various -->
     <string name="clipboard_copy_ok">تم نسخه إلى الحافظة</string>
-    <string name="more_than_percent_favorite_points">&gt; %d%% مفضلات</string>
     <!-- shortcuts -->
     <string name="cgeo_shortcut">اختصار c:geo</string>
     <string name="create_shortcut">إنشاء اختصار</string>
@@ -1155,7 +1102,6 @@
     <string name="confirm_log_title">نوع سجل خاص</string>
     <string name="confirm_log_message">أنت تريد تسجيل الزيارة \'%s\'. هل أنت متأكد؟</string>
     <!-- Geokrety -->
-    <string name="settings_activate_geokrety">تنشيط</string>
     <string name="init_summary_geokrety">تمكين أمتعة السفر من GeoKrety.org</string>
     <string name="init_geokrety_description">الترخيص لـ c:geo باستخدام GeoKrety.org لتسجيل زيارة أمتعة السفر لـ GeoKrety.</string>
     <string name="init_geokrety_userid">معرف المستخدم: %s</string>
@@ -1180,14 +1126,14 @@
     <!-- permission handling -->
     <!-- colors -->
     <!-- number input -->
-    <!-- text notification channel infos & proximity notification title -->
+    <!-- notification / channel texts -->
     <!-- individual routes -->
     <!-- individual track -->
     <!-- distance units -->
     <!-- switch settings -->
     <!-- view settings -->
     <!-- HandleLocalFilesActivity -->
-    <!-- ReceiveMapFileActivity -->
+    <!-- ReceiveDownloadActivity -->
     <!-- Download map preference and menu entry -->
     <!-- history track -->
     <!-- history track export -->
@@ -1195,4 +1141,5 @@
     <!-- install wizard -->
     <!-- Map Theme helper -->
     <!-- default actions in dialogs -->
+    <!-- ChipChoiceGroup -->
 </resources>

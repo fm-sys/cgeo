@@ -64,18 +64,38 @@ public class GeocacheTest extends CGeoTestCase {
         assertThat(cache.getGeocode()).isEqualTo("GC1234");
     }
 
+    /**
+     * The waypoint with valid coordinates.
+     * Waypoint should be extracted, so expected size is 1.
+     */
     public final void testUpdateWaypointFromNote() {
         final List<Waypoint> wpList = new ArrayList<>();
         wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "", "", "", WaypointType.OWN));
         assertWaypointsParsed("Test N51 13.888 E007 03.444", wpList);
     }
 
+    /**
+     * Waypoints in a single line with valid coordinates.
+     * Waypoints should be extracted, but the user-note contains the following text, so expected size is 3 with different user-notes.
+     */
+    public final void testUpdateWaypointsFromNoteSingleLine() {
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.444"), "", "", "Test N51 13.233 E007 03.444 Test N51 09.123 E007 03.444", WaypointType.OWN));
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.233 E007 03.444"), "", "", "Test N51 09.123 E007 03.444", WaypointType.OWN));
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 09.123 E007 03.444"), "", "", "", WaypointType.OWN));
+        assertWaypointsParsed("Test N51 13.888 E007 03.444 Test N51 13.233 E007 03.444 Test N51 09.123 E007 03.444",  wpList);
+    }
+
+    /**
+     * Waypoints in different lines with valid coordinates.
+     * Waypoints should be extracted, the user-note does not contain the following text, so expected size is 3 with empty user-notes.
+     */
     public final void testUpdateWaypointsFromNote() {
         final List<Waypoint> wpList = new ArrayList<>();
         wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "", "", "", WaypointType.OWN));
         wpList.add(new Waypoint("", new Geopoint("N51 13.233 E007 03.444"), "", "", "", WaypointType.OWN));
         wpList.add(new Waypoint("", new Geopoint("N51 09.123 E007 03.444"), "", "", "", WaypointType.OWN));
-        assertWaypointsParsed("Test N51 13.888 E007 03.444 Test N51 13.233 E007 03.444 Test N51 09.123 E007 03.444",  wpList);
+        assertWaypointsParsed("Test N51 13.888 E007 03.444 \nTest N51 13.233 E007 03.444 \nTest N51 09.123 E007 03.444",  wpList);
     }
 
     /**
@@ -86,9 +106,13 @@ public class GeocacheTest extends CGeoTestCase {
         final List<Waypoint> wpList = new ArrayList<>();
         wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "", "", "", WaypointType.OWN));
         wpList.add(new Waypoint("", new Geopoint("N51 13.233 E007 03.444"), "", "", "", WaypointType.OWN));
-        assertWaypointsParsed("Test N51 13.888 E007 03.444 Test N51 13.233 E007 03.444 Test N51 13.888 E007 03.444", wpList);
+        assertWaypointsParsed("Test N51 13.888 E007 03.444 \nTest N51 13.233 E007 03.444 \nTest N51 13.888 E007 03.444", wpList);
     }
 
+    /**
+     * The second waypoint has empty coordinates.
+     * Waypoint with empty coordinates should be created, so expected size is 2.
+     */
     public final void testUpdateWaypointsWithEmptyCoordsFromNote() {
         final List<Waypoint> wpList = new ArrayList<>();
         wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "", "", "", WaypointType.OWN));
@@ -120,21 +144,27 @@ public class GeocacheTest extends CGeoTestCase {
     }
 
     /**
-     * The new waypoints are not contained in the cache.
-     * So expected size is 3.
+     * Waypoint with coordinates exist. Update waypointlist from note.
+     * The first waypoint has auto generated name and coordinates.
+     * The second waypoint has auto generated name and empty coordinates.
+     * So expected size is 3:
+     * - existing waypoint with original coordinates.
+     * - new waypoint with auto generated name and coordinates.
+     * - new waypoint with auto generated name and with empty coordinates.
      */
-    public final void testUpdateExistingWaypointsWithEmptyCoordsFromNoteAddWaypoint() {
+    public final void testUpdateExistingWaypointFromNote() {
         final Geocache cache = new Geocache();
         final String geocode = "Test" + System.nanoTime();
         cache.setGeocode(geocode);
         cache.setCoords(new Geopoint(40.0, 8.0));
         final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
-        userWaypoint.setCoords(new Geopoint(42.0, 10.0));
+        final Geopoint userWpGeopoint = new Geopoint(42.0, 10.0);
+        userWaypoint.setCoords(userWpGeopoint);
         cache.addOrChangeWaypoint(userWaypoint, false);
         saveFreshCacheToDB(cache);
 
         final List<Waypoint> wpList = new ArrayList<>();
-        wpList.add(new Waypoint("", new Geopoint(42.0, 10.0), "Test", "", "", WaypointType.OWN));
+        wpList.add(new Waypoint("", userWpGeopoint, "Test", "", "", WaypointType.OWN));
         wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "Personal note 1", "", "", WaypointType.OWN));
         wpList.add(new Waypoint("", null, "Personal note 2", "", "", WaypointType.OWN));
         assertWaypointsParsed(cache, "Test N51 13.888 E007 03.444\nTest (NO-COORD)", wpList);
@@ -143,31 +173,72 @@ public class GeocacheTest extends CGeoTestCase {
     }
 
     /**
-     * The second waypoint has same name but empty coordinates.
-     * So expected size is 2.
+     * Waypoint with coordinates exist. Update waypointlist from note.
+     * The first waypoint has auto generated name and coordinates of original coordinates and note.
+     * So expected size is 2:
+     * - existing waypoint with original coordinates and updated note.
+     * - new waypoint with auto generated name and coordinates.
+     * Coordinates of first waypoint in note is changed. Update waypointlist from note.
+     * The changed waypoint has auto generated name and coordinates.
+     * So expected size is 3:
+     * - existing waypoint with original coordinates and updated note.
+     * - second waypoint with auto generated name and coordinates.
+     * - new waypoint with auto generated name and coordinates.
      */
-    public final void testUpdateExistingWaypointWithEmptyCoordsFromNoteWithSameNameAndCoordinates() {
+    public final void testUpdateAndAddNewWaypointFromNote() {
         final Geocache cache = new Geocache();
         final String geocode = "Test" + System.nanoTime();
         cache.setGeocode(geocode);
         cache.setCoords(new Geopoint(40.0, 8.0));
-        final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
-        userWaypoint.setCoords(new Geopoint(42.0, 10.0));
+        final Waypoint userWaypoint = new Waypoint("Personal note 1", WaypointType.OWN, true);
+        final Geopoint userWpGeopoint = new Geopoint("N51 13.888 E007 03.444");
+        userWaypoint.setCoords(userWpGeopoint);
         cache.addOrChangeWaypoint(userWaypoint, false);
         saveFreshCacheToDB(cache);
 
         final List<Waypoint> wpList = new ArrayList<>();
-        wpList.add(new Waypoint("", new Geopoint(42.0, 10.0), "Test", "", "", WaypointType.OWN));
-        wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "Personal note 1", "", "", WaypointType.OWN));
-        // wpList.add(new Waypoint("", null, "Test", "", "", WaypointType.OWN));
-        assertWaypointsParsed(cache, "Test N51 13.888 E007 03.444\n@Test (NO-COORD)", wpList);
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.444"), "Personal note 1", "", "User Note", WaypointType.OWN));
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.666"), "Personal note 2", "", "", WaypointType.OWN));
+        assertWaypointsParsed(cache, "N51 13.888 E007 03.444 \"User Note\" \n N51 13.888 E007 03.666", wpList);
+
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.555"), "Personal note 1", "", "User Note", WaypointType.OWN));
+        assertWaypointsParsed(cache, "N51 13.888 E007 03.555 \"User Note\" \n N51 13.888 E007 03.666", wpList);
 
         removeCacheCompletely(geocode);
     }
 
     /**
-     * The second waypoint has same name and empty coordinates.
-     * So expected size is 2.
+     * Waypoint with coordinates exist. Update waypointlist from note.
+     * The  waypoint has same name like the existing waypoint and a note and new coordinates.
+     * Create new waypoint with new coordinates, otherwise, new coordinates will be lost.
+     * So expected size is 2:
+     * - existing waypoint with original coordinates and old note.
+     * - new waypoint with new coordinates and new note.
+     */
+    public final void testUpdateExistingWaypointFromNoteWithSameNameAndCoords() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+        cache.setCoords(new Geopoint(40.0, 8.0));
+        final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
+        final Geopoint userWpGeopoint = new Geopoint(42.0, 10.0);
+        userWaypoint.setCoords(userWpGeopoint);
+        cache.addOrChangeWaypoint(userWaypoint, false);
+        saveFreshCacheToDB(cache);
+
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(createWaypointWithUserNote(userWpGeopoint, "Test", "", "", WaypointType.OWN));
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.444"), "Test", "", "NewNote", WaypointType.OWN));
+        assertWaypointsParsed(cache, "@Test N51 13.888 E007 03.444 \"NewNote\"", wpList);
+
+        removeCacheCompletely(geocode);
+    }
+
+    /**
+     * Waypoint with empty coordinates exist. Update waypointlist from note.
+     * The  waypoint has same name like the existing waypoint and a note and new coordinates.
+     * So expected size is 1:
+     * - existing waypoint with new coordinates and original note.
      */
     public final void testUpdateExistingWaypointWithEmptyCoordsFromNoteWithSameName() {
         final Geocache cache = new Geocache();
@@ -176,20 +247,98 @@ public class GeocacheTest extends CGeoTestCase {
         cache.setCoords(new Geopoint(40.0, 8.0));
         final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
         userWaypoint.setCoords(null);
+        userWaypoint.setUserNote("UserNote");
         cache.addOrChangeWaypoint(userWaypoint, false);
         saveFreshCacheToDB(cache);
 
         final List<Waypoint> wpList = new ArrayList<>();
-        wpList.add(new Waypoint("", null, "Test", "", "", WaypointType.OWN));
-        wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "Personal note 1", "", "", WaypointType.OWN));
-        assertWaypointsParsed(cache, "Test N51 13.888 E007 03.444\n@Test (NO-COORD)", wpList);
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.444"), "Test", "", "UserNote", WaypointType.OWN));
+        assertWaypointsParsed(cache, "@Test N51 13.888 E007 03.444 \"NewNote\"", wpList);
 
         removeCacheCompletely(geocode);
     }
 
     /**
-     * The second waypoint has same name and empty coordinates, but different type.
-     * So expected size is 3.
+     * Waypoint with empty coordinates exist. Update waypointlist from note.
+     * The  waypoint has same name like the existing waypoint and a note and new coordinates.
+     * So expected size is 1:
+     * - existing waypoint with new coordinates and original note.
+     */
+    public final void testUpdateExistingWaypointFromNoteWithSameNameWithEmptyCoordsAndNewNote() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+        cache.setCoords(new Geopoint(40.0, 8.0));
+        final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
+        final Geopoint userWpGeopoint = new Geopoint(42.0, 10.0);
+        userWaypoint.setCoords(userWpGeopoint);
+        cache.addOrChangeWaypoint(userWaypoint, false);
+        saveFreshCacheToDB(cache);
+
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(createWaypointWithUserNote(userWpGeopoint, "Test", "", "NewNote", WaypointType.OWN));
+        assertWaypointsParsed(cache, "@Test (NO-COORD) \"NewNote\"", wpList);
+
+        removeCacheCompletely(geocode);
+    }
+
+    /**
+     * Recreate waypoints from note. Waypoints with same name and different coordinates should be considered.
+     * So expected size is 2.
+     */
+    public final void testUpdateWaypointFromParseableWaypointText() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+        cache.setCoords(new Geopoint(40.0, 8.0));
+        final Waypoint userWaypoint = new Waypoint("Personal note 1", WaypointType.OWN, true);
+        final Geopoint userWpGeopoint = new Geopoint("N51 13.888 E007 03.444");
+        userWaypoint.setCoords(userWpGeopoint);
+        cache.addOrChangeWaypoint(userWaypoint, false);
+        saveFreshCacheToDB(cache);
+
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(userWaypoint);
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.555"), "Final", "", "", WaypointType.FINAL));
+        wpList.add(createWaypointWithUserNote(new Geopoint("N51 13.888 E007 03.666"), "Final", "", "", WaypointType.FINAL));
+
+        final String parseableText = WaypointParser.getParseableText(wpList, -1, false);
+        assertWaypointsParsed(cache, parseableText, wpList);
+
+        removeCacheCompletely(geocode);
+    }
+
+    public final void testUpdateExistingWaypointWithFormulaFromNoteWithSameName() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+
+        cache.addOrChangeWaypoint(new Waypoint("", null, "Test 1", "", "", WaypointType.OWN), false);
+        saveFreshCacheToDB(cache);
+
+        final String note = "@Test 1 (O) " + WaypointParser.PARSING_COORD_FORMULA_PLAIN + " N 45° A.B(C+D)  E 9° (A-B).(2*D)EF | A = a + b |B=|a=2|b=| this is the description\n\"this shall NOT be part of the note\"";
+        cache.setPersonalNote(note);
+        cache.setPreventWaypointsFromNote(false);
+
+        cache.addWaypointsFromNote();
+        final List<Waypoint> waypoints = cache.getWaypoints();
+        assertThat(waypoints.size()).isEqualTo(1);
+        final Waypoint wp = waypoints.iterator().next();
+        final String calcStateJson = wp.getCalcStateJson();
+        assertThat(calcStateJson).isNotNull();
+        assertThat(calcStateJson).contains("N 45° A.B(C+D)");
+        final CalcState calcState = CalcState.fromJSON(calcStateJson);
+        assertThat(calcState).isNotNull();
+
+        removeCacheCompletely(geocode);
+    }
+
+    /**
+     * Waypoint with empty coordinates exist. Update waypointlist from note.
+     * The  waypoint has same name like the existing waypoint, new coordinates and different type.
+     * So expected size is 2:
+     * - existing waypoint with empty coordinates.
+     * - new waypoint with new coordinates.
      */
     public final void testUpdateExistingWaypointWithEmptyCoordsFromNoteWithSameNameDifferentType() {
         final Geocache cache = new Geocache();
@@ -203,11 +352,93 @@ public class GeocacheTest extends CGeoTestCase {
 
         final List<Waypoint> wpList = new ArrayList<>();
         wpList.add(new Waypoint("", null, "Test", "", "", WaypointType.OWN));
-        wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "Personal note 1", "", "", WaypointType.OWN));
         wpList.add(new Waypoint("", null, "Test", "", "", WaypointType.FINAL));
-        assertWaypointsParsed(cache, "Test N51 13.888 E007 03.444\n@Test (F) (NO-COORD)", wpList);
+        assertWaypointsParsed(cache, "@Test (F) (NO-COORD)", wpList);
 
         removeCacheCompletely(geocode);
+    }
+
+    /**
+     * Waypoint with coordinates exist. Update waypointlist from note.
+     * The waypoint has same prefix, but different name and coordinates.
+     * So expected size is 1:
+     * - existing waypoint with original name and coordinates.
+     */
+    public final void testUpdateExistingWaypointFromNoteWithSamePrefix() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+        cache.setCoords(new Geopoint(40.0, 8.0));
+        final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
+        final Geopoint userWpGeopoint = new Geopoint(42.0, 10.0);
+        userWaypoint.setCoords(userWpGeopoint);
+        userWaypoint.setPrefix("S1");
+        cache.addOrChangeWaypoint(userWaypoint, false);
+        saveFreshCacheToDB(cache);
+
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(new Waypoint("", userWpGeopoint, "Test", "S1", "", WaypointType.OWN));
+        assertWaypointsParsed(cache, "@[S1]ModTest N51 13.888 E007 03.444", wpList);
+
+        removeCacheCompletely(geocode);
+    }
+
+    /**
+     * Waypoint with empty coordinates exist. Update waypointlist from note.
+     * The waypoint has same prefix, but different name and coordinates.
+     * So expected size is 1:
+     * - existing waypoint with original name, but new coordinates.
+     */
+    public final void testUpdateExistingWaypointWithEmptyCoordsFromNoteWithSamePrefix() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+        cache.setCoords(new Geopoint(40.0, 8.0));
+        final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
+        userWaypoint.setCoords(null);
+        userWaypoint.setPrefix("S1");
+        cache.addOrChangeWaypoint(userWaypoint, false);
+        saveFreshCacheToDB(cache);
+
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "Test", "S1", "", WaypointType.OWN));
+        assertWaypointsParsed(cache, "@[S1]ModTest N51 13.888 E007 03.444", wpList);
+
+        removeCacheCompletely(geocode);
+    }
+
+    /**
+     * Waypoint with empty coordinates exist. Update waypointlist from note.
+     * The waypoint has prefix which does not exist, but name of existing waypoint.
+     * So expected size is 2:
+     * - existing waypoint unchanged
+     * - new waypoint with prefix is added.
+     */
+    public final void testUpdateExistingWaypointWithEmptyCoordsFromNoteWithNewPrefix() {
+        final Geocache cache = new Geocache();
+        final String geocode = "Test" + System.nanoTime();
+        cache.setGeocode(geocode);
+        cache.setCoords(new Geopoint(40.0, 8.0));
+        final Waypoint userWaypoint = new Waypoint("Test", WaypointType.OWN, true);
+        userWaypoint.setCoords(null);
+        cache.addOrChangeWaypoint(userWaypoint, false);
+        saveFreshCacheToDB(cache);
+
+        final List<Waypoint> wpList = new ArrayList<>();
+        wpList.add(new Waypoint("", null, "Test", "", "", WaypointType.OWN));
+        wpList.add(new Waypoint("", new Geopoint("N51 13.888 E007 03.444"), "Test", "S1", "", WaypointType.OWN));
+        assertWaypointsParsed(cache, "@[S1]Test N51 13.888 E007 03.444", wpList);
+
+        removeCacheCompletely(geocode);
+    }
+
+    private static Waypoint createWaypointWithUserNote(final Geopoint point, final String name, final String prefix, final String userNote, final WaypointType type) {
+        final Waypoint newWaypoint = new Waypoint("", point, name, prefix, "", type);
+        newWaypoint.setUserNote(userNote);
+        if (prefix.isEmpty()) {
+            newWaypoint.setUserDefined();
+        }
+        return newWaypoint;
     }
 
     private void assertWaypointsParsed(final String note, final List<Waypoint> expectedWaypoints) {
@@ -233,11 +464,13 @@ public class GeocacheTest extends CGeoTestCase {
             final Waypoint waypoint = waypoints.get(i);
             final Waypoint expectedWaypoint = expectedWpIterator.next();
             assertThat(waypoint.getCoords()).isEqualTo(expectedWaypoint.getCoords());
+            final String wpNote = expectedWaypoint.getUserNote();
             String wpName = expectedWaypoint.getName();
             if (wpName == null || wpName.isEmpty()) {
                 wpName = CgeoApplication.getInstance().getString(R.string.cache_personal_note) + " " + (i + 1);
             }
             assertThat(waypoint.getName()).isEqualTo(wpName);
+            assertThat(waypoint.getUserNote()).isEqualTo(wpNote);
         }
     }
 

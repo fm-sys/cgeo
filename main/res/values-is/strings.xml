@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
     <!-- basics -->
     <string name="detail">Upplýsingar</string>
     <string name="search">Leit</string>
@@ -141,7 +143,6 @@
     <string name="err_acquire_image_failed">Gat ekki náð í mynd.</string>
     <string name="err_tb_details_open">c:geo getur ekki opnað upplýsingar um ferðalang.</string>
     <string name="err_tb_not_loggable">Ekki er hægt að skrá færslu fyrir þennan ferðalang.</string>
-    <string name="err_tb_find">c:geo finnur ekki ferðalang</string>
     <string name="err_tb_find_that">c:geo getur ekki fundið þennan ferðalang.</string>
     <string name="err_point_bear_and_dist_title">Þarftu aðstoð?</string>
     <string name="err_point_bear_and_dist">Skráðu inn bæði legu og vegalengd. Lega er horn frá 0 til 360 gráðum frá norðri. Vegalengd þarfnast ekki mælieiningar.</string>
@@ -185,7 +186,6 @@
     <string name="menu_history">Saga</string>
     <string name="menu_filter">Sía</string>
     <string name="menu_scan_geo">Skanna geokóða</string>
-    <string name="menu_pocket_queries">Vasafyrirspurnir</string>
     <!-- main screen -->
     <string name="live_map_button">Virkt kort</string>
     <string name="caches_nearby_button">Í nánd</string>
@@ -231,8 +231,6 @@
     <string name="caches_select_mode_exit">Fara úr valstillingu</string>
     <string name="caches_select_invert">Snúa vali við</string>
     <string name="caches_nearby">Í nánd</string>
-    <string name="caches_remove_all">Fjarlægja alla</string>
-    <string name="caches_remove_selected">Fjarlægja valda</string>
     <string name="caches_delete_events">Eyða fyrri viðburðum</string>
     <string name="caches_refresh_selected">Uppfæra það sem er valið</string>
     <string name="caches_refresh_all">Uppfæra allt</string>
@@ -241,17 +239,7 @@
     <string name="caches_copy_selected">Afrita valda</string>
     <string name="caches_copy_all">Afrita alla</string>
     <string name="caches_map_locus_export">Flytja út í Locus</string>
-    <string name="caches_filter">Sía frá</string>
     <string name="caches_filter_title">Sía eftir</string>
-    <string name="caches_filter_size">Stærð</string>
-    <string name="caches_filter_type">Tegund</string>
-    <string name="caches_filter_track">Með ferðagripum</string>
-    <string name="caches_filter_clear">Hreinsa síanir</string>
-    <string name="caches_filter_modified">Hefur breytt hnit</string>
-    <string name="caches_filter_distance">Fjarlægð</string>
-    <string name="caches_filter_popularity">Eftirlæti</string>
-    <string name="caches_filter_popularity_ratio">Eftirlæti [%]</string>
-    <string name="caches_filter_personal_data">Hefur persónuleg gögn</string>
     <string name="caches_removing_from_history">Fjarlægi af ferli…</string>
     <string name="caches_clear_offlinelogs">Hreinsa „án nets“ færslur</string>
     <string name="caches_clear_offlinelogs_message">Viltu hreinsa „án nets“ færslurnar?</string>
@@ -274,6 +262,7 @@
     <string name="list_dialog_rename_title">Endurnefna lista</string>
     <string name="list_dialog_rename">Endurnefna</string>
     <string name="list_not_available">Listi ekki lengur til, skipti í staðlaðan lista</string>
+    <!-- caches lists filter -->
     <!-- about -->
     <string name="about_version">Útgáfa</string>
     <string name="about_changelog">Breytingaskrá</string>
@@ -295,34 +284,24 @@
     <string name="settings_title_map_data">Kortaupplýsingar</string>
     <string name="settings_title_map_content">Innihald korts</string>
     <string name="confirm_data_dir_move">Færsla geocache gagna gæti tekið mjög langan tíma, en það fer eftir tækinu þínu og magni gagna.</string>
-    <string name="settings_title_navigation">Leiðsögn</string>
     <string name="settings_title_system">Kerfi</string>
     <string name="settings_category_browser">Vafri</string>
     <string name="settings_category_social">Samfélagsmiðlar</string>
     <string name="settings_goto_url_button">meira &#8230;</string>
-    <string name="settings_activate_gc">Virkja</string>
-    <string name="settings_activate_ec">Virkja</string>
+    <string name="settings_service_activate">Virkja</string>
     <string name="settings_gc_legal_note">Með því að nota þjónustu geocaching.com, samþykkir þú notkunarskilmála Groundspeak.</string>
     <string name="settings_authorize">Veita c:geo umboð</string>
     <string name="settings_gc_description">Veita c:geo aðgang að geocaching.com til að leita að kössum.</string>
     <string name="settings_ec_description">Veita c:geo aðgang að extremcaching.com til að leita að kössum og skoða/sía þá kassa sem þú hefur fundið.</string>
     <string name="settings_su_description">Veita c:geo aðgang að geocaching.su til að leita að kössum.</string>
-    <string name="settings_activate_oc">Virkja</string>
     <string name="init_summary_oc_de">Hlaða niður kössum frá opencaching.de</string>
-    <string name="settings_activate_oc_pl">Virkja</string>
     <string name="init_summary_oc_pl">Hlaða niður kössum frá opencaching.pl</string>
-    <string name="settings_activate_oc_nl">Virkja</string>
     <string name="init_summary_oc_nl">Hlaða niður kössum frá opencaching.nl</string>
-    <string name="settings_activate_oc_us">Virkja</string>
     <string name="init_summary_oc_us">Hlaða niður kössum frá opencaching.us</string>
-    <string name="settings_activate_oc_ro">Virkja</string>
     <string name="init_summary_oc_ro">Hlaða niður kössum frá opencaching.ro</string>
-    <string name="settings_activate_oc_uk">Virkja</string>
     <string name="init_summary_oc_uk">Hlaða niður kössum frá opencache.uk</string>
     <string name="init_oc_uk_description">Veita c:geo aðgang að opencache.uk til að leita að kössum og skoða/sía þá kassa sem þú hefur fundið.</string>
     <string name="init_summary_su">Hlaða niður kössum frá Geocaching.su</string>
-    <string name="settings_activate_su">Virkja</string>
-    <string name="settings_activate_twitter">Virkja</string>
     <string name="init_login_popup">Skrá inn</string>
     <string name="init_login_popup_working">Innskráning í gangi…</string>
     <string name="init_login_popup_ok">Innskráning tókst</string>
@@ -343,25 +322,19 @@
     <string name="init_signature_template_log">Færslutexti</string>
     <string name="init_ratingwanted">GCvote mat</string>
     <string name="init_summary_ratingwanted">Sjá dóma um cache frá GCvote.com</string>
-    <string name="init_skin">Ljós hamur</string>
-    <string name="init_summary_skin">Nota ljósan ham (þarfnast endurræsingar)</string>
     <string name="init_address">Sýna heimilisfang</string>
-    <string name="init_exclude">Útiloka eigin og fundin</string>
-    <string name="init_summary_exclude">Útiloka cache sem þú átt eða hefur fundið</string>
-    <string name="init_disabled">Útiloka óvirk</string>
-    <string name="init_summary_disabled">Útiloka óvirk cache</string>
     <string name="init_save_log_img">Vista myndir</string>
     <string name="init_summary_save_log_img">Vista myndir úr færslum</string>
     <string name="init_units">Nota breskar mælieiningar</string>
     <string name="init_summary_units">Nota breskar mælieiningar í staðinn fyrir metrakerfið</string>
     <string name="init_log_offline">Skráning án netsambands</string>
     <string name="init_livelist">Sýna átt</string>
+    <!-- app theme -->
     <!-- backup / restore -->
     <string name="init_backup_backup">Öryggisafrit</string>
     <string name="init_backup_running">Bý til öryggisafrit af gagnagrunninum…</string>
     <string name="init_backup_restore">Endurheimta</string>
     <string name="init_backup_failed">Það mistókst að taka afrit af gagnagrunni c:geo.</string>
-    <string name="init_backup_unnecessary">Gagnagrunnurinn er tómur, óþarfi að taka öryggisafrit.</string>
     <string name="init_backup_no_backup_available">Það er engin öryggisafritsskrá tiltæk.</string>
     <string name="init_restore_success">Endurheimt lokið.</string>
     <string name="settings_info_offline_maps_title">Upplýsingar um kort án nettengingar</string>
@@ -399,7 +372,7 @@
     <string name="init_sendToCgeo_name">Nafn tækisins þíns</string>
     <string name="init_sendToCgeo_register">Óska eftir skráningu</string>
     <!-- Content Storage -->
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <!-- FolderUtils: async processing -->
     <!-- FolderUtils: copy/move -->
     <!-- auth generic -->
@@ -486,14 +459,9 @@
     <string name="cache_status_offline_log">Vistuð skráning</string>
     <string name="cache_status_found">Fundið</string>
     <string name="cache_not_status_found">Ekki fundinn</string>
-    <string name="cache_never_found">Aldrei fundinn</string>
-    <string name="cache_found_last_30_days">Fundinn síðustu 30 daga</string>
     <string name="cache_status_archived">Vistað</string>
     <string name="cache_status_disabled">Óvirkt</string>
     <string name="cache_status_premium">Aðeins fyrir Premium Members</string>
-    <string name="cache_status_not_premium">Aðgangur fyrir alla meðlimi</string>
-    <string name="cache_status_stored">Vistað</string>
-    <string name="cache_status_not_stored">Ekki vistað</string>
     <string name="cache_geocode">Geokóði</string>
     <string name="cache_name">Nafn</string>
     <string name="cache_type">Tegund</string>
@@ -573,8 +541,6 @@
     <string name="search_kw">Leitarorð</string>
     <string name="search_kw_prefill">Leitarorð</string>
     <string name="search_kw_button">Leita eftir leitarorðum</string>
-    <string name="search_fbu_prefill">Notandanafn</string>
-    <string name="search_fbu_button">Leita eftir notandanafni</string>
     <string name="search_hbu_prefill">Eigandi</string>
     <string name="search_hbu_button">Leita eftir nafni eiganda</string>
     <string name="search_tb_button">Leita að ferðalangi</string>
@@ -693,7 +659,6 @@
     <string name="about_twitter">Á <b>c:geo</b> að setja inn nýja færslu á Twitter í hvert skipti sem þú skráir heimsókn þína?</string>
     <string name="faq_title">Algengar spurningar</string>
     <!-- status (used via string based resource loading) -->
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">Nýlegar breytingar á geocaching.com brutu c:geo.\nVið erum að vinna í því, athugaðu aftur síðar.</string>
     <!-- text-to-speech for compass view -->
     <string name="tts_service">Talandi áttaviti</string>
     <string name="tts_one_kilometer">einn kílómeter</string>
@@ -754,7 +719,7 @@
     <!-- permission handling -->
     <!-- colors -->
     <!-- number input -->
-    <!-- text notification channel infos & proximity notification title -->
+    <!-- notification / channel texts -->
     <!-- individual routes -->
     <!-- individual track -->
     <!-- distance units -->
@@ -763,7 +728,7 @@
     <!-- switch settings -->
     <!-- view settings -->
     <!-- HandleLocalFilesActivity -->
-    <!-- ReceiveMapFileActivity -->
+    <!-- ReceiveDownloadActivity -->
     <!-- Download map preference and menu entry -->
     <!-- history track -->
     <!-- history track export -->
@@ -771,4 +736,5 @@
     <!-- install wizard -->
     <!-- Map Theme helper -->
     <!-- default actions in dialogs -->
+    <!-- ChipChoiceGroup -->
 </resources>

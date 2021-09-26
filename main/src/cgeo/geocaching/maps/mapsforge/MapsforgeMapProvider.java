@@ -19,13 +19,13 @@ import cgeo.geocaching.utils.FileUtils;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.TextUtils;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -60,6 +61,7 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
         registerMapSource(new OsmMapSource(this, resources.getString(R.string.map_source_osm_mapnik)));
         registerMapSource(new OsmdeMapSource(this, resources.getString(R.string.map_source_osm_osmde)));
         registerMapSource(new CyclosmMapSource(this, resources.getString(R.string.map_source_osm_cyclosm)));
+        registerMapSource(new MapyCzMapSource(this, resources.getString(R.string.map_source_mapy_cz)));
 
         //get notified if Offline Maps directory changes
         PersistableFolder.OFFLINE_MAPS.registerChangeListener(this, pf -> updateOfflineMaps());
@@ -77,7 +79,7 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
     }
 
     public static List<ContentStorage.FileInformation> getOfflineMaps() {
-        return ContentStorage.get().list(PersistableFolder.OFFLINE_MAPS);
+        return ContentStorage.get().list(PersistableFolder.OFFLINE_MAPS, true);
 
     }
 
@@ -87,7 +89,7 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
     }
 
     @Override
-    public Class<? extends Activity> getMapClass() {
+    public Class<? extends AppCompatActivity> getMapClass() {
         mapItemFactory = new MapsforgeMapItemFactory();
         return NewMap.class;
     }
@@ -162,6 +164,18 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
             return new ImmutablePair<>(MapsforgeMapProvider.getInstance().getAttributionFor(this.mapUri), true);
         }
 
+   }
+
+   public static final class MapyCzMapSource extends AbstractMapsforgeMapSource {
+
+       MapyCzMapSource(final MapProvider mapProvider, final String name) {
+           super(mapProvider, name, TileSourceMapyCz.INSTANCE);
+       }
+
+       @Override
+       public ImmutablePair<String, Boolean> calculateMapAttribution(final Context context) {
+            return new ImmutablePair<>(context.getString(R.string.map_attribution_mapy_cz_html), false);
+       }
    }
 
     public static final class CyclosmMapSource extends AbstractMapsforgeMapSource {
@@ -303,10 +317,10 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
         try {
             mapFile = createMapFile(mapFileCtx, mapStream);
             if (mapFile != null && mapFile.getMapFileInfo() != null && mapFile.getMapFileInfo().fileVersion <= 5) {
-                if (!StringUtils.isBlank(mapFile.getMapFileInfo().comment)) {
+                if (StringUtils.isNotBlank(mapFile.getMapFileInfo().comment)) {
                     return mapFile.getMapFileInfo().comment;
                 }
-                if (!StringUtils.isBlank(mapFile.getMapFileInfo().createdBy)) {
+                if (StringUtils.isNotBlank(mapFile.getMapFileInfo().createdBy)) {
                     return mapFile.getMapFileInfo().createdBy;
                 }
                 //map file is valid but has no attribution -> return default value
@@ -324,14 +338,14 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
         if (mapUri == null) {
             return null;
         }
-        return ContentStorage.get().openForRead(mapUri);
+        return ContentStorage.get().openForRead(mapUri, true);
     }
 
     private static MapFile createMapFile(final String mapFileCtx, final InputStream fis) {
 
         if (fis != null) {
             try {
-                return new MapFile((FileInputStream) fis, 0, MapProviderFactory.getLanguage(Settings.getMapLanguage()));
+                return new MapFile((FileInputStream) fis, 0, Settings.getMapLanguage());
             } catch (MapFileException mfe) {
                 Log.e("Problem opening map file '" + mapFileCtx + "'", mfe);
             }
@@ -355,7 +369,7 @@ public final class MapsforgeMapProvider extends AbstractMapProvider {
         final Resources resources = CgeoApplication.getInstance().getResources();
         final List<ImmutablePair<String, Uri>> offlineMaps =
             CollectionStream.of(getOfflineMaps())
-                .filter(fi -> !fi.isDirectory && fi.name.toLowerCase().endsWith(FileUtils.MAP_FILE_EXTENSION) && isValidMapFile(fi.uri))
+                .filter(fi -> !fi.isDirectory && fi.name.toLowerCase(Locale.getDefault()).endsWith(FileUtils.MAP_FILE_EXTENSION) && isValidMapFile(fi.uri))
                 .map(fi -> new ImmutablePair<>(fi.name, fi.uri)).toList();
         Collections.sort(offlineMaps, (o1, o2) -> TextUtils.COLLATOR.compare(o1.left, o2.left));
         if (offlineMaps.size() > 1) {

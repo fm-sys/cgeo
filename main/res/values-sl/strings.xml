@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
     <!-- basics -->
     <string name="cache">Zaklad</string>
     <string name="detail">Podrobnosti</string>
@@ -176,7 +178,6 @@
     <string name="err_tb_display">c:geo ne more prikazati željenega sledljivčka. Ali je res sledljivček?</string>
     <string name="err_tb_details_open">c:geo ne more pokazati podatke sledljivčka.</string>
     <string name="err_tb_not_loggable">Tega sledljivčka ni mogoče logirati.</string>
-    <string name="err_tb_find">c:geo ni našel sledljivčka.</string>
     <string name="err_tb_find_that">c:geo ni našel tega sledljivčka.</string>
     <string name="err_waypoint_cache_unknown">c:geo ne ve h kateremu zakladu želite dodati točko.</string>
     <string name="err_waypoint_add_failed">c:geo ni uspelo dodati točke.</string>
@@ -242,7 +243,6 @@
     <string name="menu_history">Zgodovina</string>
     <string name="menu_filter">Filtriraj</string>
     <string name="menu_scan_geo">Skeniraj geo-kodo</string>
-    <string name="menu_pocket_queries">Zbirke Pocket Query</string>
     <string name="menu_scan_description">c:geo lahko skenira GC kodo, ki je izpisana kot QR koda. Za to potrebujete aplikacijo, ki ni nameščena. Ali jo želite odpreti v Google Play in jo namestiti?</string>
     <!-- main screen -->
     <string name="live_map_button">Zemljevid</string>
@@ -293,8 +293,6 @@
     <string name="caches_select_mode_exit">Izhod iz načina izbiranja</string>
     <string name="caches_select_invert">Obrni izbor</string>
     <string name="caches_nearby">V bližini</string>
-    <string name="caches_remove_all">Odstrani vse</string>
-    <string name="caches_remove_selected">Odstrani izbrane</string>
     <string name="caches_delete_events">Izbriši pretekla srečanja</string>
     <string name="caches_refresh_selected">Osveži izbrane</string>
     <string name="caches_refresh_all">Osveži vse</string>
@@ -303,22 +301,7 @@
     <string name="caches_copy_selected">Kopiraj izbrane</string>
     <string name="caches_copy_all">Kopiraj vse</string>
     <string name="caches_map_locus_export">Izvozi v Locus</string>
-    <string name="caches_filter">Filtriraj</string>
     <string name="caches_filter_title">Filtriraj po</string>
-    <string name="caches_filter_size">Velikosti</string>
-    <string name="caches_filter_type">Tipu</string>
-    <string name="caches_filter_track">S sledljivčki</string>
-    <string name="caches_filter_clear">Počisti filtre</string>
-    <string name="caches_filter_modified">S spremenjenimi koordinatami</string>
-    <string name="caches_filter_offline_log">Z offline zapisom</string>
-    <string name="caches_filter_origin">Vir</string>
-    <string name="caches_filter_distance">Razdalja</string>
-    <string name="caches_filter_personal_note">Z osebnim zapisom</string>
-    <string name="caches_filter_popularity">Favoriti</string>
-    <string name="caches_filter_popularity_ratio">Favoriti [%]</string>
-    <string name="caches_filter_personal_data">Z osebnim zapisom</string>
-    <string name="caches_filter_rating">Z oceno</string>
-    <string name="caches_filter_own_rating">Z lastno oceno</string>
     <string name="caches_removing_from_history">Brišem iz zgodovine…</string>
     <string name="caches_clear_offlinelogs">Izbriši shranjene zapise</string>
     <string name="caches_clear_offlinelogs_message">Ali želite izbrisati zapise brez povezave?</string>
@@ -344,6 +327,7 @@
     <string name="list_dialog_rename_title">Preimenuj seznam</string>
     <string name="list_dialog_rename">Preimenuj</string>
     <string name="list_not_available">Seznam ni več na voljo, preklapljam na standardni seznam</string>
+    <!-- caches lists filter -->
     <!-- about -->
     <string name="about_version">Različica</string>
     <string name="about_changelog">Zadnje spremembe</string>
@@ -380,37 +364,26 @@
     <string name="settings_title_map_content">Vsebina zemljevida</string>
     <string name="settings_title_map_behavior">Nastavitve zemljevida</string>
     <string name="settings_title_basicmembers">Možnosti za Basic Member</string>
-    <string name="settings_title_navigation">Navigacija</string>
-    <string name="settings_summary_navigation">Izberi želeno metodo navigacije in izberi zunanje aplikacije.</string>
     <string name="settings_title_system">Sistem</string>
     <string name="settings_title_navigation_menu">Navigacijski menu</string>
     <string name="settings_category_browser">Brskalnik</string>
     <string name="settings_category_social">Socialni vtičniki</string>
     <string name="settings_category_logging_other">Druge možnosti zapisa</string>
     <string name="settings_goto_url_button">več …</string>
-    <string name="settings_activate_gc">Aktiviraj</string>
-    <string name="settings_activate_ec">Aktiviraj</string>
+    <string name="settings_service_activate">Aktiviraj</string>
     <string name="settings_gc_legal_note">Za uporabo storitev Geocaching.com se morate strinjati s pogoji uporabe podjetja Groundspeak.</string>
     <string name="settings_authorize">Poveži c:geo</string>
-    <string name="settings_activate_oc">Aktiviraj</string>
     <string name="init_summary_oc_de">Naloži zaklade iz opencaching.de</string>
     <string name="init_oc_de_description">Poveži c:geo z opencaching.de za iskanje zakladov in dostop in filter najdenih zakladov.</string>
-    <string name="settings_activate_oc_pl">Aktiviraj</string>
     <string name="init_summary_oc_pl">Naloži zaklade iz opencaching.de</string>
     <string name="init_oc_pl_description">Poveži c:geo z opencaching.pl za iskanje zakladov in dostop in filter najdenih zakladov.</string>
-    <string name="settings_activate_oc_nl">Aktiviraj</string>
     <string name="init_summary_oc_nl">Naloži zaklade iz opencaching.nl</string>
     <string name="init_oc_nl_description">Poveži c:geo z opencaching.nl za iskanje zakladov in dostop in filter najdenih zakladov.</string>
-    <string name="settings_activate_oc_us">Aktiviraj</string>
     <string name="init_summary_oc_us">Naloži zaklade iz opencaching.us</string>
     <string name="init_oc_us_description">Poveži c:geo z opencaching.us za iskanje zakladov in dostop in filter najdenih zakladov.</string>
-    <string name="settings_activate_oc_ro">Aktiviraj</string>
     <string name="init_summary_oc_ro">Naloži zaklade iz opencaching.ro</string>
     <string name="init_oc_ro_description">Poveži c:geo z opencaching.ro za iskanje zakladov in dostop in filter najdenih zakladov.</string>
-    <string name="settings_activate_oc_uk">Aktiviraj</string>
     <string name="init_summary_oc_uk">Naloži zaklade iz opencache.uk</string>
-    <string name="settings_activate_su">Aktiviraj</string>
-    <string name="settings_activate_twitter">Aktiviraj</string>
     <string name="init_login_popup">Prijava</string>
     <string name="init_login_popup_working">Prijavljanje…</string>
     <string name="init_login_popup_ok">Prijava uspešna</string>
@@ -437,16 +410,10 @@
     <string name="init_summary_friends_and_own_logs_wanted">Prikaži dodaten zavihek s svojimi/prijateljevimi zapisi</string>
     <string name="init_openlastdetailspage">Odpri nazadnje odprto stran</string>
     <string name="init_summary_openlastdetailspage">Pri podrobnostih zaklada vedno odpri zadnjo uporabljeno stran</string>
-    <string name="init_skin">Svetli izgled</string>
-    <string name="init_summary_skin">Uporabi svetlo različico\n(potrebuje ponovni zagon aplikacije)</string>
     <string name="init_address">Pokaži naslov</string>
     <string name="init_summary_address">Na glavnem zaslonu pokaži naslov namesto koordinat</string>
-    <string name="init_exclude">Ne pokaži najdenih ali mojih zakladov</string>
-    <string name="init_summary_exclude">Ne pokaži mojih ali najdenih zakladov v iskanjih ali na zemljevidu</string>
     <string name="init_showwaypoints">Dodatne točke na zemljevidu</string>
     <string name="init_showwaypoint_description">Če je manj kot določeno število zakladov na zemljevidu, se pokažejo tudi dodatne točke.</string>
-    <string name="init_disabled">Ne pokaži onemogočenih zakladov v iskanjih ali na zemljevidu</string>
-    <string name="init_summary_disabled">Ne pokaži onemogočenih zakladov</string>
     <string name="init_save_log_img">Slike iz zapisov</string>
     <string name="init_summary_save_log_img">Za delo brez povezave shrani tudi slike iz zapisov</string>
     <string name="init_units">Anglosaške merske enote</string>
@@ -456,13 +423,13 @@
     <string name="init_choose_list">Vprašaj za seznam</string>
     <string name="init_summary_choose_list">Pri shranjevanju zaklada za delo brez povezave vprašaj za seznam</string>
     <string name="init_livelist">Pokaži smeri</string>
+    <!-- app theme -->
     <!-- backup / restore -->
     <string name="init_backup_backup">Ustvari varnostno kopijo</string>
     <string name="init_backup_running">Ustvarjanje varnostne kopije baze…</string>
     <string name="init_backup_restore">Obnovi iz varnostne kopije</string>
     <string name="init_backup_success">Varnostna kopija je bila uspešno ustvarjena.</string>
     <string name="init_backup_failed">Varnostne kopije ni bilo mogoče ustvariti.</string>
-    <string name="init_backup_unnecessary">Baza je prazna. Varnostna kopija ni potrebna.</string>
     <string name="init_restore_success">Obnovitev iz varnostne kopije je uspela.</string>
     <string name="init_restore_running">Obnavljam bazo podatkov iz varnostne kopije…</string>
     <string name="init_restore_confirm">Baza podatkov je prazna, ali ji želite obnoviti iz varnostne kopije?</string>
@@ -542,7 +509,7 @@
     <string name="sendToCgeo_download_fail">c:geo ni uspel prenesti zakladov. Vaša povezava z internetom morda ne deluje, ali pa ne deluje spletna stran send2cgeo.</string>
     <string name="sendToCgeo_no_registration">c:geo ni uspel prenesti zakladov. Registracija s send2cgeo je potekla. Prosimo ponovno registrirajte napravo v nastavitvah.</string>
     <!-- Content Storage -->
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <!-- FolderUtils: async processing -->
     <!-- FolderUtils: copy/move -->
     <!-- auth generic -->
@@ -572,7 +539,6 @@
     <string name="cache_offline_stored">Shranjeno na napravi</string>
     <string name="cache_offline_not_ready">Ni na voljo brez povezave</string>
     <string name="cache_offline_time_mins_few">nekaj minut nazaj</string>
-    <string name="cache_attributes">Atributi</string>
     <string name="cache_inventory">Inventar</string>
     <string name="cache_log_images_title">Slike</string>
     <string name="cache_log_image_default_title">Slika</string>
@@ -593,12 +559,6 @@
     <string name="cache_favpoint_not_on">Zaklad ni na vašem spisku priljubljenih.</string>
     <string name="cache_images">Slike</string>
     <string name="cache_waypoints">Dodatne točke</string>
-    <plurals name="waypoints">
-        <item quantity="one">%d dodatna točka</item>
-        <item quantity="two">%d dodatni točki</item>
-        <item quantity="few">%d dodatne točke</item>
-        <item quantity="other">%d dodatnih točk</item>
-    </plurals>
     <string name="cache_waypoints_add">Dodaj točko</string>
     <string name="cache_hint">Namig</string>
     <string name="cache_logs">Dnevnik zapisov</string>
@@ -651,14 +611,9 @@
     <string name="cache_status_offline_log">Shranjen zapis</string>
     <string name="cache_status_found">Najden</string>
     <string name="cache_not_status_found">Ni najden</string>
-    <string name="cache_never_found">Še ni najden</string>
-    <string name="cache_found_last_30_days">Najdbe zadnjih 30 dni</string>
     <string name="cache_status_archived">Arhiviran</string>
     <string name="cache_status_disabled">Onemogočen</string>
     <string name="cache_status_premium">Samo za Premium člane</string>
-    <string name="cache_status_not_premium">Za vse člane</string>
-    <string name="cache_status_stored">Shranjen</string>
-    <string name="cache_status_not_stored">Ni shranjen</string>
     <string name="cache_geocode">Geo koda</string>
     <string name="cache_name">Ime</string>
     <string name="cache_type">Tip</string>
@@ -674,7 +629,6 @@
     <string name="cache_event">Datum</string>
     <string name="cache_location">Lokacija</string>
     <string name="cache_coordinates">Koordinate</string>
-    <string name="cache_calculator">Kalkulator</string>
     <string name="cache_coordinates_original">Originalne koordiante</string>
     <string name="cache_spoiler_images_title">Spoiler slike</string>
     <string name="cache_log_types">Tipi zapisov</string>
@@ -754,7 +708,6 @@
     <string name="map_map">Zemljevid</string>
     <string name="map_live">Zemljevid</string>
     <string name="map_view_map">Pogled zemljevida</string>
-    <string name="map_show_circles">Pokaži kroge</string>
     <string name="map_theme_select">Izberi temo zemljevida</string>
     <string name="map_live_enable">Vklopi podatke v živo</string>
     <string name="map_live_disable">Izklopi podatke v živo</string>
@@ -771,8 +724,6 @@
     <string name="search_kw">Ključne besede</string>
     <string name="search_kw_prefill">Ključna beseda</string>
     <string name="search_kw_button">Iskanje po ključnih besedah</string>
-    <string name="search_fbu_prefill">Uporabniško ime</string>
-    <string name="search_fbu_button">Iskanje po uporabniškem imenu</string>
     <string name="search_hbu_prefill">Lastnik</string>
     <string name="search_hbu_button">Iskanje po imenu lastnika</string>
     <string name="search_tb">Sledljivčki</string>
@@ -781,7 +732,6 @@
     <string name="search_address_started">Iskanje mest</string>
     <string name="search_address_result">Najdena mesta</string>
     <string name="search_own_caches">Iskanje mojih zakladov</string>
-    <string name="search_pocket_loading">Nalaganje seznama Pocket Query</string>
     <!-- trackable -->
     <string name="trackable">Sledljivček</string>
     <string name="trackable_details_loading">Nalaganje podatkov o sledljivčku…</string>
@@ -813,7 +763,6 @@
     <!-- user -->
     <string name="user_menu_title">Uporabnik</string>
     <string name="user_menu_view_hidden">Skritih zakladov</string>
-    <string name="user_menu_view_found">Najdenih zakladov</string>
     <string name="user_menu_open_browser">Odpri profil v brskalniku</string>
     <string name="user_menu_send_message">Pošlji sporočilo</string>
     <string name="user_menu_open_contact">Odpri vizitko kontakta</string>
@@ -837,7 +786,6 @@
     <string name="helper_gpsstatus_description">Aplikacija GPS Status vam omogoča prikaz radarja in uporabljate jo lahko z aplikacijo c:geo. Omogoča tudi prikaz veliko drugih informacij povezanih z GPS in njihovimi orodji.</string>
     <string name="helper_bluetoothgps_description">Omogoča vam uporabo zunanjega GPS sprejemnika, ki ga povežete z vašo napravo preko Bluetooth. Na ta način lahko varčujete z baterijo in dobite bolj natančen sprejem.</string>
     <string name="helper_barcode_description">Aplikacija omogoča skeniranje črtnih kod.</string>
-    <string name="helper_pocketquery_description">Aplikacija vam omogoča ustvarjanje PQ poizvedb na Geocaching.com S temi poizvedbami lahko enostavno prenesete zakladke na napravo. Deluje samo na Premium računih.</string>
     <string name="helper_google_translate_title">Prevajalnik Google</string>
     <string name="helper_google_translate_description">Če prenesete pakete prevodov znotraj Google Translate aplikacije, lahko prevajate opise zakladov v c:geo tudi brez povezave z dolgim pritiskom na tekst.</string>
     <string name="helper_where_you_go_description">WhereYouGo omogoča igranje in iskanje geocaches vrste Wherigo. c:Geo lahko samodejno sprožijo prenos kartuš v to app.</string>
@@ -1092,9 +1040,6 @@
     <string name="about_twitter">Naj <b>c:geo</b> objavi nov status na Twitter, ko objavite nov zapis pri zakladu?</string>
     <string name="faq_title">Pogosta vprašanja</string>
     <!-- status (used via string based resource loading) -->
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">Spremembe na spletni strani Geocaching.com so povzročile, da c:geo ne deluje popolno.\nŽe delamo na tem! Poskusite ponovno čez nekaj časa.</string>
-    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">Spremembe na spletni strani Geocaching.com so povzročile, da zemljevid zakladov ne deluje več.\nŽe delamo na tem! Poskusite ponovno čez nekaj časa.</string>
-    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">Trenutno poteka vzdrževanje spletne strani geocaching.com.\nMorda boste imeli težave pri povezovanju.</string>
     <!-- text-to-speech for compass view -->
     <string name="tts_service">Glasovni kompas</string>
     <string name="tts_started">Začel govor</string>
@@ -1131,7 +1076,6 @@
     <string name="confirm_log_title">Posebna vrsta dnevniškega zapisa</string>
     <string name="confirm_log_message">Poslali boste zapis \'%s\'. Ali ste prepričani?</string>
     <!-- Geokrety -->
-    <string name="settings_activate_geokrety">Aktiviraj</string>
     <string name="command_copy_caches_progress">Kopiranje zakladov v seznam %1s</string>
     <string name="command_unique_list_result">Izbriši zaklade iz ostalih seznamov</string>
     <string name="caches_refresh_all_warning">To dejanje lahko povzroči veliko mrežnega prometa - prenosa podatkov. Ali ste prepričani, da želite osvežiti vse zaklade?</string>
@@ -1142,14 +1086,14 @@
     <!-- permission handling -->
     <!-- colors -->
     <!-- number input -->
-    <!-- text notification channel infos & proximity notification title -->
+    <!-- notification / channel texts -->
     <!-- individual routes -->
     <!-- individual track -->
     <!-- distance units -->
     <!-- switch settings -->
     <!-- view settings -->
     <!-- HandleLocalFilesActivity -->
-    <!-- ReceiveMapFileActivity -->
+    <!-- ReceiveDownloadActivity -->
     <!-- Download map preference and menu entry -->
     <!-- history track -->
     <string name="map_trail_show">Pokaži sled</string>
@@ -1158,4 +1102,5 @@
     <!-- install wizard -->
     <!-- Map Theme helper -->
     <!-- default actions in dialogs -->
+    <!-- ChipChoiceGroup -->
 </resources>

@@ -17,6 +17,7 @@ import cgeo.geocaching.utils.EditUtils;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -31,13 +32,14 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.Spinner;
+import android.widget.TableLayout;
 import android.widget.TextView;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 
@@ -45,6 +47,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.android.material.textfield.TextInputLayout;
 import org.apache.commons.lang3.StringUtils;
 
 public class CoordinatesInputDialog extends DialogFragment {
@@ -52,12 +55,28 @@ public class CoordinatesInputDialog extends DialogFragment {
     private Geopoint gp;
     private Geopoint cacheCoords;
 
-    private EditText eLat, eLon;
-    private Button bLat, bLon;
-    private EditText eLatDeg, eLatMin, eLatSec, eLatSub;
-    private EditText eLonDeg, eLonMin, eLonSec, eLonSub;
-    private TextView tLatSep1, tLatSep2, tLatSep3;
-    private TextView tLonSep1, tLonSep2, tLonSep3;
+    private TableLayout coordTable;
+    private TextInputLayout eLatFrame;
+    private TextInputLayout eLonFrame;
+    private EditText eLat;
+    private EditText eLon;
+    private Button bLat;
+    private Button bLon;
+    private Button bCalculate;
+    private EditText eLatDeg;
+    private EditText eLatMin;
+    private EditText eLatSec;
+    private EditText eLatSub;
+    private EditText eLonDeg;
+    private EditText eLonMin;
+    private EditText eLonSec;
+    private EditText eLonSub;
+    private TextView tLatSep1;
+    private TextView tLatSep2;
+    private TextView tLatSep3;
+    private TextView tLonSep1;
+    private TextView tLonSep2;
+    private TextView tLonSep3;
 
     private CoordInputFormatEnum currentFormat = null;
     private List<EditText> orderedInputs;
@@ -110,7 +129,8 @@ public class CoordinatesInputDialog extends DialogFragment {
     @Override
     public void onPause() {
         super.onPause();
-        new Keyboard(getActivity()).hide();
+        Keyboard.hide(getActivity());
+
     }
 
     @Override
@@ -126,37 +146,40 @@ public class CoordinatesInputDialog extends DialogFragment {
         final boolean noTitle = dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         final View v = inflater.inflate(R.layout.coordinatesinput_dialog, container, false);
-        final InputDoneListener inputdone = new InputDoneListener();
+
+        // change table border color depending on "any child has focus" state
+        coordTable = v.findViewById(R.id.coordTable);
+        coordTable.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> coordTable.setBackgroundResource(coordTable.findFocus() != null ? R.drawable.textinputlayout_bcg_active : R.drawable.textinputlayout_bcg_default));
+
         if (!noTitle) {
             dialog.setTitle(R.string.cache_coordinates);
         } else {
-            final TextView title = v.findViewById(R.id.dialog_title_title);
-            if (title != null) {
-                title.setText(R.string.cache_coordinates);
-                title.setVisibility(View.VISIBLE);
-            }
-            final ImageButton cancel = v.findViewById(R.id.dialog_title_cancel);
-            if (cancel != null) {
-                cancel.setOnClickListener(new InputCancelListener());
-                cancel.setVisibility(View.VISIBLE);
-            }
-            final ImageButton done = v.findViewById(R.id.dialog_title_done);
-            if (done != null) {
-                done.setOnClickListener(inputdone);
-                done.setVisibility(View.VISIBLE);
+            final Toolbar toolbar = v.findViewById(R.id.toolbar);
+            if (toolbar != null) {
+                toolbar.setTitle(R.string.cache_coordinates);
+                toolbar.inflateMenu(R.menu.menu_ok_cancel);
+                toolbar.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == R.id.menu_item_save) {
+                        saveAndFinishDialog();
+                    } else {
+                        dismiss();
+                    }
+                    return true;
+                });
             }
         }
 
         final Spinner spinner = v.findViewById(R.id.spinnerCoordinateFormats);
         final ArrayAdapter<CharSequence> adapter =
-                ArrayAdapter.createFromResource(getActivity(),
-                        R.array.waypoint_coordinate_formats,
-                        android.R.layout.simple_spinner_item);
+            ArrayAdapter.createFromResource(getActivity(),
+                R.array.waypoint_coordinate_formats,
+                android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
         spinner.setSelection(Settings.getCoordInputFormat().ordinal());
         spinner.setOnItemSelectedListener(new CoordinateFormatListener());
 
+        eLatFrame = v.findViewById(R.id.latitudeFrame);
         bLat = v.findViewById(R.id.ButtonLat);
         eLat = v.findViewById(R.id.latitude);
         eLatDeg = v.findViewById(R.id.EditTextLatDeg);
@@ -167,6 +190,7 @@ public class CoordinatesInputDialog extends DialogFragment {
         tLatSep2 = v.findViewById(R.id.LatSeparator2);
         tLatSep3 = v.findViewById(R.id.LatSeparator3);
 
+        eLonFrame = v.findViewById(R.id.longitudeFrame);
         bLon = v.findViewById(R.id.ButtonLon);
         eLon = v.findViewById(R.id.longitude);
         eLonDeg = v.findViewById(R.id.EditTextLonDeg);
@@ -197,10 +221,11 @@ public class CoordinatesInputDialog extends DialogFragment {
         } else {
             buttonCache.setVisibility(View.GONE);
         }
-        final Button buttonCalculate = v.findViewById(R.id.calculate);
+
+        bCalculate = v.findViewById(R.id.calculate);
         if (getActivity() instanceof CalculateState) {
-            buttonCalculate.setOnClickListener(new CalculateListener());
-            buttonCalculate.setVisibility(View.VISIBLE);
+            bCalculate.setOnClickListener(new CalculateListener());
+            bCalculate.setVisibility(View.VISIBLE);
         }
 
         final Button buttonClear = v.findViewById(R.id.clear);
@@ -219,7 +244,7 @@ public class CoordinatesInputDialog extends DialogFragment {
         if (noTitle) {
             buttonDone.setVisibility(View.GONE);
         } else {
-            buttonDone.setOnClickListener(inputdone);
+            buttonDone.setOnClickListener(view -> saveAndFinishDialog());
         }
 
         return v;
@@ -253,8 +278,8 @@ public class CoordinatesInputDialog extends DialogFragment {
         switch (currentFormat) {
             case Plain:
                 setVisible(R.id.coordTable, View.GONE);
-                eLat.setVisibility(View.VISIBLE);
-                eLon.setVisibility(View.VISIBLE);
+                eLatFrame.setVisibility(View.VISIBLE);
+                eLonFrame.setVisibility(View.VISIBLE);
                 if (gp != null) {
                     eLat.setText(gp.format(GeopointFormatter.Format.LAT_DECMINUTE));
                     eLon.setText(gp.format(GeopointFormatter.Format.LON_DECMINUTE));
@@ -262,8 +287,8 @@ public class CoordinatesInputDialog extends DialogFragment {
                 break;
             case Deg: // DDD.DDDDD°
                 setVisible(R.id.coordTable, View.VISIBLE);
-                eLat.setVisibility(View.GONE);
-                eLon.setVisibility(View.GONE);
+                eLatFrame.setVisibility(View.GONE);
+                eLonFrame.setVisibility(View.GONE);
                 eLatSec.setVisibility(View.GONE);
                 eLonSec.setVisibility(View.GONE);
                 tLatSep3.setVisibility(View.GONE);
@@ -291,8 +316,8 @@ public class CoordinatesInputDialog extends DialogFragment {
                 break;
             case Min: // DDD° MM.MMM
                 setVisible(R.id.coordTable, View.VISIBLE);
-                eLat.setVisibility(View.GONE);
-                eLon.setVisibility(View.GONE);
+                eLatFrame.setVisibility(View.GONE);
+                eLonFrame.setVisibility(View.GONE);
                 eLatSec.setVisibility(View.VISIBLE);
                 eLonSec.setVisibility(View.VISIBLE);
                 tLatSep3.setVisibility(View.VISIBLE);
@@ -326,8 +351,8 @@ public class CoordinatesInputDialog extends DialogFragment {
                 break;
             case Sec: // DDD° MM SS.SSS
                 setVisible(R.id.coordTable, View.VISIBLE);
-                eLat.setVisibility(View.GONE);
-                eLon.setVisibility(View.GONE);
+                eLatFrame.setVisibility(View.GONE);
+                eLonFrame.setVisibility(View.GONE);
                 eLatSec.setVisibility(View.VISIBLE);
                 eLonSec.setVisibility(View.VISIBLE);
                 tLatSep3.setVisibility(View.VISIBLE);
@@ -367,6 +392,16 @@ public class CoordinatesInputDialog extends DialogFragment {
 
         for (final EditText editText : orderedInputs) {
             setSize(editText);
+        }
+
+        if (getActivity() instanceof CalculateState) {
+            final CalculateState calculateState = (CalculateState) getActivity();
+            final CalcState theState = calculateState.fetchCalculatorState();
+
+            if (null != theState) {
+                bCalculate.setText(R.string.waypoint_calculated_coordinates);
+                bCalculate.setTypeface(null, Typeface.ITALIC);
+            }
         }
     }
 
@@ -637,16 +672,12 @@ public class CoordinatesInputDialog extends DialogFragment {
         }
     }
 
-    private class InputDoneListener implements View.OnClickListener {
-
-        @Override
-        public void onClick(final View v) {
-            if (!areCurrentCoordinatesValid(true)) {
-                return;
-            }
-            ((CoordinateUpdate) getActivity()).updateCoordinates(gp);
-            dismiss();
+    private void saveAndFinishDialog () {
+        if (!areCurrentCoordinatesValid(true)) {
+            return;
         }
+        ((CoordinateUpdate) requireActivity()).updateCoordinates(gp);
+        dismiss();
     }
 
     private class ClearCoordinatesListener implements View.OnClickListener {
@@ -654,14 +685,6 @@ public class CoordinatesInputDialog extends DialogFragment {
         @Override
         public void onClick(final View v) {
             ((CoordinateUpdate) getActivity()).updateCoordinates(null);
-            dismiss();
-        }
-    }
-
-    private class InputCancelListener implements View.OnClickListener {
-
-        @Override
-        public void onClick(final View v) {
             dismiss();
         }
     }

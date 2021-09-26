@@ -3,6 +3,7 @@ package cgeo.geocaching.maps.google.v2;
 import cgeo.geocaching.EditWaypointActivity;
 import cgeo.geocaching.R;
 import cgeo.geocaching.connector.internal.InternalConnector;
+import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.maps.CGeoMap;
@@ -23,8 +24,10 @@ import cgeo.geocaching.maps.mapsforge.AbstractMapsforgeMapSource;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.Log;
 import static cgeo.geocaching.maps.google.v2.GoogleMapUtils.isGoogleMapsAvailable;
+import static cgeo.geocaching.storage.extension.OneTimeDialogs.DialogType.MAP_AUTOROTATION_DISABLE;
 
 import android.app.Activity;
 import android.content.Context;
@@ -77,6 +80,8 @@ public class GoogleMapView extends MapView implements MapViewImpl<GoogleCacheOve
 
     private WeakReference<PositionAndHistory> positionAndHistoryRef;
     private View root = null;
+
+    private int fromList = StoredList.TEMPORARY_LIST.id;
 
     public interface PostRealDistance {
         void postRealDistance (float realDistance);
@@ -133,7 +138,7 @@ public class GoogleMapView extends MapView implements MapViewImpl<GoogleCacheOve
                 if (null != cache) {
                     EditWaypointActivity.startActivityAddWaypoint(this.getContext(), cache, new Geopoint(tapLatLong.latitude, tapLatLong.longitude));
                 } else if (Settings.isLongTapOnMapActivated()) {
-                    InternalConnector.interactiveCreateCache(this.getContext(), new Geopoint(tapLatLong.latitude, tapLatLong.longitude), InternalConnector.UDC_LIST);
+                    InternalConnector.interactiveCreateCache(this.getContext(), new Geopoint(tapLatLong.latitude, tapLatLong.longitude), fromList, true);
                 }
             }
         });
@@ -143,7 +148,8 @@ public class GoogleMapView extends MapView implements MapViewImpl<GoogleCacheOve
             final float bearing = cameraPosition.bearing;
             if (canDisableAutoRotate && bearing == 0.0f && Settings.getMapRotation() == Settings.MAPROTATION_AUTO) {
                 canDisableAutoRotate = false;
-                Dialogs.confirm((Activity) getContext(), R.string.map_gm_autorotation, R.string.map_gm_autorotation_disable, (dialog, which) -> {
+                final Context context = getContext();
+                Dialogs.advancedOneTimeMessage(context, MAP_AUTOROTATION_DISABLE, context.getString(MAP_AUTOROTATION_DISABLE.messageTitle), context.getString(MAP_AUTOROTATION_DISABLE.messageText), "", true, null, () -> {
                     Settings.setMapRotation(Settings.MAPROTATION_MANUAL);
 
                     // notify overlay
@@ -166,6 +172,11 @@ public class GoogleMapView extends MapView implements MapViewImpl<GoogleCacheOve
         redraw();
     }
 
+    @Override
+    public void setListId(final int listId) {
+        fromList = listId;
+    }
+
     private void recognizePositionChange() {
         final CameraPosition cameraPosition = googleMap.getCameraPosition();
         // update all variable, which getters are available only in main thread
@@ -185,13 +196,13 @@ public class GoogleMapView extends MapView implements MapViewImpl<GoogleCacheOve
 
         if (!isGoogleMapsAvailable(context)) {
             // either play services are missing (should have been caught in MapProviderFactory) or Play Services version does not support this Google Maps API version
-            Dialogs.confirmYesNo((Activity) context, R.string.warn_gm_not_available, R.string.switch_to_mf, (dialog, whichButton) -> {
+            SimpleDialog.of((Activity) context).setTitle(R.string.warn_gm_not_available).setMessage(R.string.switch_to_mf).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm((dialog, whichButton) -> {
                 // switch to first Mapsforge mapsource found
                 final Collection<MapSource> mapSources = MapProviderFactory.getMapSources();
                 for (final MapSource mapSource : mapSources) {
                     if (mapSource instanceof AbstractMapsforgeMapSource) {
                         Settings.setMapSource(mapSource);
-                        Dialogs.message((Activity) context, R.string.warn_gm_not_available, R.string.switched_to_mf, (dialog2, whichButton2) -> ((Activity) context).finish());
+                        SimpleDialog.of((Activity) context).setTitle(R.string.warn_gm_not_available).setMessage(R.string.switched_to_mf).show((dialog2, whichButton2) -> ((Activity) context).finish());
                         break;
                     }
                 }

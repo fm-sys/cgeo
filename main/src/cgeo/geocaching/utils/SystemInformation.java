@@ -6,9 +6,10 @@ import cgeo.geocaching.connector.ConnectorFactory;
 import cgeo.geocaching.connector.IConnector;
 import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.connector.gc.GCConnector;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.maps.interfaces.MapSource;
 import cgeo.geocaching.maps.mapsforge.v6.RenderThemeHelper;
-import cgeo.geocaching.maps.routing.Routing;
 import cgeo.geocaching.playservices.GooglePlayServices;
 import cgeo.geocaching.sensors.MagnetometerAndAccelerometerProvider;
 import cgeo.geocaching.sensors.OrientationProvider;
@@ -22,14 +23,18 @@ import cgeo.geocaching.storage.FolderUtils;
 import cgeo.geocaching.storage.LocalStorage;
 import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.storage.PersistableUri;
+import static cgeo.geocaching.filters.core.GeocacheFilterContext.FilterType.TRANSIENT;
 
 import android.Manifest;
 import android.content.Context;
 import android.content.UriPermission;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.graphics.Point;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Environment;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -60,17 +65,18 @@ public final class SystemInformation {
         } else {
             usedDirectionSensor = "magnetometer & accelerometer";
         }
-        final String hideCaches = (Settings.isExcludeMyCaches() ? "own/found " : "") + (Settings.isExcludeDisabledCaches() ? "disabled " : "") + (Settings.isExcludeArchivedCaches() ? "archived" : "");
         final String hideWaypoints = (Settings.isExcludeWpOriginal() ? "original " : "") + (Settings.isExcludeWpParking() ? "parking " : "") + (Settings.isExcludeWpVisited() ? "visited" : "");
-        final StringBuilder body = new StringBuilder("--- System information ---")
+        final StringBuilder body = new StringBuilder("## System information").append("\n")
             .append("\nc:geo version: ").append(Version.getVersionName(context)).append("\n")
 
             .append("\nDevice:")
             .append("\n-------")
             .append("\n- Device type: ").append(Build.MODEL).append(" (").append(Build.PRODUCT).append(", ").append(Build.BRAND).append(')')
+            .append("\n- Available processors: ").append(Runtime.getRuntime().availableProcessors())
             .append("\n- Android version: ").append(VERSION.RELEASE)
-            .append("\n- Android build: ").append(Build.DISPLAY)
-            .append("\n- Sailfish OS detected: ").append(EnvironmentUtils.isSailfishOs());
+            .append("\n- Android build: ").append(Build.DISPLAY);
+        appendScreenResolution(context, body);
+        body.append("\n- Sailfish OS detected: ").append(EnvironmentUtils.isSailfishOs());
         appendGooglePlayServicesVersion(context, body);
         body.append("\n- HW acceleration: ").append(Settings.useHardwareAcceleration() ? "enabled" : "disabled")
             .append(" (").append(Settings.useHardwareAcceleration() == HwAccel.hwAccelShouldBeEnabled() ? "default state" : "manually changed").append(')')
@@ -87,18 +93,25 @@ public final class SystemInformation {
 
             .append("\n")
             .append("\nProgram settings:")
-            .append("\n-------")
-            .append("\n- Hide caches: ").append(hideCaches.isEmpty() ? "-" : hideCaches)
-            .append("\n- Hide waypoints: ").append(hideWaypoints.isEmpty() ? "-" : hideWaypoints)
+            .append("\n-------");
+            appendSettings(body);
+            body
             .append("\n- Set language: ").append(Settings.getUserLanguage().isEmpty() ? Locale.getDefault() + " (system default)" : Settings.getUserLanguage())
             .append("\n- System date format: ").append(Formatter.getShortDateFormat())
+            .append("\n- Time zone: ").append(CalendarUtils.getUserTimeZoneString())
             .append("\n- Debug mode active: ").append(Settings.isDebug() ? "yes" : "no")
-            .append("\n- Live map mode: ").append(Settings.isLiveMap())
-            .append("\n- Global filter: ").append(Settings.getCacheType().pattern)
             .append("\n- Last backup: ").append(BackupUtils.hasBackup(BackupUtils.newestBackupFolder()) ? BackupUtils.getNewestBackupDateTime() : "never")
-            .append("\n- Routing mode: ").append(context.getString(Settings.getRoutingMode().infoResId));
-        appendSettings(body);
+            .append("\n- Routing mode: ").append(LocalizationUtils.getEnglishString(context, Settings.getRoutingMode().infoResId))
+            .append("\n- Live map mode: ").append(Settings.isLiveMap())
+            .append("\n- OSM multi-threading: ").append(Settings.hasOSMMultiThreading()).append(" / threads: ").append(Settings.getMapOsmThreads());
         appendMapSourceInformation(body, context);
+        body
+            .append("\n")
+            .append("\nFilters:")
+            .append("\n-------")
+            .append("\n- Hide waypoints: ").append(hideWaypoints.isEmpty() ? "-" : hideWaypoints);
+        appendFilters(body);
+
         body
             .append("\n")
             .append("\nServices:")
@@ -107,7 +120,7 @@ public final class SystemInformation {
         if (GCConnector.getInstance().isActive()) {
             body.append("\n- Geocaching.com date format: ").append(Settings.getGcCustomDate());
         }
-        body.append("\n- Routing: ").append(Settings.useInternalRouting() ? "internal" : "external").append(" / connection available: ").append(Routing.isAvailable()).append(" / BRouter installed: ").append(ProcessUtils.isInstalled(context.getString(R.string.package_brouter)));
+        body.append("\n- Routing: ").append(Settings.useInternalRouting() ? "internal" : "external").append(" / BRouter installed: ").append(ProcessUtils.isInstalled(context.getString(R.string.package_brouter)));
         appendAddons(body);
 
         body.append("\n")
@@ -124,7 +137,7 @@ public final class SystemInformation {
         appendPersistedUriPermission(body, context);
         appendDatabase(body);
 
-        body.append("\n--- End of system information ---\n");
+        body.append("\n\n--- End of system information ---\n");
         return body.toString();
     }
 
@@ -137,8 +150,19 @@ public final class SystemInformation {
     }
 
     private static void appendSettings(@NonNull final StringBuilder body) {
-        body.append("\n -Settings: ").append(versionInfoToString(Settings.getActualVersion(), Settings.getExpectedVersion()))
+        body.append("\n- Settings: ").append(versionInfoToString(Settings.getActualVersion(), Settings.getExpectedVersion()))
             .append(", Count:").append(Settings.getPreferencesCount());
+    }
+
+    private static void appendFilters(@NonNull final StringBuilder body) {
+        for (GeocacheFilterContext.FilterType filterType : GeocacheFilterContext.FilterType.values()) {
+            if (TRANSIENT.equals(filterType)) {
+                continue;
+            }
+            body.append("\n- ").append(filterType.name()).append(": ");
+            final GeocacheFilter filter = new GeocacheFilterContext(filterType).get();
+            body.append(filter.toUserDisplayableString()).append(" (").append(filter.toConfig()).append(")");
+        }
     }
 
     private static void appendDirectory(@NonNull final StringBuilder body, @NonNull final String label, @NonNull final File directory) {
@@ -193,9 +217,10 @@ public final class SystemInformation {
             return;
         }
         final ImmutablePair<String, Boolean> mapAtts = source.calculateMapAttribution(ctx);
-        body.append(source.getName()).append("\n  - Id: ").append(source.getId())
-            .append("\n  - Atts: ").append(mapAtts == null ? "none" : mapAtts.left)
-            .append("\n  - Theme: ").append(Settings.getSelectedMapRenderTheme());
+        body.append(source.getName()) // unfortunately localized but an English string would require large refactoring. The sourceId provides an unlocalized and unique identifier.
+                .append("\n  - Id: ").append(source.getId())
+                .append("\n  - Atts: ").append(mapAtts == null ? "none" :  HtmlUtils.extractText(mapAtts.left).replace("\n", " / "))
+                .append("\n  - Theme: ").append(StringUtils.isBlank(Settings.getSelectedMapRenderTheme()) ? "none" : Settings.getSelectedMapRenderTheme());
     }
 
 
@@ -217,7 +242,7 @@ public final class SystemInformation {
                 if (connector instanceof ILogin) {
                     final ILogin login = (ILogin) connector;
                     connectors.append(": ").append(login.isLoggedIn() ? "Logged in" : "Not logged in")
-                            .append(" (").append(login.getLoginStatusString()).append(')');
+                            .append(" (").append(login.getLoginStatusString() /* unfortunately localized but an English string would require large refactoring */).append(')');
                     if (login.getName().equals("geocaching.com") && login.isLoggedIn()) {
                         connectors.append(" / ").append(Settings.getGCMemberStatus());
                     }
@@ -260,6 +285,14 @@ public final class SystemInformation {
                 body.append("unretrievable version (").append(e.getMessage()).append(')');
             }
         }
+    }
+
+    private static void appendScreenResolution(final Context context, final StringBuilder body) {
+        final Configuration config = context.getResources().getConfiguration();
+        final Point size = new Point();
+        ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getSize(size);
+
+        body.append("\n- Screen resolution: ").append(size.x).append("x").append(size.y).append("px (").append(config.screenWidthDp).append("x").append(config.screenHeightDp).append("dp)");
     }
 
     private static String versionInfoToString(final int actualVersion, final int expectedVersion) {

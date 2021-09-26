@@ -2,13 +2,16 @@ package cgeo.geocaching.downloader;
 
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
-import cgeo.geocaching.models.OfflineMap;
+import cgeo.geocaching.models.Download;
 import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.utils.MatcherWrapper;
 
 import android.app.Activity;
 import android.net.Uri;
 
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import java.util.List;
@@ -17,7 +20,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class AbstractDownloader {
-    public OfflineMap.OfflineMapType offlineMapType;
+    public Download.DownloadType offlineMapType;
+    public Download.DownloadType companionType = null;
     public Uri mapBase;
     public String mapSourceName;
     public String mapSourceInfo;
@@ -26,8 +30,12 @@ public abstract class AbstractDownloader {
     public PersistableFolder targetFolder;
     public static final String oneDirUp = CgeoApplication.getInstance().getString(R.string.downloadmap_onedirup);
     public String forceExtension = "";
+    public boolean useCompanionFiles = true; // store source info (uri etc.) in companion files (true) or use date/timestamp and identical uri only (false)?
+    @DrawableRes public int iconRes = R.drawable.ic_menu_save;
 
-    AbstractDownloader(final OfflineMap.OfflineMapType offlineMapType, final @StringRes int mapBase, final @StringRes int mapSourceName, final @StringRes int mapSourceInfo, final @StringRes int projectUrl, final @StringRes int likeItUrl, final PersistableFolder targetFolder) {
+    public static final int ICONRES_FOLDER = R.drawable.ic_menu_folder;
+
+    AbstractDownloader(final Download.DownloadType offlineMapType, final @StringRes int mapBase, final @StringRes int mapSourceName, final @StringRes int mapSourceInfo, final @StringRes int projectUrl, final @StringRes int likeItUrl, final PersistableFolder targetFolder) {
         this.offlineMapType = offlineMapType;
         this.mapBase = Uri.parse(CgeoApplication.getInstance().getString(mapBase));
         this.mapSourceName = CgeoApplication.getInstance().getString(mapSourceName);
@@ -41,10 +49,11 @@ public abstract class AbstractDownloader {
     }
 
     // find available maps, dir-up, subdirs
-    protected abstract void analyzePage(Uri uri, List<OfflineMap> list, String page);
+    protected abstract void analyzePage(Uri uri, List<Download> list, @NonNull String page);
 
     // find source for single map
-    protected abstract OfflineMap checkUpdateFor(String page, String remoteUrl, String remoteFilename);
+    @Nullable
+    protected abstract Download checkUpdateFor(@NonNull String page, String remoteUrl, String remoteFilename);
 
     // create update check page url for download page url
     // default is: identical
@@ -53,14 +62,14 @@ public abstract class AbstractDownloader {
     }
 
     // generic matchers
-    protected void basicUpMatcher(final Uri uri, final List<OfflineMap> list, final String page, final Pattern patternUp) {
+    protected void basicUpMatcher(final Uri uri, final List<Download> list, final @NonNull String page, final Pattern patternUp) {
         if (!mapBase.equals(uri)) {
             final MatcherWrapper matchUp = new MatcherWrapper(patternUp, page);
             if (matchUp.find()) {
                 final String oneUp = uri.toString();
                 final int endOfPreviousSegment = oneUp.lastIndexOf("/", oneUp.length() - 2); // skip trailing "/"
                 if (endOfPreviousSegment > -1) {
-                    final OfflineMap offlineMap = new OfflineMap(oneDirUp, Uri.parse(oneUp.substring(0, endOfPreviousSegment + 1)), true, "", "", offlineMapType);
+                    final Download offlineMap = new Download(oneDirUp, Uri.parse(oneUp.substring(0, endOfPreviousSegment + 1)), true, "", "", offlineMapType, ICONRES_FOLDER);
                     list.add(offlineMap);
                 }
             }
@@ -86,15 +95,14 @@ public abstract class AbstractDownloader {
         }
     }
 
+    // extra file to download?
+    public DownloaderUtils.DownloadDescriptor getExtrafile(final Activity activity) {
+        return null;
+    }
+
     // default action to be started after having received and copied the downloaded file successfully
     protected void onSuccessfulReceive(final Uri result) {
         // default: nothing to do
-    }
-
-    // default followup action on UI thread after having received and copied the downloaded file successfully
-    protected void onFollowup(final Activity activity, final Runnable callback) {
-        // default: just continue with callback
-        callback.run();
     }
 
 }

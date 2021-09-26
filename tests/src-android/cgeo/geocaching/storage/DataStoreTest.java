@@ -4,9 +4,9 @@ import cgeo.CGeoTestCase;
 import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.connector.gc.Tile;
-import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.enumerations.LoadFlags.SaveFlag;
+import cgeo.geocaching.list.PseudoList;
 import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
@@ -78,7 +78,7 @@ public class DataStoreTest extends CGeoTestCase {
 
             // move to list (cache1=listId2, cache2=listId2)
             DataStore.moveToList(Collections.singletonList(cache1), listId1, listId2);
-            assertThat(DataStore.getAllStoredCachesCount(CacheType.ALL, listId2)).isEqualTo(1);
+            assertThat(DataStore.getAllStoredCachesCount(listId2)).isEqualTo(1);
 
             // remove list (cache1=listId2, cache2=listId2)
             assertThat(DataStore.removeList(listId1)).isTrue();
@@ -88,7 +88,7 @@ public class DataStoreTest extends CGeoTestCase {
 
             // mark stored (cache1=1, cache2=listId2)
             DataStore.moveToList(Collections.singletonList(cache2), listId1, listId2);
-            assertThat(DataStore.getAllStoredCachesCount(CacheType.ALL, listId2)).isEqualTo(2);
+            assertThat(DataStore.getAllStoredCachesCount(listId2)).isEqualTo(2);
 
             // drop stored (cache1=0, cache2=0)
             DataStore.removeList(listId2);
@@ -110,14 +110,7 @@ public class DataStoreTest extends CGeoTestCase {
     // Check that queries don't throw an exception (see issue #1429).
     public static void testLoadWaypoints() {
         final Viewport viewport = new Viewport(new Geopoint(-1, -2), new Geopoint(3, 4));
-        DataStore.loadWaypoints(viewport, false, false, false, CacheType.ALL);
-        DataStore.loadWaypoints(viewport, false, true, false, CacheType.ALL);
-        DataStore.loadWaypoints(viewport, true, false, false, CacheType.ALL);
-        DataStore.loadWaypoints(viewport, true, true, false, CacheType.ALL);
-        DataStore.loadWaypoints(viewport, false, false, false, CacheType.TRADITIONAL);
-        DataStore.loadWaypoints(viewport, false, true, false, CacheType.TRADITIONAL);
-        DataStore.loadWaypoints(viewport, true, false, false, CacheType.TRADITIONAL);
-        DataStore.loadWaypoints(viewport, true, true, false, CacheType.TRADITIONAL);
+        DataStore.loadWaypoints(viewport);
     }
 
     // Check that saving a cache and trackable without logs works (see #2199)
@@ -197,21 +190,11 @@ public class DataStoreTest extends CGeoTestCase {
     }
 
     public static void testLoadCacheHistory() {
-        int sumCaches = 0;
-        int allCaches = 0;
-        for (final CacheType cacheType : CacheType.values()) {
-            final SearchResult historyOfType = DataStore.getHistoryOfCaches(cacheType);
-            assertThat(historyOfType).isNotNull();
-            if (cacheType != CacheType.ALL) {
-                sumCaches += historyOfType.getCount();
-            } else {
-                allCaches = historyOfType.getCount();
-            }
-        }
-        // check that sum of types equals 'all'
-        assertThat(allCaches).isEqualTo(sumCaches);
+        final SearchResult history = DataStore.getBatchOfStoredCaches(null, PseudoList.HISTORY_LIST.id);
+        assertThat(history).isNotNull();
+
         // check that two different routines behave the same
-        assertThat(sumCaches).isEqualTo(DataStore.getAllHistoryCachesCount());
+        assertThat(history.getCount()).isEqualTo(DataStore.getAllStoredCachesCount(PseudoList.HISTORY_LIST.id));
     }
 
     public static void testCachedMissing() {

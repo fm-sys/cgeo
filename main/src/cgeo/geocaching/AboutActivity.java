@@ -1,17 +1,18 @@
 package cgeo.geocaching;
 
-import cgeo.geocaching.activity.AbstractViewPagerActivity;
+import cgeo.geocaching.activity.ActivityMixin;
+import cgeo.geocaching.activity.TabbedViewPagerActivity;
+import cgeo.geocaching.activity.TabbedViewPagerFragment;
 import cgeo.geocaching.databinding.AboutChangesPageBinding;
 import cgeo.geocaching.databinding.AboutContributorsPageBinding;
 import cgeo.geocaching.databinding.AboutLicensePageBinding;
 import cgeo.geocaching.databinding.AboutSystemPageBinding;
 import cgeo.geocaching.databinding.AboutVersionPageBinding;
 import cgeo.geocaching.maps.routing.Routing;
-import cgeo.geocaching.ui.AbstractCachingPageViewCreator;
 import cgeo.geocaching.ui.AnchorAwareLinkMovementMethod;
 import cgeo.geocaching.utils.ClipboardUtils;
 import cgeo.geocaching.utils.DebugUtils;
-import cgeo.geocaching.utils.LiUtils;
+import cgeo.geocaching.utils.FileUtils;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.ProcessUtils;
 import cgeo.geocaching.utils.ShareUtils;
@@ -25,49 +26,280 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
+import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ScrollView;
-import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RawRes;
 import androidx.annotation.StringRes;
-import androidx.core.text.HtmlCompat;
+import androidx.appcompat.app.ActionBar;
 import androidx.core.util.Consumer;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-import org.apache.commons.io.IOUtils;
+import io.noties.markwon.Markwon;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
-public class AboutActivity extends AbstractViewPagerActivity<AboutActivity.Page> {
+public class AboutActivity extends TabbedViewPagerActivity {
 
     private static final String EXTRA_ABOUT_STARTPAGE = "cgeo.geocaching.extra.about.startpage";
 
     private final GatherSystemInformationTask systemInformationTask = new GatherSystemInformationTask();
 
-    class LicenseViewCreator extends AbstractCachingPageViewCreator<ScrollView> {
+    enum Page {
+        VERSION(R.string.about_version),
+        CHANGELOG(R.string.about_changelog),
+        SYSTEM(R.string.about_system),
+        CONTRIBUTORS(R.string.about_contributors),
+        LICENSE(R.string.about_license);
 
-        @Override
-        public ScrollView getDispatchedView(final ViewGroup parentView) {
-            final AboutLicensePageBinding binding = AboutLicensePageBinding.inflate(getLayoutInflater(), parentView, false);
-            setClickListener(binding.license, "https://www.apache.org/licenses/LICENSE-2.0.html");
-            binding.licenseText.setText(getRawResourceString(R.raw.license));
-            return binding.getRoot();
+        @StringRes
+        protected final int resourceId;
+        protected final long id;
+
+        Page(@StringRes final int resourceId) {
+            this.resourceId = resourceId;
+            this.id = ordinal();
         }
 
-        private String getRawResourceString(@RawRes final int resourceId) {
+        static Page find(final long pageId) {
+            for (Page page : Page.values()) {
+                if (page.id == pageId) {
+                    return page;
+                }
+            }
+            return null;
+        }
+    }
+
+    @Override
+    public void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        Routing.connect();
+        systemInformationTask.execute();
+
+        int startPage = 0;
+        final Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            startPage = (int) extras.getLong(EXTRA_ABOUT_STARTPAGE, startPage);
+        }
+
+        final Page[] pages = Page.values();
+        final long[] orderedPages = new long[pages.length];
+        for (int i = 0; i < pages.length; i++) {
+            orderedPages[i] = pages[i].id;
+        }
+
+        createViewPager(startPage, orderedPages, this::onPageChangeListener, false);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+        setActionBarTitle(getCurrentPageId()); // to avoid race conditions on first view creation
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void onPageChangeListener(final long currentPageId) {
+        setActionBarTitle(currentPageId);
+    }
+
+    private void setActionBarTitle(final long currentPageId) {
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            final String prefix = getString(R.string.about);
+            actionBar.setTitle((StringUtils.isNotBlank(prefix) ? prefix + " - " : "") + getTitle(currentPageId));
+        }
+    }
+
+    @Override
+    protected String getTitle(final long pageId) {
+        if (pageId == Page.VERSION.id) {
+            return getResources().getString(R.string.about_version) + " / " + getResources().getString(R.string.about_help);
+        }
+        return this.getString(Page.find(pageId).resourceId);
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    protected TabbedViewPagerFragment createNewFragment(final long pageId) {
+        if (pageId == Page.VERSION.id) {
+            return new VersionViewCreator();
+        } else if (pageId == Page.CHANGELOG.id) {
+            return new ChangeLogViewCreator();
+        } else if (pageId == Page.SYSTEM.id) {
+            return new SystemViewCreator();
+        } else if (pageId == Page.LICENSE.id) {
+            return new LicenseViewCreator();
+        } else if (pageId == Page.CONTRIBUTORS.id) {
+            return new ContributorsViewCreator();
+        }
+        throw new IllegalStateException(); // cannot happen, when switch case is enum complete
+    }
+
+    public static class VersionViewCreator extends TabbedViewPagerFragment<AboutVersionPageBinding> {
+
+        @Override
+        public AboutVersionPageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return AboutVersionPageBinding.inflate(getLayoutInflater(), container, false);
+        }
+
+        @Override
+        public long getPageId() {
+            return Page.VERSION.id;
+        }
+
+        @Override
+        public void setContent() {
+            final AboutActivity activity = (AboutActivity) getActivity();
+            if (activity == null) {
+                return;
+            }
+            binding.getRoot().setVisibility(View.VISIBLE);
+            binding.aboutVersionString.setText(Version.getVersionName(activity));
+            setClickListener(binding.donate, "https://www.cgeo.org");
+            if (StringUtils.isNotEmpty(BuildConfig.SPECIAL_BUILD)) {
+                binding.aboutSpecialBuild.setText(BuildConfig.SPECIAL_BUILD);
+                binding.aboutSpecialBuild.setVisibility(View.VISIBLE);
+            }
+            if (StringUtils.isNotEmpty(BuildConfig.BUILD_TYPE)) {
+                //noinspection ConstantConditions
+                if (BuildConfig.BUILD_TYPE.equals("debug")) {
+                    binding.aboutVersionIcon.setImageResource(R.mipmap.ic_launcher_debug);
+                } else if (BuildConfig.BUILD_TYPE.equals("nightly")) {
+                    binding.aboutVersionIcon.setImageResource(R.mipmap.ic_launcher_nightly);
+                } else if (BuildConfig.BUILD_TYPE.equals("rc")) {
+                    binding.aboutVersionIcon.setImageResource(R.mipmap.ic_launcher_rc);
+                }
+            }
+            binding.support.setEnabled(false);
+
+            activity.getSystemInformationTask().getSystemInformation(si -> {
+                setClickListener(binding.support, "mailto:support@cgeo.org?subject=" + Uri.encode("cgeo " + Version.getVersionName(activity)) +
+                    "&body=" + Uri.encode(si) + "\n");
+                binding.support.setEnabled(true);
+            });
+
+            setClickListener(binding.website, "https://www.cgeo.org/");
+            setClickListener(binding.facebook, "https://www.facebook.com/pages/cgeo/297269860090");
+            setClickListener(binding.fangroup, "https://facebook.com/groups/cgeo.fangruppe");
+            setClickListener(binding.twitter, "https://twitter.com/android_gc");
+            setClickListener(binding.nutshellmanual, "https://manual.cgeo.org/");
+            setClickListener(binding.faq, "https://faq.cgeo.org/");
+            setClickListener(binding.github, "https://github.com/cgeo/cgeo/issues");
+            binding.market.setOnClickListener(v -> ProcessUtils.openMarket(activity, activity.getPackageName()));
+        }
+    }
+
+    public static class ChangeLogViewCreator extends TabbedViewPagerFragment<AboutChangesPageBinding> {
+
+        @Override
+        public AboutChangesPageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return AboutChangesPageBinding.inflate(getLayoutInflater(), container, false);
+        }
+
+        @Override
+        public long getPageId() {
+            return Page.CHANGELOG.id;
+        }
+
+        @Override
+        public void setContent() {
+            final Activity activity = getActivity();
+            if (activity == null || binding == null) {
+                return;
+            }
+            binding.getRoot().setVisibility(View.VISIBLE);
+            final Markwon markwon = Markwon.create(activity);
+
+            final String changelogMaster = FileUtils.getChangelogMaster(activity);
+            if (StringUtils.isNotBlank(changelogMaster)) {
+                markwon.setMarkdown(binding.changelogMaster, "## " + getString(R.string.about_changelog_nightly_build) + "\n\n" + changelogMaster);
+            } else {
+                binding.changelogMaster.setVisibility(View.GONE);
+            }
+
+            final String versionRelease = FileUtils.getRawResourceAsString(activity, R.raw.version_release).trim();
+            markwon.setMarkdown(binding.changelogRelease, "## " + (StringUtils.isNotBlank(versionRelease) ? versionRelease : getString(R.string.about_changelog_next_release)) + "\n\n" + FileUtils.getChangelogRelease(activity));
+            binding.changelogGithub.setOnClickListener(v -> ShareUtils.openUrl(activity, "https://github.com/cgeo/cgeo/blob/master/main/res/raw/changelog_full.md"));
+        }
+    }
+
+    public static class SystemViewCreator extends TabbedViewPagerFragment<AboutSystemPageBinding> {
+
+        @Override
+        public AboutSystemPageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return AboutSystemPageBinding.inflate(getLayoutInflater(), container, false);
+        }
+
+        @Override
+        public long getPageId() {
+            return Page.SYSTEM.id;
+        }
+
+        @Override
+        public void setContent() {
+            final AboutActivity activity = (AboutActivity) getActivity();
+            if (activity == null) {
+                return;
+            }
+            binding.getRoot().setVisibility(View.VISIBLE);
+
+            binding.system.setText(R.string.about_system_collecting);
+            binding.copy.setEnabled(false);
+            binding.share.setEnabled(false);
+
+            activity.getSystemInformationTask().getSystemInformation(si -> {
+                final Markwon markwon = Markwon.create(activity);
+                markwon.setMarkdown(binding.system, si);
+                binding.copy.setEnabled(true);
+                binding.copy.setOnClickListener(view1 -> {
+                    ClipboardUtils.copyToClipboard(si);
+                    ActivityMixin.showShortToast(activity, getString(R.string.clipboard_copy_ok));
+                });
+                binding.share.setEnabled(true);
+                binding.share.setOnClickListener(view12 -> ShareUtils.shareAsEmail(activity, getString(R.string.about_system_info), si, null, R.string.about_system_info_send_chooser));
+            });
+
+            binding.system.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
+            binding.system.setTextIsSelectable(true);
+
+            binding.logcat.setOnClickListener(view13 -> DebugUtils.createLogcat(activity));
+        }
+    }
+
+    public static class LicenseViewCreator extends TabbedViewPagerFragment<AboutLicensePageBinding> {
+
+        @Override
+        public AboutLicensePageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return AboutLicensePageBinding.inflate(getLayoutInflater(), container, false);
+        }
+
+        @Override
+        public long getPageId() {
+            return Page.LICENSE.id;
+        }
+
+        @Override
+        public void setContent() {
+            binding.getRoot().setVisibility(View.VISIBLE);
+            setClickListener(binding.license, "https://www.apache.org/licenses/LICENSE-2.0.html");
+            final Markwon markwon = Markwon.create(getActivity());
+            markwon.setMarkdown(binding.licenseText, getRawResourceString(R.raw.license));
+        }
+
+        private String getRawResourceString(@SuppressWarnings("SameParameterValue") @RawRes final int resourceId) {
             InputStream ins = null;
             Scanner scanner = null;
             try {
-                ins = res.openRawResource(resourceId);
+                ins = getResources().openRawResource(resourceId);
                 scanner = new Scanner(ins, StandardCharsets.UTF_8.name());
                 return scanner.useDelimiter("\\A").next();
             } finally {
@@ -78,38 +310,48 @@ public class AboutActivity extends AbstractViewPagerActivity<AboutActivity.Page>
                 }
             }
         }
-
     }
 
-    class ContributorsViewCreator extends AbstractCachingPageViewCreator<ScrollView> {
+    public static class ContributorsViewCreator extends TabbedViewPagerFragment<AboutContributorsPageBinding> {
 
         @Override
-        public ScrollView getDispatchedView(final ViewGroup parentView) {
-            final AboutContributorsPageBinding binding = AboutContributorsPageBinding.inflate(getLayoutInflater(), parentView, false);
+        public AboutContributorsPageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return AboutContributorsPageBinding.inflate(getLayoutInflater(), container, false);
+        }
 
-            setText(binding.aboutContributorsRecent, R.string.contributors_recent);
-            setText(binding.aboutContributorsOthers, R.string.contributors_other);
+        @Override
+        public long getPageId() {
+            return Page.CONTRIBUTORS.id;
+        }
 
-            final AnchorAwareLinkMovementMethod mm = AnchorAwareLinkMovementMethod.getInstance();
-            binding.aboutCarnerodetails.setMovementMethod(mm);
-            binding.aboutContributorsRecent.setMovementMethod(mm);
-            binding.aboutSpecialthanksdetails.setMovementMethod(mm);
-            binding.aboutContributorsOthers.setMovementMethod(mm);
-            binding.aboutComponents.setMovementMethod(mm);
+        @Override
+        public void setContent() {
+            final Activity activity = getActivity();
+            if (activity == null) {
+                return;
+            }
+            binding.getRoot().setVisibility(View.VISIBLE);
 
-            return binding.getRoot();
+            final Markwon markwon = Markwon.create(activity);
+
+            markwon.setMarkdown(binding.aboutContributorsRecent, formatContributors(R.string.contributors_recent));
+            markwon.setMarkdown(binding.aboutContributorsOthers, formatContributors(R.string.contributors_other));
+            markwon.setMarkdown(binding.aboutSpecialthanksdetails, getString(R.string.about_contributors_specialthanksdetails));
+
+            final String indentedList = "   " + getString(R.string.components2).replace("\n", "\n  ");
+            markwon.setMarkdown(binding.aboutComponents, getString(R.string.components).replace("%1", indentedList.substring(0, indentedList.length() - 2)));
         }
 
         private String checkRoles(final String s, final String roles, final char checkFor, final int infoId) {
             return roles.indexOf(checkFor) >= 0 ? (s.isEmpty() ? "" : s + ", ") + getString(infoId) : s;
         }
 
-        private void setText(final TextView t, final int resId) {
+        private String formatContributors(@StringRes final int resId) {
             String s = getString(resId);
-            final SpannableStringBuilder sb = new SpannableStringBuilder("<ul>");
-            int p1 = 0;
-            int p2 = 0;
-            int p3 = 0;
+            final SpannableStringBuilder sb = new SpannableStringBuilder();
+            int p1;
+            int p2;
+            int p3;
             String name;
             String link;
             String roles;
@@ -128,193 +370,29 @@ public class AboutActivity extends AbstractViewPagerActivity<AboutActivity.Page>
                         break;
                     }
                     final String temp = s.substring(p2 + 1, p3);
-                    roles = checkRoles(checkRoles(checkRoles(checkRoles(checkRoles(checkRoles("",
+                    roles = checkRoles(checkRoles(checkRoles(checkRoles(checkRoles(checkRoles(checkRoles("",
                         temp, 'c', R.string.contribution_code),
                         temp, 'd', R.string.contribution_documentation),
                         temp, 'g', R.string.contribution_graphics),
+                        temp, 'i', R.string.contribution_infrastructure),
                         temp, 'p', R.string.contribution_projectleader),
                         temp, 's', R.string.contribution_support),
                         temp, 't', R.string.contribution_tester);
 
-                    sb.append("· ")
-                        .append(link.isEmpty() ? name : "<a href=\"" + link + "\">" + name + "</a>")
+                    sb.append("- ")
+                        .append(link.isEmpty() ? name : "[" + name + "](" + link + ")")
                         .append(roles.isEmpty() ? "" : " (" + roles + ")")
-                        .append("<br />");
+                        .append("\n");
 
                     s = s.substring(p3 + 1);
                     p1 = s.indexOf("|");
                 } while (p1 > 0);
             }
-            sb.append("</ul>");
-
-            t.setText(HtmlCompat.fromHtml(sb.toString(), HtmlCompat.FROM_HTML_MODE_LEGACY));
+            return sb.toString();
         }
     }
 
-    class ChangeLogViewCreator extends AbstractCachingPageViewCreator<ScrollView> {
-
-        @Override
-        public ScrollView getDispatchedView(final ViewGroup parentView) {
-            final AboutChangesPageBinding binding = AboutChangesPageBinding.inflate(getLayoutInflater(), parentView, false);
-            binding.changelogRelease.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-            final String changeLogMasterString = getString(R.string.changelog_master);
-            if (StringUtils.isBlank(changeLogMasterString)) {
-                binding.changelogMaster.setVisibility(View.GONE);
-            } else {
-                binding.changelogMaster.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-            }
-            binding.changelogGithub.setOnClickListener(v -> startUrl("https://github.com/cgeo/cgeo/releases"));
-            binding.changelogMaster.setText(LiUtils.formatHTML(getString(R.string.changelog_master)));
-            binding.changelogRelease.setText(LiUtils.formatHTML(getString(R.string.changelog_release)));
-
-            return binding.getRoot();
-        }
-
-    }
-
-    class SystemViewCreator extends AbstractCachingPageViewCreator<ScrollView> {
-
-        @Override
-        public ScrollView getDispatchedView(final ViewGroup parentView) {
-            final AboutSystemPageBinding binding = AboutSystemPageBinding.inflate(getLayoutInflater(), parentView, false);
-            binding.system.setText("System Information is collected, please wait...");
-            binding.copy.setEnabled(false);
-            binding.share.setEnabled(false);
-            systemInformationTask.getSystemInformation(si -> {
-                    binding.system.setText(si);
-                    binding.copy.setEnabled(true);
-                    binding.copy.setOnClickListener(view1 -> {
-                        ClipboardUtils.copyToClipboard(si);
-                        showShortToast(getString(R.string.clipboard_copy_ok));
-                    });
-                    binding.share.setEnabled(true);
-                    binding.share.setOnClickListener(view12 -> ShareUtils.shareAsEmail(AboutActivity.this, getString(R.string.about_system_info), si, null, R.string.about_system_info_send_chooser));
-
-            });
-            binding.system.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-            binding.system.setTextIsSelectable(true);
-
-            binding.logcat.setOnClickListener(view13 -> DebugUtils.createLogcat(AboutActivity.this));
-            return binding.getRoot();
-        }
-
-    }
-
-    class VersionViewCreator extends AbstractCachingPageViewCreator<ScrollView> {
-
-        @Override
-        public ScrollView getDispatchedView(final ViewGroup parentView) {
-            final AboutVersionPageBinding binding = AboutVersionPageBinding.inflate(getLayoutInflater(), parentView, false);
-            binding.aboutVersionString.setText(Version.getVersionName(AboutActivity.this));
-            setClickListener(binding.donate, "https://www.cgeo.org");
-            if (StringUtils.isNotEmpty(BuildConfig.SPECIAL_BUILD)) {
-                binding.aboutSpecialBuild.setText(BuildConfig.SPECIAL_BUILD);
-                binding.aboutSpecialBuild.setVisibility(View.VISIBLE);
-            }
-            binding.support.setEnabled(false);
-            systemInformationTask.getSystemInformation(si -> {
-                setClickListener(binding.support, "mailto:support@cgeo.org?subject=" + Uri.encode("cgeo " + Version.getVersionName(AboutActivity.this)) +
-                    "&body=" + Uri.encode(si) + "\n");
-                binding.support.setEnabled(true);
-            });
-
-            setClickListener(binding.website, "https://www.cgeo.org/");
-            setClickListener(binding.facebook, "https://www.facebook.com/pages/cgeo/297269860090");
-            setClickListener(binding.fangroup, "https://facebook.com/groups/cgeo.fangruppe");
-            setClickListener(binding.twitter, "https://twitter.com/android_gc");
-            setClickListener(binding.nutshellmanual, "https://manual.cgeo.org/");
-            setClickListener(binding.faq, "https://faq.cgeo.org/");
-            setClickListener(binding.github, "https://github.com/cgeo/cgeo/issues");
-            binding.market.setOnClickListener(v -> ProcessUtils.openMarket(AboutActivity.this, getPackageName()));
-            return binding.getRoot();
-        }
-    }
-
-    enum Page {
-        VERSION(R.string.about_version),
-        CHANGELOG(R.string.about_changelog),
-        SYSTEM(R.string.about_system),
-        CONTRIBUTORS(R.string.about_contributors),
-        LICENSE(R.string.about_license);
-
-        @StringRes
-        private final int resourceId;
-
-        Page(@StringRes final int resourceId) {
-            this.resourceId = resourceId;
-        }
-    }
-
-    @Override
-    public void onCreate(final Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setThemeAndContentView(R.layout.viewpager_activity);
-
-        Routing.connect();
-        systemInformationTask.execute();
-
-        int startPage = Page.VERSION.ordinal();
-        final Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            startPage = extras.getInt(EXTRA_ABOUT_STARTPAGE, startPage);
-        }
-        createViewPager(startPage, position -> setTitle(res.getString(R.string.about) + " - " + getTitle(Page.values()[position])));
-        reinitializeViewPager();
-    }
-
-    @Override
-    protected void onDestroy() {
-        Routing.disconnect();
-        super.onDestroy();
-        systemInformationTask.onDestroy();
-    }
-
-    public final void setClickListener(final View view, final String url) {
-        view.setOnClickListener(v -> startUrl(url));
-    }
-
-    private void startUrl(final String url) {
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-    }
-
-    @Override
-    protected final AbstractViewPagerActivity.PageViewCreator createViewCreator(final Page page) {
-        switch (page) {
-            case VERSION:
-                return new VersionViewCreator();
-            case CHANGELOG:
-                return new ChangeLogViewCreator();
-            case SYSTEM:
-                return new SystemViewCreator();
-            case CONTRIBUTORS:
-                return new ContributorsViewCreator();
-            case LICENSE:
-                return new LicenseViewCreator();
-        }
-        throw new IllegalStateException(); // cannot happen, when switch case is enum complete
-    }
-
-    @Override
-    protected final String getTitle(final Page page) {
-        if (page == Page.VERSION) {
-            return res.getString(R.string.about_version) + " / " + res.getString(R.string.about_help);
-        }
-        return res.getString(page.resourceId);
-    }
-
-    @Override
-    protected final Pair<List<? extends Page>, Integer> getOrderedPages() {
-        final List<Page> pages = Arrays.asList(Page.values());
-        return new ImmutablePair<>(pages, 0);
-    }
-
-    public static void showChangeLog(final Activity fromActivity) {
-        final Intent intent = new Intent(fromActivity, AboutActivity.class);
-        intent.putExtra(EXTRA_ABOUT_STARTPAGE, Page.CHANGELOG.ordinal());
-        fromActivity.startActivity(intent);
-    }
-
-    private static class GatherSystemInformationTask extends AsyncTask<Void, Void, String> {
+    protected static class GatherSystemInformationTask extends AsyncTask<Void, Void, String> {
 
         private final Object mutex = new Object();
         private String systemInformation = null;
@@ -356,4 +434,22 @@ public class AboutActivity extends AbstractViewPagerActivity<AboutActivity.Page>
         }
     }
 
+    public static void showChangeLog(final Activity fromActivity) {
+        final Intent intent = new Intent(fromActivity, AboutActivity.class);
+        intent.putExtra(EXTRA_ABOUT_STARTPAGE, Page.CHANGELOG.id);
+        fromActivity.startActivity(intent);
+    }
+
+    protected GatherSystemInformationTask getSystemInformationTask() {
+        return systemInformationTask;
+    }
+
+    @Override
+    protected void onDestroy() {
+        Routing.disconnect();
+        super.onDestroy();
+        systemInformationTask.onDestroy();
+    }
+
 }
+

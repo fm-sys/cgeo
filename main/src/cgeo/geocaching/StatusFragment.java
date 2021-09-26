@@ -64,7 +64,7 @@ public class StatusFragment extends Fragment {
                     statusGroup.setVisibility(View.VISIBLE);
 
                     if (status.url != null) {
-                        statusGroup.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(status.url))));
+                        statusGroup.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(status.url)))); // don't use ShareUtils here. E.g. we want to redirect directly to PlayStore even if "use WebView" is set
                     } else {
                         statusGroup.setClickable(false);
                     }

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
     <!-- basics -->
     <string name="cache">Láda</string>
     <string name="detail">Adatok</string>
@@ -185,7 +187,6 @@
     <string name="err_tb_display">Sajnáljuk, a c:geo nem tudja megjeleníteni az utazót. Biztos, hogy ez egy utazó?</string>
     <string name="err_tb_details_open">Sajnáljuk, a c:geo nem tudja megnyitni az utazó adatait.</string>
     <string name="err_tb_not_loggable">Ezt az utazót nem lehet logolni.</string>
-    <string name="err_tb_find">Sajnáljuk, a c:geo nem találja az utazót.</string>
     <string name="err_tb_find_that">Sajnáljuk, a c:geo nem találja azt az utazót.</string>
     <string name="err_waypoint_cache_unknown">Sajnáljuk, a c:geo nem tudja melyik ládához szeretnéd hozzáadni az útpontot.</string>
     <string name="err_waypoint_add_failed">Sajnáljuk, a c:geo nem tudta hozzáadni az útpontodat.</string>
@@ -262,7 +263,6 @@
     <string name="menu_history">Előzmények</string>
     <string name="menu_filter">Szűrés</string>
     <string name="menu_scan_geo">Geokód szkennelése</string>
-    <string name="menu_pocket_queries">Pocket lekérdezések</string>
     <string name="menu_scan_description">A c:geo QR formátumú geokódokat is be tud olvasni, de az ehhez szükséges alkalmazás nincs telepítve. Meg szeretnéd nyitni a Google Play-t, hogy telepítsd?</string>
     <!-- main screen -->
     <string name="live_map_button">Élő térkép</string>
@@ -311,8 +311,6 @@
     <string name="caches_select_mode_exit">Kijelölés vége</string>
     <string name="caches_select_invert">Kijelölés megfordítása</string>
     <string name="caches_nearby">Közeli</string>
-    <string name="caches_remove_all">Összes törlése</string>
-    <string name="caches_remove_selected">Kijelöltek törlése</string>
     <string name="caches_delete_events">Elmúlt események törlése</string>
     <string name="caches_upload_modifiedcoords">Módosított koordináták feltöltése</string>
     <string name="caches_upload_modifiedcoords_warning">Feltöltöd az összes (kijelölt) láda módosított koordinátáját és felülírod a szerveren lévő koordinátákat? Ezt nem lehet visszavonni.</string>
@@ -326,26 +324,7 @@
     <string name="caches_copy_selected">Kijelöltek másolása</string>
     <string name="caches_copy_all">Összes másolása</string>
     <string name="caches_map_locus_export">Exportálás Locus-ba</string>
-    <string name="caches_filter">Szűrés</string>
     <string name="caches_filter_title">Szűrés eszerint</string>
-    <string name="caches_filter_size">Méret</string>
-    <string name="caches_filter_type">Típus</string>
-    <string name="caches_filter_track">Utazó a ládában</string>
-    <string name="caches_filter_clear">Szűrés törlése</string>
-    <string name="caches_filter_modified">Módosított koordináták</string>
-    <string name="caches_filter_offline_log">Offline log</string>
-    <string name="caches_filter_origin">Származás</string>
-    <string name="caches_filter_distance">Távolság</string>
-    <string name="caches_filter_personal_note">Személyes megjegyzés</string>
-    <string name="caches_filter_popularity">Kedvencek</string>
-    <string name="caches_filter_popularity_ratio">Kedvencek [%]</string>
-    <string name="caches_filter_personal_data">Személyes</string>
-    <string name="caches_filter_rating">Értékelve</string>
-    <string name="caches_filter_own_rating">Saját értékelés</string>
-    <string name="caches_filter_multi_listing">Különböző állapotú multik listázása</string>
-    <string name="caches_filter_missing_gcvote">Nem értékelt ládák</string>
-    <string name="caches_filter_lists">Listához csatolva</string>
-    <string name="caches_filter_empty">(üres)</string>
     <string name="caches_removing_from_history">Törlés az Előzményekből…</string>
     <string name="caches_clear_offlinelogs">Offline logok törlése</string>
     <string name="caches_clear_offlinelogs_message">Szeretnéd törölni az offline logokat?</string>
@@ -372,6 +351,7 @@
     <string name="list_dialog_rename_title">Lista átnevezése</string>
     <string name="list_dialog_rename">Átnevezés</string>
     <string name="list_not_available">A lista már nem elérhető, váltás az alapértelmezett listára</string>
+    <!-- caches lists filter -->
     <!-- about -->
     <string name="about_version">Verzió</string>
     <string name="about_changelog">Változások</string>
@@ -391,7 +371,6 @@
     <string name="about_contributors_carnerodetails">mint a c:geo szülőatyja</string>
     <string name="about_contributors_recent">2018/2019-es közreműködők</string>
     <string name="about_contributors_specialthanks">Külön köszönet</string>
-    <string name="about_contributors_specialthanksdetails">· a fordításban segédkezőknek a <a href="https://crowdin.net/project/cgeo">Crowdin.net</a>-en!\n· a hibák megtalálóinak\n· és minden támogatónknak.\n</string>
     <string name="about_contributors_other">2018 előtti közreműködők</string>
     <string name="about_components">Komponensek</string>
     <string name="contribution_code">kódolás</string>
@@ -420,8 +399,6 @@
     <string name="settings_data_dir_item">%1$s (%2$s szabad)</string>
     <string name="confirm_data_dir_move">A ládaadatok mozgatása hosszú ideig is eltarthat az adatok mennyiségétől, a készülékedtől függően.</string>
     <string name="settings_title_basicmembers">Normál tagok beállításai</string>
-    <string name="settings_title_navigation">Navigáció</string>
-    <string name="settings_summary_navigation">Preferált navigációs eszközök és külső navigációs programok kiválasztása</string>
     <string name="settings_title_system">Rendszer</string>
     <string name="settings_title_navigation_menu">Navigációs menü</string>
     <string name="settings_category_browser">Böngésző</string>
@@ -430,36 +407,27 @@
     <string name="settings_category_social">Közösségi média</string>
     <string name="settings_category_logging_other">Egyéb logolási beállítások</string>
     <string name="settings_goto_url_button">Tovább…</string>
-    <string name="settings_activate_gc">Aktiválás</string>
-    <string name="settings_activate_ec">Aktiválás</string>
+    <string name="settings_service_activate">Aktiválás</string>
     <string name="settings_gc_legal_note">A geocaching.com használatával elfogadod a Groundspeak Felhasználási Feltételeit.</string>
     <string name="settings_authorize">A c:geo hitelesítése</string>
     <string name="settings_reauthorize">Engedély frissítése vagy törlése</string>
     <string name="settings_gc_description">A c:geo hitelesítése a geocaching.com-on ládák kereséséhez.</string>
     <string name="settings_ec_description">A c:geo hitelesítése az extremcaching.com-on ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
     <string name="settings_su_description">A c:geo hitelesítése a geocaching.su-n ládák kereséséhez.</string>
-    <string name="settings_activate_oc">Aktiválás</string>
     <string name="init_summary_oc_de">Ládák letöltése az opencaching.de-ről</string>
     <string name="init_oc_de_description">A c:geo hitelesítése az opencaching.de-n ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
-    <string name="settings_activate_oc_pl">Aktiválás</string>
     <string name="init_summary_oc_pl">Ládák letöltése az opencaching.pl-ről</string>
     <string name="init_oc_pl_description">A c:geo hitelesítése az opencaching.pl-en ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
-    <string name="settings_activate_oc_nl">Aktiválás</string>
     <string name="init_summary_oc_nl">Ládák letöltése az opencaching.nl-ről</string>
     <string name="init_oc_nl_description">A c:geo hitelesítése az opencaching.nl-en ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
-    <string name="settings_activate_oc_us">Aktiválás</string>
     <string name="init_summary_oc_us">Ládák letöltése az opencaching.us-ről</string>
     <string name="init_oc_us_description">A c:geo hitelesítése az opencaching.us-en ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
-    <string name="settings_activate_oc_ro">Aktiválás</string>
     <string name="init_summary_oc_ro">Ládák letöltése az opencaching.ro-ról</string>
     <string name="init_oc_ro_description">A c:geo hitelesítése az opencaching.ro-n ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
-    <string name="settings_activate_oc_uk">Aktiválás</string>
     <string name="init_summary_oc_uk">Ládák letöltése az opencache.uk-ról</string>
     <string name="init_oc_uk_description">A c:geo hitelesítése az opencache.uk-án ládák kereséséhez és találataid lekéréséhez, szűréséhez.</string>
     <string name="init_summary_su">Ládák letöltése a geocaching.su-ról</string>
-    <string name="settings_activate_su">Aktiválás</string>
     <string name="init_gcvote_password_description">Ládák értékeléséhez itt add meg a GCVote jelszavad és kövesd az utasításokat a GCVote.com-on!</string>
-    <string name="settings_activate_twitter">Aktiválás</string>
     <string name="init_login_popup">Bejelentkezés</string>
     <string name="init_login_popup_working">Bejelentkezés a geocaching.com-ra…</string>
     <string name="init_login_popup_ok">Bejelentkezés ok</string>
@@ -491,18 +459,12 @@
     <string name="init_summary_friends_and_own_logs_wanted">Barátok/saját logok megjelenítése kiegészítő oldalon</string>
     <string name="init_openlastdetailspage">Utoljára használt oldaltípus</string>
     <string name="init_summary_openlastdetailspage">Utoljára használt oldaltípus megnyitása belépéskor</string>
-    <string name="init_skin">Világos felület</string>
-    <string name="init_summary_skin">Világos felület\n(a c:geo újraindítását igényli)</string>
     <string name="init_address">Cím mutatása a főablakban</string>
     <string name="init_summary_address">Cím mutatása a főablakban</string>
-    <string name="init_exclude">Saját és megtalált ládák kihagyása</string>
-    <string name="init_summary_exclude">Saját és megtalált ládák kihagyása</string>
     <string name="init_showwaypoints">Útpontok mutatása élő térképen</string>
     <string name="init_showwaypoint_description">Maximum ennyi útpontot mutasson</string>
     <string name="init_brouterThreshold">Útvonaltervezés</string>
     <string name="init_brouterShowBothDistances">Légvonalbeli távolság mutatása</string>
-    <string name="init_disabled">Letiltott ládák kihagyása</string>
-    <string name="init_summary_disabled">Letiltott ládák kihagyása</string>
     <string name="init_save_log_img">Logokban található képek mentése</string>
     <string name="init_summary_save_log_img">Logokban található képek mentése</string>
     <string name="init_units">Mérföld/láb használata</string>
@@ -512,6 +474,7 @@
     <string name="init_choose_list">Listaválasztás</string>
     <string name="init_summary_choose_list">Listaválasztás ládamentéséhez</string>
     <string name="init_livelist">Ládák irányának jelzése a listán</string>
+    <!-- app theme -->
     <!-- backup / restore -->
     <string name="init_backup">Ládák / útpontok biztonsági mentése</string>
     <string name="init_backup_backup">Biztonsági mentés</string>
@@ -519,7 +482,6 @@
     <string name="init_backup_restore">Visszaállítás</string>
     <string name="init_backup_success">A c:geo adatbázisának mentése sikerült:</string>
     <string name="init_backup_failed">A c:geo biztonsági mentése sikertelen.</string>
-    <string name="init_backup_unnecessary">Az adatbázis üres, biztonsági mentés nem szükséges.</string>
     <string name="init_backup_no_backup_available">Nincs elérhető biztonsági mentés.</string>
     <string name="init_restore_success">Visszaállítás kész.</string>
     <string name="init_restore_running">A ládaadatbázis visszaállítása…</string>
@@ -618,7 +580,7 @@
     <string name="sendToCgeo_download_fail">A c:geo nem tudta letölteni a ládákat. Nincs internetkapcsolat vagy a send2cgeo leállt.</string>
     <string name="sendToCgeo_no_registration">A c:geo nem tudta letölteni a ládákat. A send2cgeo regisztrációd lejárt. Kérlek, regisztrálj a beállításoknál!</string>
     <!-- Content Storage -->
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <!-- FolderUtils: async processing -->
     <!-- FolderUtils: copy/move -->
     <!-- auth generic -->
@@ -658,7 +620,6 @@
     </plurals>
     <string name="last_day_available">utolsó nap</string>
     <string name="cache_offline_refresh">Frissítés</string>
-    <string name="cache_offline_drop">Törlés</string>
     <string name="cache_offline_store">Mentés</string>
     <string name="cache_offline_stored">Elmentve az eszközre</string>
     <string name="cache_offline_not_ready">Nem érhető el offline</string>
@@ -681,7 +642,6 @@
     </plurals>
     <string name="cache_offline_about_time_year">több mint egy évvel ezelőtt</string>
     <string name="cache_premium">Prémium</string>
-    <string name="cache_attributes">Tulajdonságok</string>
     <string name="cache_inventory">Utazók</string>
     <string name="cache_log_images_title">Logfotók</string>
     <string name="cache_log_image_default_title">Fotó</string>
@@ -710,10 +670,6 @@
     <string name="cache_list_select_last">Utolsó választás</string>
     <string name="cache_images">Képek</string>
     <string name="cache_waypoints">Útpontok</string>
-    <plurals name="waypoints">
-        <item quantity="one">%d útpont</item>
-        <item quantity="other">%d útpont</item>
-    </plurals>
     <string name="cache_waypoints_add">Útpont hozzáadása</string>
     <string name="cache_hint">Segítség</string>
     <string name="cache_hint_not_available">Nincs segítség megadva</string>
@@ -771,27 +727,12 @@
     <string name="ignore_confirm_title">Légy óvatos</string>
     <string name="ignore_confirm_message">Egy láda mellőzése azt jelenti, hogy a láda soha többé nem töltődik le a geocaching.com-ról. Csak akkor láthatod ismét ezt a ládát, ha visszavonod a mellőzését a geocaching.com-on.</string>
     <string name="cache_status">Állapot</string>
-    <string name="cache_stored">Elmentve</string>
     <string name="cache_status_offline_log">Offline log</string>
     <string name="cache_status_found">Megtaláltam</string>
     <string name="cache_not_status_found">Nem találtam meg</string>
-    <string name="cache_never_found">Szűz láda</string>
-    <string name="cache_found_last_30_days">Megtalálva az elmúlt 30 napban</string>
     <string name="cache_status_archived">Archiválva</string>
     <string name="cache_status_disabled">Letiltva</string>
     <string name="cache_status_premium">Csak prémium tagoknak</string>
-    <string name="cache_status_not_premium">Minden tag számára</string>
-    <string name="cache_status_stored">Elmentve</string>
-    <string name="cache_status_not_stored">Nincs elmentve</string>
-    <string name="cache_status_stored_lasteighthours">Az elmúlt 8 órában</string>
-    <string name="cache_status_stored_lasttwentyfourhours">Az elmúlt 24 órában</string>
-    <string name="cache_status_stored_lastsevendays">Az elmúlt 7 napban</string>
-    <string name="cache_status_stored_lastthirtydays">Az elmúlt 30 napot megelőzően</string>
-    <string name="cache_status_stored_morethaneighthours">Az elmúlt 8 ór
-át megelőzően</string>
-    <string name="cache_status_stored_morethantwentyfourhours">Az elmúlt 24 órát megelőzően</string>
-    <string name="cache_status_stored_morethansevendays">Az elmúlt 7 napot megelőzően</string>
-    <string name="cache_status_stored_morethanthirtydays">Az elmúlt 30 napot megelőzően</string>
     <string name="cache_geocode">Geokód</string>
     <string name="cache_name">Név</string>
     <string name="cache_type">Típus</string>
@@ -807,7 +748,6 @@
     <string name="cache_event">Dátum</string>
     <string name="cache_location">Helyszín</string>
     <string name="cache_coordinates">Koordináták</string>
-    <string name="cache_calculator">Számológép</string>
     <string name="cache_coordinates_original">Eredeti koordináták</string>
     <string name="cache_spoiler_images_title">Spoiler képek</string>
     <string name="cache_log_types">Bejegyzéstípusok</string>
@@ -893,7 +833,6 @@
     <string name="map_live">Élő térkép</string>
     <string name="map_view_map">Térképek</string>
     <string name="map_dot_mode">Kompakt ikonok használata</string>
-    <string name="map_show_circles">Ládahatárok be</string>
     <string name="map_theme_select">Térképstílusok</string>
     <string name="map_theme_options">Térképstílus beállítások</string>
     <string name="map_live_enable">Élő mód</string>
@@ -911,8 +850,6 @@
     <string name="search_kw">Kulcsszavak</string>
     <string name="search_kw_prefill">Kulcsszó</string>
     <string name="search_kw_button">Keresés kulcsszóval</string>
-    <string name="search_fbu_prefill">Felhasználónév</string>
-    <string name="search_fbu_button">Keresés felhasználónév szerint</string>
     <string name="search_hbu_prefill">Tulajdonos</string>
     <string name="search_hbu_button">Keresés tulajdonos neve alapján</string>
     <string name="search_tb">Utazó</string>
@@ -922,7 +859,6 @@
     <string name="search_address_result">Megtalált helyek</string>
     <string name="search_own_caches">Saját ládák keresése</string>
     <string name="search_pocket_title">Pocket lekérdezés</string>
-    <string name="search_pocket_loading">Pocket lekérdezések listájának betöltése</string>
     <!-- trackable -->
     <string name="trackable">Utazó</string>
     <string name="trackable_details_loading">Utazó adatainak betöltése…</string>
@@ -955,7 +891,6 @@
     <string name="geokret_type_coin">Érme</string>
     <!-- user -->
     <string name="user_menu_view_hidden">Ládák száma</string>
-    <string name="user_menu_view_found">Megtalálások száma</string>
     <string name="user_menu_open_browser">Profil megnyitása a böngészőben</string>
     <string name="user_menu_send_message">Üzenet küldése</string>
     <string name="user_menu_open_contact">Névjegy megnyitása</string>
@@ -983,7 +918,6 @@
     <string name="helper_bluetoothgps_description">Ez a program külső GPS vevők használatát teszi lehetővé, amelyek segítségével jobb vételt és pontosabb koordinátákat kaphatsz. Külső GPS használatával a telefonod akkumulátora is tovább bírja.</string>
     <string name="helper_gps_locker_description">A GPS Locker stabil GPS-jelről gondoskodik alkalmazások közötti váltáskor és készüléked képernyőjének kikapcsolása után is.</string>
     <string name="helper_barcode_description">Léteznek olyan Greasemonkey szkriptek és weboldalak, melyek segítségével egy geokód megjeleníthető vonalkódként. Ezzel az app-pal a c:geo közvetlenül a számítógéped képernyőjéről tudja beolvasni ezeket a geokódokat.</string>
-    <string name="helper_pocketquery_description">A jelenlegi pozíciód vagy egy kijelölt pont körüli pocket lekérdezések egyszerű létrehozása és letöltése. Csak prémium geocaching.com-os tagsággal használható.</string>
     <string name="helper_google_translate_title">Google Fordító</string>
     <string name="helper_google_translate_description">A Google Fordító alkalmazáshoz letöltött fordítócsomagokkal könnyedén lefordíthatod a c:geo ládaleírásait, ha hosszan tartva megnyomod a ládaleírás szövegét. (Internet kapcsolat nélkül is működik.)</string>
     <string name="helper_where_you_go_description">A WhereYouGo lehetővé teszi Wherigo ládák keresését és játszását. A c:geo képes automatikusan elindítani a cartridge fájlok létöltését a programon belül.</string>
@@ -1246,9 +1180,6 @@
     <string name="about_twitter">Akarod, hogy a <b>c:geo</b> új bejegyzést írjon a Twitter-re, amikor megtalálsz egy ládát?</string>
     <string name="faq_title">GYIK</string>
     <!-- status (used via string based resource loading) -->
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">A c:geo működésképtelen a geocaching.com-on történt aktuális változások miatt.\nDolgozunk a megoldáson. Nézz vissza minél hamarabb!</string>
-    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">Az élő térkép működésképtelen a geocaching.com-on történt aktuális változások miatt.\nDolgozunk a megoldáson. Nézz vissza minél hamarabb!</string>
-    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">A geocaching.com karbantartás alatt van. \nEsetleg egyéb hiba lépett fel.</string>
     <!-- text-to-speech for compass view -->
     <string name="tts_service">Beszélő iránytű</string>
     <string name="tts_started">Beszéd elindítva</string>
@@ -1282,7 +1213,6 @@
         <item quantity="one">%s kedvenc pont</item>
         <item quantity="other">%s kedvenc pont</item>
     </plurals>
-    <string name="more_than_percent_favorite_points">&gt; %d%% kedvenc pont</string>
     <!-- shortcuts -->
     <string name="cgeo_shortcut">c:geo parancsikon</string>
     <string name="create_shortcut">Parancsikon létrehozása</string>
@@ -1292,7 +1222,6 @@
     <string name="confirm_report_problem_title">Probléma jelentése</string>
     <string name="confirm_report_problem_message">Jelenteni akarod: \'%s\'. Biztosan vagy benne?</string>
     <!-- Geokrety -->
-    <string name="settings_activate_geokrety">Aktiválás</string>
     <string name="init_summary_geokrety">GeoKrety utazók engedélyezése</string>
     <string name="init_geokrety_description">A c:geo hitelesítése a geokrety.org-on GeoKrety tárgyak logolásához.</string>
     <string name="init_geokrety_userid">Felhasználói azonosító: %s</string>
@@ -1346,14 +1275,14 @@
     <string name="number_input_title">Adj meg egy értéket %1$s és %2$s között</string>
     <string name="number_input_err_boundarymax">A megadott érték túl nagy - állítsd vissza a megengedett maximális értékre</string>
     <string name="number_input_err_format">Érvénytelen számformátum</string>
-    <!-- text notification channel infos & proximity notification title -->
+    <!-- notification / channel texts -->
     <!-- individual routes -->
     <!-- individual track -->
     <!-- distance units -->
     <!-- switch settings -->
     <!-- view settings -->
     <!-- HandleLocalFilesActivity -->
-    <!-- ReceiveMapFileActivity -->
+    <!-- ReceiveDownloadActivity -->
     <!-- Download map preference and menu entry -->
     <!-- history track -->
     <!-- history track export -->
@@ -1361,4 +1290,5 @@
     <!-- install wizard -->
     <!-- Map Theme helper -->
     <!-- default actions in dialogs -->
+    <!-- ChipChoiceGroup -->
 </resources>

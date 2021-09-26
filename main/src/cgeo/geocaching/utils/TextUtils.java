@@ -3,6 +3,7 @@ package cgeo.geocaching.utils;
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
 import cgeo.geocaching.models.Geocache;
+import cgeo.geocaching.utils.functions.Func1;
 
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -20,12 +21,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -40,6 +44,9 @@ public final class TextUtils {
 
     private static final Pattern PATTERN_REMOVE_NONPRINTABLE = Pattern.compile("\\p{Cntrl}");
 
+    private static final Pattern PATTERN_REMOVE_SPECIAL = Pattern.compile("[^a-z0-9]");
+
+
     /**
      * Internal cache for created Patterns (avoids parsing them unnecessarily often)
      */
@@ -47,6 +54,15 @@ public final class TextUtils {
 
     private TextUtils() {
         // utility class
+    }
+
+    public static List<String> sortListLocaleAware(final List<String> listToSort) {
+        return sortListLocaleAware(listToSort, s -> s);
+    }
+
+    public static <T> List<T> sortListLocaleAware(final List<T> listToSort, final Func1<T, String> sortStringAccessor) {
+        Collections.sort(listToSort, (e1, e2) -> COLLATOR.compare(sortStringAccessor.call(e1), sortStringAccessor.call(e2)));
+        return listToSort;
     }
 
     /**
@@ -66,9 +82,9 @@ public final class TextUtils {
      *            Find the last occurring value
      * @return defaultValue or the n-th group if the pattern matches (trimmed if wanted)
      */
-    @SuppressWarnings("RedundantStringConstructorCall")
+    @Nullable
     @SuppressFBWarnings("DM_STRING_CTOR")
-    public static String getMatch(@Nullable final String data, final Pattern pattern, final boolean trim, final int group, final String defaultValue, final boolean last) {
+    public static String getMatch(@Nullable final String data, final Pattern pattern, final boolean trim, final int group, @Nullable final String defaultValue, final boolean last) {
         if (data != null) {
             final Matcher matcher = pattern.matcher(data);
             if (matcher.find()) {
@@ -86,6 +102,7 @@ public final class TextUtils {
                     // see http://developer.android.com/reference/java/lang/String.html#backing_array
                     // Thus the creation of a new String via String constructor is voluntary here!!
                     // And BTW: You cannot even see that effect in the debugger, but must use a separate memory profiler!
+                    //noinspection StringOperationCanBeSimplified
                     return trim ? new String(untrimmed).trim() : new String(untrimmed);
                 }
             }
@@ -107,7 +124,8 @@ public final class TextUtils {
      *            Value to return if the pattern is not found
      * @return defaultValue or the first group if the pattern matches (trimmed if wanted)
      */
-    public static String getMatch(final String data, final Pattern pattern, final boolean trim, final String defaultValue) {
+    @Nullable
+    public static String getMatch(@Nullable final String data, final Pattern pattern, final boolean trim, @Nullable final String defaultValue) {
         return getMatch(data, pattern, trim, 1, defaultValue, false);
     }
 
@@ -122,7 +140,8 @@ public final class TextUtils {
      *            Value to return if the pattern is not found
      * @return defaultValue or the first group if the pattern matches (trimmed)
      */
-    public static String getMatch(@Nullable final String data, final Pattern pattern, final String defaultValue) {
+    @Nullable
+    public static String getMatch(@Nullable final String data, final Pattern pattern, @Nullable final String defaultValue) {
         return getMatch(data, pattern, true, 1, defaultValue, false);
     }
 
@@ -134,7 +153,6 @@ public final class TextUtils {
     public static boolean matches(final String data, final Pattern pattern) {
         // matcher is faster than String.contains() and more flexible - it takes patterns instead of fixed texts
         return data != null && pattern.matcher(data).find();
-
     }
 
     /**
@@ -188,7 +206,10 @@ public final class TextUtils {
      * @return <tt>true</tt> if <tt>str</tt> contains HTML code that needs to go through a HTML renderer before
      *         being displayed, <tt>false</tt> if it can be displayed as-is without any loss
      */
-    public static boolean containsHtml(final String str) {
+    public static boolean containsHtml(@Nullable final String str) {
+        if (StringUtils.isBlank(str)) {
+            return false;
+        }
         return str.indexOf('<') != -1 || str.indexOf('&') != -1;
     }
 
@@ -238,6 +259,7 @@ public final class TextUtils {
         // loop back to the first non-whitespace character
         //noinspection StatementWithEmptyBody
         while (--i >= 0 && Character.isWhitespace(source.charAt(i))) {
+            // empty
         }
 
         if (i < length - 1) {
@@ -253,7 +275,8 @@ public final class TextUtils {
      * @param html a string containing either HTML or plain text
      * @return a string without any HTML markup
      */
-    public static String stripHtml(final String html) {
+    @Nullable
+    public static String stripHtml(@Nullable final String html) {
         return containsHtml(html) ? trimSpanned(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY)).toString() : html;
     }
 
@@ -274,7 +297,7 @@ public final class TextUtils {
     }
 
     @NonNull
-    public static String getTextAfterIndexUntil(final String text, final int idx, final String endToken) {
+    public static String getTextAfterIndexUntil(final String text, final int idx, @Nullable final String endToken) {
         return getTextAfterIndexUntil(text, idx, endToken, -1);
     }
 
@@ -294,7 +317,7 @@ public final class TextUtils {
         }
         String before = text.substring(0, Math.min(idx, text.length()));
 
-        if (!StringUtils.isEmpty(startToken)) {
+        if (StringUtils.isNotEmpty(startToken)) {
             final int tokenIdx = before.lastIndexOf(startToken);
             if (tokenIdx >= 0) {
                 before = before.substring(tokenIdx + startToken.length());
@@ -313,12 +336,12 @@ public final class TextUtils {
      * @return found text or empty string. Never null.
      */
     @NonNull
-    public static String getTextAfterIndexUntil(final String text, final int idx, final String endToken, final int maxLength) {
+    public static String getTextAfterIndexUntil(final String text, final int idx, @Nullable final String endToken, final int maxLength) {
         if (StringUtils.isEmpty(text) || idx >= text.length() - 1) {
             return "";
         }
         String after = text.substring(idx < 0 ? 0 : idx + 1);
-        if (!StringUtils.isEmpty(endToken)) {
+        if (StringUtils.isNotEmpty(endToken)) {
             final int tokenIdx = after.indexOf(endToken);
             if (tokenIdx >= 0) {
                 after = after.substring(0, tokenIdx);
@@ -334,6 +357,7 @@ public final class TextUtils {
      * Method returns null if no delimited value is found.
      * This is the 'inverse' function to {@link #createDelimitedValue(String, char, char)}
      */
+    @Nullable
     public static String parseNextDelimitedValue(@NonNull final String text, final char delimiterChar, final char escapeChar) {
         final String quotedDelim = "\\" + delimiterChar;
         final String quotedEsc = "\\" + escapeChar;
@@ -445,7 +469,47 @@ public final class TextUtils {
         final int charsAtEnd = maxLength - separator.length() - charsAtBegin;
 
         return text.substring(0, charsAtBegin) + separator + text.substring(text.length() - charsAtEnd);
+    }
 
+    public static boolean isLetterOrDigit(final char ch, final boolean useUpper) {
+        boolean returnValue = CharUtils.isAsciiAlphanumeric(ch);
+        if (useUpper) {
+            returnValue &= CharUtils.isAsciiAlphaUpper(ch);
+        } else {
+            returnValue &= CharUtils.isAsciiAlphaLower(ch);
+        }
+
+        return returnValue;
+    }
+
+    public static boolean isEqualIgnoreCaseAndSpecialChars(final String s1, final String s2) {
+        if (Objects.equals(s1, s2)) {
+            return true;
+        }
+        if (s1 == null || s2 == null) {
+            return false;
+        }
+        return toComparableStringIgnoreCaseAndSpecialChars(s1).equals(toComparableStringIgnoreCaseAndSpecialChars(s2));
+    }
+
+    @Nullable
+    public static String toComparableStringIgnoreCaseAndSpecialChars(final String value) {
+        if (value == null) {
+            return null;
+        }
+        return PATTERN_REMOVE_SPECIAL.matcher(value.toLowerCase(Locale.US)).replaceAll("");
+    }
+
+    public static <E extends Enum<E>> E getEnumIgnoreCaseAndSpecialChars(final Class<E> enumClass, final String enumName, final E defaultEnum) {
+        if (enumName == null || !enumClass.isEnum()) {
+            return defaultEnum;
+        }
+        for (final E each : enumClass.getEnumConstants()) {
+            if (isEqualIgnoreCaseAndSpecialChars(each.name(), enumName)) {
+                return each;
+            }
+        }
+        return defaultEnum;
     }
 
     private static Pattern getTokenSearchPattern(final String startToken, final String endToken) {
@@ -462,5 +526,4 @@ public final class TextUtils {
         }
         return pattern;
     }
-
 }

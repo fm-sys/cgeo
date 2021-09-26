@@ -4,19 +4,23 @@ import cgeo.geocaching.CgeoApplication;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.DisplayMetrics;
-import android.util.Pair;
 import android.view.WindowManager;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.DrawableRes;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
 
 public class DisplayUtils {
+
+    public static final int SIZE_LIST_MARKER_DP = 12;  // size of a list marker in dp
+    public static final int SIZE_CACHE_MARKER_DP = 22; // size of a cache type marker in dp
 
     private DisplayUtils() {
         // Utility class, do not instantiate
@@ -47,16 +51,17 @@ public class DisplayUtils {
         return (int) (screenWidthDp / columnWidthDp + 0.5);
     }
 
-    /**
-     * get actual height of given drawable resource
-     * @param res - resources to load from
-     * @param resToFitIn - resource to check
-     * @return actual height
-     */
-    public static Pair<Integer, Integer> getDrawableDimensions(final Resources res, @DrawableRes final int resToFitIn) {
-        final Bitmap calc = BitmapFactory.decodeResource(res, resToFitIn);
-        return new Pair<>(calc.getWidth(), calc.getHeight());
+    public static int getPxFromDp(final Resources res, final int size, final float scaleFactor) {
+        final float conversionFactor = (float) res.getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT;
+        return (int) (size * conversionFactor * scaleFactor);
+    }
 
+    public static Drawable getTintedDrawable(final Resources res, @DrawableRes final int menuRes, @ColorRes final int tintColor) {
+        final int textColor = res.getColor(tintColor);
+
+        final Drawable menuDrawable = ResourcesCompat.getDrawable(res, menuRes, null);
+        DrawableCompat.setTint(menuDrawable, textColor);
+        return menuDrawable;
     }
 
     /**

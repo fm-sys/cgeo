@@ -5,12 +5,12 @@ import cgeo.geocaching.list.PseudoList;
 import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.maps.MapActivity;
 import cgeo.geocaching.storage.DataStore;
-import cgeo.geocaching.ui.dialog.Dialogs;
-import cgeo.geocaching.ui.dialog.Dialogs.ItemWithIcon;
+import cgeo.geocaching.ui.ImageParam;
+import cgeo.geocaching.ui.TextParam;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.ImageUtils;
 
 import android.content.Intent;
-import android.content.Intent.ShortcutIconResource;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
@@ -26,7 +26,7 @@ import java.util.List;
 
 public class CreateShortcutActivity extends AbstractActionBarActivity {
 
-    private static class Shortcut implements ItemWithIcon {
+    private static class Shortcut {
 
         @StringRes
         private final int titleResourceId;
@@ -43,7 +43,6 @@ public class CreateShortcutActivity extends AbstractActionBarActivity {
             this.intent = intent;
         }
 
-        @Override
         @DrawableRes
         public int getIcon() {
             return drawableResourceId;
@@ -85,7 +84,10 @@ public class CreateShortcutActivity extends AbstractActionBarActivity {
         shortcuts.add(new Shortcut(R.string.any_button, R.drawable.main_any, new Intent(this, NavigateAnyPointActivity.class)));
         shortcuts.add(new Shortcut(R.string.menu_history, R.drawable.main_stored, CacheListActivity.getHistoryIntent(this)));
 
-        Dialogs.select(this, getString(R.string.create_shortcut), shortcuts, shortcut -> {
+        SimpleDialog.of(this).setTitle(R.string.create_shortcut)
+            .selectSingle(shortcuts, (s, i) -> TextParam.text(s.toString()).setImage(ImageParam.id(s.getIcon()), 30), -1, false, (shortcut, pos) -> {
+
+        //Dialogs.select(this, getString(R.string.create_shortcut), shortcuts, shortcut -> {
             if (offlineShortcut.equals(shortcut)) {
                 promptForListShortcut();
             } else {
@@ -112,12 +114,7 @@ public class CreateShortcutActivity extends AbstractActionBarActivity {
         final Intent intent = new Intent();
         intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, targetIntent);
         intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, title);
-        if (iconResourceId == R.drawable.cgeo) {
-            final ShortcutIconResource iconResource = Intent.ShortcutIconResource.fromContext(this, iconResourceId);
-            intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
-        } else {
-            intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, createOverlay(iconResourceId));
-        }
+        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, createOverlay(iconResourceId));
 
         setResult(RESULT_OK, intent);
 

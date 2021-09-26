@@ -73,7 +73,7 @@ public class ImageListFragment extends Fragment {
      * get title for an image in the list as displayed
      */
     public String getImageTitle(final Image image, final int position) {
-        if (!StringUtils.isBlank(image.getTitle())) {
+        if (StringUtils.isNotBlank(image.getTitle())) {
             return image.getTitle();
         }
         return getString(R.string.log_image_titleprefix) + " " + (position + 1);
@@ -114,7 +114,7 @@ public class ImageListFragment extends Fragment {
 
     /** sets the list of images to display in this fragment */
     public void setImages(final List<Image> images) {
-        imageList.submitList(images);
+        imageList.setItems(images);
     }
 
     /** clears the list of images to display in this fragment */
@@ -156,7 +156,7 @@ public class ImageListFragment extends Fragment {
             imageHelper.getImageFromCamera(geocode, false));
 
         if (savedState != null) {
-            imageList.submitList(savedState.getParcelableArrayList(SAVED_STATE_IMAGELIST));
+            imageList.setItems(savedState.getParcelableArrayList(SAVED_STATE_IMAGELIST));
             imageHelper.setState(savedState.getBundle(SAVED_STATE_IMAGEHELPER));
         }
     }
@@ -200,7 +200,7 @@ public class ImageListFragment extends Fragment {
             holder.binding.imageTitle.setText(getImageTitle(image, position));
             holder.binding.imageInfo.setText(getImageInfo(image));
             holder.binding.imageDescription.setText(image.getDescription());
-            holder.binding.imageDescription.setVisibility(!StringUtils.isBlank(image.getDescription()) ? View.VISIBLE : View.GONE);
+            holder.binding.imageDescription.setVisibility(StringUtils.isNotBlank(image.getDescription()) ? View.VISIBLE : View.GONE);
         }
 
         private String getImageInfo(final Image image) {
@@ -218,6 +218,7 @@ public class ImageListFragment extends Fragment {
                 scaledWidth = scaledImageSizes.left;
                 scaledHeight = scaledImageSizes.middle;
             }
+            final String isScaled = getString(width != scaledWidth || height != scaledHeight ? R.string.log_image_info_scaled : R.string.log_image_info_notscaled);
 
             final long fileSize = imageFileInfo == null ? 0 : imageFileInfo.size;
             //A rough estimation for the size of the compressed image:
@@ -227,7 +228,7 @@ public class ImageListFragment extends Fragment {
             final long roughCompressedSize = width * height == 0 ? 0 :
                 ((fileSize * (scaledHeight * scaledWidth) / 10 / (width * height)) / 1024) * 1024;
 
-            return getString(R.string.log_image_info, width, height, Formatter.formatBytes(fileSize), scaledWidth, scaledHeight, Formatter.formatBytes(roughCompressedSize));
+            return getString(R.string.log_image_info2, isScaled, scaledWidth, scaledHeight, Formatter.formatBytes(roughCompressedSize));
         }
 
         @NonNull

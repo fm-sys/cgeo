@@ -5,21 +5,33 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     android:padding="4dip"
-    tools:context=".AboutActivity$ChangeLogViewCreator" >
+    tools:context=".AboutActivity$ChangeLogViewCreator">
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical" >
 
+        <!-- ToDo: remove celebration image and corresponding resource as soon as our party is over ;-) -->
+        <ImageView
+            android:id="@+id/about_version_icon"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dip"
+            android:gravity="center"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:src="@drawable/cgeo_10th_birthday" />
+        <!-- end of ToDo -->
+
         <TextView
             android:id="@+id/changelog_master"
-            android:text="@string/changelog_master"
-            style="@style/about_changes"/>
+            style="@style/about_changes"
+            android:paddingBottom="20dip" />
 
         <TextView
             android:id="@+id/changelog_release"
-            android:text="@string/changelog_release"
             style="@style/about_changes" />
 
         <Button

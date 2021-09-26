@@ -3,7 +3,9 @@ package cgeo.geocaching.maps;
 import cgeo.geocaching.R;
 import cgeo.geocaching.activity.ActivityMixin;
 import cgeo.geocaching.enumerations.LoadFlags;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.location.Geopoint;
+import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.maps.interfaces.CachesOverlayItemImpl;
 import cgeo.geocaching.maps.interfaces.MapActivityImpl;
 import cgeo.geocaching.maps.interfaces.MapViewImpl;
@@ -13,8 +15,9 @@ import cgeo.geocaching.maps.routing.Routing;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Route;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.utils.IndividualRouteUtils;
+import cgeo.geocaching.utils.TrackUtils;
 
-import android.app.Activity;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.Menu;
@@ -22,6 +25,9 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Collection;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -47,7 +53,11 @@ public abstract class AbstractMap {
         return mapActivity.getResources();
     }
 
-    public Activity getActivity() {
+    public MapActivityImpl getMapActivity() {
+        return mapActivity;
+    }
+
+    public AppCompatActivity getActivity() {
         return mapActivity.getActivity();
     }
 
@@ -99,11 +109,22 @@ public abstract class AbstractMap {
         //
     }
 
+    public void centerOnPosition(final double latitude, final double longitude, final Viewport viewport) {
+        //
+    }
+
+
     public void reloadIndividualRoute() {
         //
     }
 
-    @Nullable
+    public void clearIndividualRoute() {
+        //
+    }
+
+    public abstract void refreshMapData(boolean circlesSwitched);
+
+     @Nullable
     public Geocache getCurrentTargetCache() {
         if (StringUtils.isNotBlank(targetGeocode)) {
             return DataStore.loadCache(targetGeocode, LoadFlags.LOAD_CACHE_OR_DB);
@@ -125,5 +146,19 @@ public abstract class AbstractMap {
         }
         ActivityMixin.invalidateOptionsMenu(getActivity());
     }
+
+    protected TrackUtils getTrackUtils() {
+        return mapActivity.getTrackUtils();
+    }
+
+    protected IndividualRouteUtils getIndividualRouteUtils() {
+        return mapActivity.getIndividualRouteUtils();
+    }
+
+    public abstract Collection<Geocache> getCaches();
+
+     public abstract GeocacheFilterContext getFilterContext();
+
+     public abstract MapOptions getMapOptions();
 
 }

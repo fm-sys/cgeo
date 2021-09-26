@@ -89,7 +89,6 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
         assertThat(cache.getLocation()).isEqualTo("Baden-Württemberg, Germany");
         assertThat(cache.getShortDescription()).isEqualTo("Ein alter Kindheitstraum, ein Schatz auf einer unbewohnten Insel. A old dream of my childhood, a treasure on a lonely is");
         assertThat(cache.getCoords()).isEqualTo(new Geopoint(48.85968, 9.18740));
-        assertThat(cache.isReliableLatLon()).isTrue();
     }
 
     public void testGc31j2h() throws IOException, ParserException {
@@ -103,7 +102,6 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
 
         // no waypoints without importing waypoint file
         assertThat(cache.getWaypoints()).isEmpty();
-        assertThat(cache.isReliableLatLon()).isTrue();
     }
 
     public void testGc31j2hWpts() throws IOException, ParserException {
@@ -124,8 +122,48 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
 
         final List<Waypoint> waypointList = cache.getWaypoints();
         assertThat(waypointList).isNotNull();
-        assertThat(waypointList).hasSize(2);
-        assertThat(waypointList.get(1).getCoords()).isNull();
+        assertThat(waypointList).as("Number of imported waypoints").hasSize(2);
+
+        final Waypoint wpEmpty = waypointList.get(1);
+        assertThat(wpEmpty.getCoords()).as("Empty coordinates").isNull();
+        assertThat(wpEmpty.isUserDefined()).as("UserDefined").isFalse();
+        assertThat(wpEmpty.isOriginalCoordsEmpty()).as("OriginalCoordEmpty").isTrue();
+    }
+
+
+    public void testOCddd2WptsEmptyCoord() throws IOException, ParserException {
+        removeCacheCompletely("OCDDD2");
+        final List<Geocache> caches = readGPX10(R.raw.ocddd2, R.raw.ocddd2_empty_coord);
+        assertThat(caches).hasSize(1);
+        final Geocache cache = caches.get(0);
+
+        final List<Waypoint> waypointList = cache.getWaypoints();
+        assertThat(waypointList).isNotNull();
+        assertThat(waypointList).as("Number of imported waypoints").hasSize(8);
+
+        final Waypoint wpNotEmpty = waypointList.get(3);
+        assertThat(wpNotEmpty.getCoords()).as("Not empty coordinates").isNotNull();
+        assertThat(wpNotEmpty.isOriginalCoordsEmpty()).as("OriginalCoordEmpty").isFalse();
+
+        final Waypoint wpEmptyUser = waypointList.get(4);
+        assertThat(wpEmptyUser.getCoords()).as("Empty coordinates").isNull();
+        assertThat(wpEmptyUser.isUserDefined()).as("UserDefined").isTrue();
+        assertThat(wpEmptyUser.isOriginalCoordsEmpty()).as("OriginalCoordEmpty").isFalse();
+
+        final Waypoint wpEmptyOwner = waypointList.get(5);
+        assertThat(wpEmptyOwner.getCoords()).as("Empty coordinates").isNull();
+        assertThat(wpEmptyOwner.isUserDefined()).as("UserDefined").isFalse();
+        assertThat(wpEmptyOwner.isOriginalCoordsEmpty()).as("OriginalCoordEmpty").isTrue();
+
+        final Waypoint wpEmptyOwnerModfied = waypointList.get(6);
+        assertThat(wpEmptyOwnerModfied.getCoords()).as("Not empty coordinates").isNotNull();
+        assertThat(wpEmptyOwnerModfied.isUserDefined()).as("UserDefined").isFalse();
+        assertThat(wpEmptyOwnerModfied.isOriginalCoordsEmpty()).as("OriginalCoordEmpty").isTrue();
+
+        final Waypoint wpBlank = waypointList.get(7);
+        assertThat(wpBlank.getCoords()).as("Blank coordinates").isNull();
+        assertThat(wpBlank.isUserDefined()).as("UserDefined").isFalse();
+        assertThat(wpBlank.isOriginalCoordsEmpty()).as("OriginalCoordEmpty").isTrue();
     }
 
     private static void checkWaypointType(final Collection<Geocache> caches, final String geocode, final int wpIndex, final WaypointType waypointType) {
@@ -263,18 +301,6 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
         return new ArrayList<>(DataStore.loadCaches(result, LoadFlags.LOAD_ALL_DB_ONLY));
     }
 
-    public static void testParseDateWithFractionalSeconds() throws ParseException {
-        // was experienced in GSAK file
-        final String dateString = "2011-08-13T02:52:18.103Z";
-        GPXParser.parseDate(dateString);
-    }
-
-    public static void testParseDateWithHugeFraction() throws ParseException {
-        // see issue 821
-        final String dateString = "2011-11-07T00:00:00.0000000-07:00";
-        GPXParser.parseDate(dateString);
-    }
-
     public void testSelfmadeGPXWithoutGeocodes() throws Exception {
         final List<Geocache> caches = readGPX11(R.raw.no_connector);
         assertThat(caches).hasSize(13);
@@ -397,6 +423,20 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
         assertThat(cache.getCoords()).isEqualTo(new Geopoint("51.223033", "6.027767"));
     }
 
+    public void testGsakGuidV110() throws IOException, ParserException {
+        final List<Geocache> caches = readGPX11(R.raw.gc3t1xg_gsak_110);
+        assertThat(caches).hasSize(1);
+        final Geocache cache = caches.get(0);
+        assertThat(cache.getGuid()).isEqualTo("9946f030-a514-46d8-a050-a60e92fd2e1a");
+    }
+
+    public void testGsakDNF() throws IOException, ParserException {
+        final Geocache cache = getFirstCache(R.raw.gc3t1xg_gsak_dnf);
+        assertThat(cache.isFound()).isFalse();
+        assertThat(cache.isDNF()).isTrue();
+        assertThat(cache.getVisitedDate()).isEqualTo(parseTime("2021-03-20T00:00:00Z"));
+    }
+
     public void testGPXMysteryType() throws IOException, ParserException {
         final List<Geocache> caches = readGPX10(R.raw.tc2012);
         final Geocache mystery = getCache(caches, "U017");
@@ -419,8 +459,8 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
         final Geocache lab = getCache(caches, "01_Munich Olympic Walk Of Stars_Updated-Project MUNICH2014 - Mia san Giga! Olympiapark");
         assertThat(lab).isNotNull();
 
-        // parse labs as virtual for the time being
-        assertThat(lab.getType()).isEqualTo(CacheType.VIRTUAL);
+        // cache type
+        assertThat(lab.getType()).isEqualTo(CacheType.ADVLAB);
 
         // no difficulty and terrain rating
         assertThat(lab.getTerrain()).isEqualTo(0);
@@ -447,8 +487,8 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
         for (final Geocache lab :caches) {
             assertThat(lab).isNotNull();
 
-            // parse labs as virtual for the time being
-            assertThat(lab.getType()).isEqualTo(CacheType.VIRTUAL);
+            // cache type
+            assertThat(lab.getType()).isEqualTo(CacheType.ADVLAB);
 
             // no container size
             assertThat(lab.getSize().comparable).isGreaterThan(CacheSize.VERY_LARGE.comparable);
@@ -569,5 +609,4 @@ public class GPXParserTest extends AbstractResourceInstrumentationTestCase {
         final Geocache cache = caches.get(0);
         assertThat(cache.getSize()).isEqualTo(CacheSize.NANO);
     }
-
 }

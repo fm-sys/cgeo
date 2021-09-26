@@ -2,43 +2,41 @@ package cgeo.geocaching.downloader;
 
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
-import cgeo.geocaching.maps.mapsforge.v6.RenderThemeHelper;
-import cgeo.geocaching.models.OfflineMap;
-import cgeo.geocaching.storage.PersistableFolder;
+import cgeo.geocaching.models.Download;
 import cgeo.geocaching.utils.MatcherWrapper;
-import cgeo.geocaching.utils.UriUtils;
 
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class MapDownloaderOpenAndroMapsThemes extends AbstractDownloader {
+public class MapDownloaderOpenAndroMapsThemes extends AbstractThemeDownloader {
 
     private static final Pattern PATTERN_LAST_UPDATED_DATE = Pattern.compile("<a href=\"https:\\/\\/www\\.openandromaps\\.org\\/wp-content\\/users\\/tobias\\/version\\.txt\">[0-9]\\.[0-9]\\.[0-9]<\\/a><\\/strong>, ([0-9]{1,2})\\.([0-9]{1,2})\\.([0-9]{2}) ");
     private static final MapDownloaderOpenAndroMapsThemes INSTANCE = new MapDownloaderOpenAndroMapsThemes();
 
     private MapDownloaderOpenAndroMapsThemes() {
-        super(OfflineMap.OfflineMapType.MAP_DOWNLOAD_TYPE_OPENANDROMAPS_THEMES, R.string.mapserver_openandromaps_themes_updatecheckurl, R.string.mapserver_openandromaps_themes_name, R.string.mapserver_openandromaps_themes_info, R.string.mapserver_openandromaps_projecturl, R.string.mapserver_openandromaps_likeiturl, PersistableFolder.OFFLINE_MAP_THEMES);
-        this.forceExtension = ".zip";
+        super(Download.DownloadType.DOWNLOADTYPE_THEME_OPENANDROMAPS, R.string.mapserver_openandromaps_themes_updatecheckurl, R.string.mapserver_openandromaps_themes_name, R.string.mapserver_openandromaps_themes_info, R.string.mapserver_openandromaps_projecturl, R.string.mapserver_openandromaps_likeiturl);
     }
 
     @Override
-    protected void analyzePage(final Uri uri, final List<OfflineMap> list, final String page) {
-        final OfflineMap file = checkUpdateFor(page, CgeoApplication.getInstance().getString(R.string.mapserver_openandromaps_themes_downloadurl), "Elevate.zip");
+    protected void analyzePage(final Uri uri, final List<Download> list, final @NonNull String page) {
+        final Download file = checkUpdateFor(page, CgeoApplication.getInstance().getString(R.string.mapserver_openandromaps_themes_downloadurl), "Elevate.zip");
         if (file != null) {
             list.add(file);
         }
     }
 
+    @Nullable
     @Override
-    protected OfflineMap checkUpdateFor(final String page, final String remoteUrl, final String remoteFilename) {
+    protected Download checkUpdateFor(final @NonNull String page, final String remoteUrl, final String remoteFilename) {
         final MatcherWrapper matchDate = new MatcherWrapper(PATTERN_LAST_UPDATED_DATE, page);
         if (matchDate.find()) {
             final String date = "20" + matchDate.group(3) + "-" + matchDate.group(2) + "-" + matchDate.group(1);
-            return new OfflineMap("Elevate", Uri.parse(CgeoApplication.getInstance().getString(R.string.mapserver_openandromaps_themes_downloadurl) + "Elevate.zip"), false, date, "", offlineMapType);
+            return new Download("Elevate", Uri.parse(CgeoApplication.getInstance().getString(R.string.mapserver_openandromaps_themes_downloadurl) + "Elevate.zip"), false, date, "", offlineMapType, iconRes);
         }
         return null;
     }
@@ -54,16 +52,6 @@ public class MapDownloaderOpenAndroMapsThemes extends AbstractDownloader {
             return result.endsWith("/") ? result : result + "/";
         }
         return downloadPageUrl;
-    }
-
-    @Override
-    protected void onSuccessfulReceive(final Uri result) {
-
-        //resync
-        RenderThemeHelper.resynchronizeOrDeleteMapThemeFolder();
-
-        //set map theme
-        RenderThemeHelper.setSelectedMapThemeDirect(UriUtils.getLastPathSegment(result));
     }
 
     @NonNull

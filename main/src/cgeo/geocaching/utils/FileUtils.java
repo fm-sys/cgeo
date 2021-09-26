@@ -3,13 +3,16 @@ package cgeo.geocaching.utils;
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import android.os.StatFs;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RawRes;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -397,6 +400,12 @@ public final class FileUtils {
     }
 
     public static String createUniqueFilename(@NonNull final String requestedName, @NonNull final List<String> existingNames) {
+        return createUniqueFilename(requestedName, existingNames, null);
+    }
+
+
+    public static String createUniqueFilename(@NonNull final String requestedName, @NonNull final List<String> existingNames, @Nullable final File dir) {
+
         //split in suffix and praefix
         final int suffIdx = requestedName.lastIndexOf(".");
         final String suffix = suffIdx >= 0 ? requestedName.substring(suffIdx) : "";
@@ -404,7 +413,7 @@ public final class FileUtils {
 
         String newPraefix = praefix;
         int idx = 1;
-        while (existingNames.contains(newPraefix + suffix)) {
+        while (existingNames.contains(newPraefix + suffix) || (dir != null && dir.isDirectory() && new File(dir, newPraefix + suffix).exists())) {
             newPraefix = praefix + " (" + (idx++) + ")";
         }
         return newPraefix + suffix;
@@ -541,6 +550,26 @@ public final class FileUtils {
             }
         }
         return result;
+    }
+
+    public static String getRawResourceAsString(final Context context, @RawRes final int resId) {
+        final StringBuilder content = new StringBuilder();
+        try (BufferedReader is = new BufferedReader(new InputStreamReader(context.getResources().openRawResource(resId)))) {
+            String line;
+            while ((line = is.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        } catch (IOException ignored) {
+        }
+        return content.toString();
+    }
+
+    public static String getChangelogMaster(final Context context) {
+        return getRawResourceAsString(context, R.raw.changelog_master);
+    }
+
+    public static String getChangelogRelease(final Context context) {
+        return getRawResourceAsString(context, R.raw.changelog_release);
     }
 
 }

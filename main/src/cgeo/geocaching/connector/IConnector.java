@@ -15,7 +15,7 @@ import java.util.Set;
 
 public interface IConnector {
     /**
-     * get name for display (currently only used in links)
+     * get name for display. Also used for unique identification of this connector, so make sure its uniqueness!
      *
      */
     @NonNull
@@ -29,6 +29,13 @@ public interface IConnector {
      * @return return {@code true}, if this connector is responsible for the cache
      */
     boolean canHandle(@NonNull String geocode);
+
+    /**
+     * @return a couple of SQL-Like expression, applicably to a SQL geocode column to filter caches handled by this connector
+     * (e.g. something like 'GC%')
+     */
+    @NonNull
+    String[] getGeocodeSqlLikeExpressions();
 
     /**
      * Return a new geocodes list, with only geocodes for which this connector is responsible.
@@ -99,6 +106,17 @@ public interface IConnector {
      */
     boolean supportsDescriptionchange();
 
+
+    /**
+     * Shall an extra description be displayed on cache detail page?
+     */
+    String getExtraDescription();
+
+    /**
+     * enable/disable changing found state of a cache
+     */
+    boolean supportsSettingFoundState();
+
     /**
      * Get host name of the connector server for dynamic loading of data.
      *
@@ -138,14 +156,6 @@ public interface IConnector {
      *
      */
     boolean isZippedGPXFile(@NonNull String fileName);
-
-    /**
-     * return true if coordinates of a cache are reliable. only implemented by GC connector
-     *
-     * @param cacheHasReliableLatLon
-     *            flag of the cache
-     */
-    boolean isReliableLatLon(boolean cacheHasReliableLatLon);
 
     /**
      * extract a geocode from the given URL, if this connector can handle that URL somehow
@@ -201,11 +211,26 @@ public interface IConnector {
     /**
      * Return the marker id of the caches for this connector. This creates the different backgrounds for cache markers
      * on the map.
-     *
-     * @param disabled
-     *            Whether to return the enabled or disabled marker type
      */
-    int getCacheMapMarkerId(boolean disabled);
+    int getCacheMapMarkerId();
+
+    /**
+     * Return the marker background id of the caches for this connector. This creates the different backgrounds for cache markers
+     * on the map.
+     */
+    int getCacheMapMarkerBackgroundId();
+
+    /**
+     * Return the marker id of the caches for this connector. This creates the different backgrounds for cache markers
+     * on the map.
+     */
+    int getCacheMapDotMarkerId();
+
+    /**
+     * Return the marker background id of the caches for this connector. This creates the different backgrounds for cache markers
+     * on the map.
+     */
+    int getCacheMapDotMarkerBackgroundId();
 
     /**
      * Get the list of <b>potentially</b> possible log types for a cache. Those may still be filtered further during the

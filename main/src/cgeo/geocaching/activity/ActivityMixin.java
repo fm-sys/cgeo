@@ -55,10 +55,7 @@ public final class ActivityMixin {
     }
 
     private static int getThemeId() {
-        if (Settings.isLightSkin()) {
-            return R.style.light;
-        }
-        return R.style.dark;
+        return R.style.cgeo;
     }
 
     public static void setTheme(final Activity activity) {
@@ -70,11 +67,7 @@ public final class ActivityMixin {
     }
 
     public static int getDialogTheme() {
-        // Light theme dialogs don't work on Android Api < 11
-        if (Settings.isLightSkin()) {
-            return R.style.popup_light;
-        }
-        return R.style.popup_dark;
+        return R.style.Theme_AppCompat_Transparent_NoActionBar;
     }
 
     /**

@@ -2,8 +2,10 @@ package cgeo.geocaching.settings;
 
 import cgeo.geocaching.R;
 import cgeo.geocaching.activity.AbstractActivity;
+import cgeo.geocaching.databinding.ViewSettingsAddBinding;
 import cgeo.geocaching.ui.FastScrollListener;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.ApplicationSettings;
 import cgeo.geocaching.utils.SettingsUtils;
 import static cgeo.geocaching.utils.SettingsUtils.getType;
@@ -17,8 +19,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -31,6 +31,7 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,8 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.radiobutton.MaterialRadioButton;
 import org.apache.commons.lang3.StringUtils;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -73,7 +76,9 @@ public class ViewSettingsActivity extends AbstractActivity {
             final Object value = entry.getValue();
             final String key = entry.getKey();
             final SettingsUtils.SettingsType type = getType(value);
-            items.add(new KeyValue(key, value.toString(), type));
+            if (value != null) { // should not happen, but...
+                items.add(new KeyValue(key, value.toString(), type));
+            }
         }
         Collections.sort(items, (o1, o2) -> o1.key.compareTo(o2.key));
 
@@ -88,6 +93,7 @@ public class ViewSettingsActivity extends AbstractActivity {
         private HashMap<String, Integer> mapFirstPosition;
         private HashMap<String, Integer> mapSection;
         private String[] sections;
+        private final HashSet<String> sensitiveKeys = Settings.getSensitivePreferenceKeys(getContext());
 
         SettingsAdapter(final Activity activity) {
             super(activity, 0, items);
@@ -112,22 +118,24 @@ public class ViewSettingsActivity extends AbstractActivity {
             }
         }
 
+        @NonNull
         public View getView(final int position, final View convertView, @NonNull final ViewGroup parent) {
             View v = convertView;
             if (null == convertView) {
                 v = getLayoutInflater().inflate(R.layout.twotexts_twobuttons_item, parent, false);
-                ((ImageButton) v.findViewById(R.id.button_left)).setImageResource(R.drawable.ic_menu_edit);
-                ((ImageButton) v.findViewById(R.id.button_right)).setImageResource(R.drawable.ic_menu_delete);
             }
+
             final KeyValue keyValue = items.get(position);
             ((TextView) v.findViewById(R.id.title)).setText(keyValue.key);
-            ((TextView) v.findViewById(R.id.detail)).setText(keyValue.value);
+            ((TextView) v.findViewById(R.id.detail)).setText(sensitiveKeys.contains(keyValue.key) ? "******" : keyValue.value);
 
-            final View buttonDelete = v.findViewById(R.id.button_right);
+            final MaterialButton buttonDelete = v.findViewById(R.id.button_right);
+            buttonDelete.setIconResource(R.drawable.ic_menu_delete);
             buttonDelete.setOnClickListener(v2 -> deleteItem(position));
             buttonDelete.setVisibility(editMode ? View.VISIBLE : View.GONE);
 
-            final View buttonEdit = v.findViewById(R.id.button_left);
+            final MaterialButton buttonEdit = v.findViewById(R.id.button_left);
+            buttonEdit.setIconResource(R.drawable.ic_menu_edit);
             buttonEdit.setOnClickListener(v3 -> editItem(position));
             buttonEdit.setVisibility(editMode ? keyValue.type != SettingsUtils.SettingsType.TYPE_UNKNOWN ? View.VISIBLE : View.INVISIBLE : View.GONE);
 
@@ -167,7 +175,7 @@ public class ViewSettingsActivity extends AbstractActivity {
     private void deleteItem(final int position) {
         final KeyValue keyValue = items.get(position);
         final String key = keyValue.key;
-        Dialogs.confirm(this, R.string.delete_setting, String.format(getString(R.string.delete_setting_warning), key), (dialog, which) -> {
+        SimpleDialog.of(this).setTitle(R.string.delete_setting).setMessage(R.string.delete_setting_warning, key).confirm((dialog, which) -> {
             final SharedPreferences.Editor editor = prefs.edit();
             editor.remove(key);
             editor.apply();
@@ -193,51 +201,37 @@ public class ViewSettingsActivity extends AbstractActivity {
                 inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL;
                 break;
         }
-        final EditText editText = new EditText(this);
-        editText.setInputType(inputType);
-        editText.setText(keyValue.value);
-
-        Dialogs.newBuilder(this)
-            .setTitle(String.format(getString(R.string.edit_setting), key))
-            .setView(editText)
-            .setPositiveButton(android.R.string.ok, (dialog, whichButton) -> {
-                final String newValue = editText.getText().toString();
-                final SharedPreferences.Editor editor = prefs.edit();
-                try {
-                    SettingsUtils.putValue(editor, type, key, newValue);
-                    editor.apply();
-                    debugAdapter.remove(keyValue);
-                    debugAdapter.insert(new KeyValue(key, newValue, type), position);
-                } catch (XmlPullParserException e) {
-                    showToast(R.string.edit_setting_error_unknown_type);
-                } catch (NumberFormatException e) {
-                    showToast(String.format(getString(R.string.edit_setting_error_invalid_data), newValue));
-                }
-            })
-            .setNegativeButton(android.R.string.cancel, (dialog, whichButton) -> { })
-            .show()
-        ;
+        Dialogs.input(this, String.format(getString(R.string.edit_setting), key), keyValue.value, null, inputType, 1, 1, newValue -> {
+            final SharedPreferences.Editor editor = prefs.edit();
+            try {
+                SettingsUtils.putValue(editor, type, key, newValue);
+                editor.apply();
+                debugAdapter.remove(keyValue);
+                debugAdapter.insert(new KeyValue(key, newValue, type), position);
+            } catch (XmlPullParserException e) {
+                showToast(R.string.edit_setting_error_unknown_type);
+            } catch (NumberFormatException e) {
+                showToast(String.format(getString(R.string.edit_setting_error_invalid_data), newValue));
+            }
+        });
     }
 
     private void addItem() {
-        final View layout = View.inflate(this, R.layout.view_settings_add, null);
-
-        final EditText preferenceNameEdit = layout.findViewById(R.id.preference_name);
-
+        final ViewSettingsAddBinding binding = ViewSettingsAddBinding.inflate(getLayoutInflater());
         final List<String> stringList = SettingsUtils.SettingsType.getStringList();
-        final RadioGroup rg = layout.findViewById(R.id.preference_type);
+        final RadioGroup rg = binding.preferenceType;
         for (int i = 0; i < stringList.size(); i++) {
-            final RadioButton rb = new RadioButton(this);
+            final MaterialRadioButton rb = new MaterialRadioButton(this);
             rb.setText(stringList.get(i));
             rg.addView(rb);
         }
 
         Dialogs.newBuilder(this)
             .setTitle(R.string.add_setting)
-            .setView(layout)
+            .setView(binding.getRoot())
             .setNegativeButton(android.R.string.cancel, (d, which) -> d.dismiss())
             .setPositiveButton(android.R.string.ok, (d, which) -> {
-                final String preferenceName = preferenceNameEdit.getText().toString().trim();
+                final String preferenceName = binding.preferenceName.getText().toString().trim();
                 final int rbId = rg.getCheckedRadioButtonId();
                 if (rbId == -1) {
                     Toast.makeText(this, R.string.add_setting_missing_type, Toast.LENGTH_SHORT).show();
@@ -300,7 +294,7 @@ public class ViewSettingsActivity extends AbstractActivity {
     public boolean onOptionsItemSelected(final MenuItem item) {
         final int itemId = item.getItemId();
         if (itemId == R.id.view_settings_edit && !editMode) {
-            Dialogs.confirm(this, R.string.activate_editmode_title, R.string.activate_editmode_warning, (dialog, which) -> {
+            SimpleDialog.of(this).setTitle(R.string.activate_editmode_title).setMessage(R.string.activate_editmode_warning).confirm((dialog, which) -> {
                 editMode = true;
                 invalidateOptionsMenu();
                 debugAdapter.notifyDataSetChanged();

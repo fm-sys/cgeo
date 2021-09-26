@@ -8,7 +8,6 @@ import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.network.AndroidBeam;
-import cgeo.geocaching.storage.ContentStorageActivityHelper;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.utils.ApplicationSettings;
 import cgeo.geocaching.utils.ClipboardUtils;
@@ -37,6 +36,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.viewbinding.ViewBinding;
 
 import java.util.Locale;
 
@@ -52,8 +52,6 @@ public abstract class AbstractActivity extends AppCompatActivity implements IAbs
     private final CompositeDisposable resumeDisposable = new CompositeDisposable();
 
     private final String logToken = "[" + this.getClass().getName() + "]";
-
-    private ContentStorageActivityHelper contentStorageHelper = null; //lazy initalized
 
     protected AbstractActivity() {
         this(false);
@@ -127,12 +125,22 @@ public abstract class AbstractActivity extends AppCompatActivity implements IAbs
     public void onCreate(final Bundle savedInstanceState) {
         Log.v(logToken + ".onCreate(Bundle)");
         ApplicationSettings.setLocale(this);
-        super.onCreate(savedInstanceState);
+        try {
+            super.onCreate(savedInstanceState);
+        } catch (Exception e) {
+            Log.e(e.toString());
+            throw e;
+        }
         onCreateCommon();
     }
 
     protected void setThemeAndContentView(@LayoutRes final int resourceLayoutID) {
         setThemeAndContentView(resourceLayoutID, false);
+    }
+
+    protected void setThemeAndContentView(final ViewBinding binding) {
+        ActivityMixin.setTheme(this, false);
+        setContentView(binding.getRoot());
     }
 
     protected void setThemeAndContentView(@LayoutRes final int resourceLayoutID, final boolean isDialog) {
@@ -174,7 +182,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IAbs
     }
 
     protected void hideKeyboard() {
-        new Keyboard(this).hide();
+        Keyboard.hide(this);
     }
 
     protected void buildDetailsContextMenu(final ActionMode actionMode, final Menu menu, final CharSequence fieldTitle, final boolean copyOnly) {
@@ -258,7 +266,7 @@ public abstract class AbstractActivity extends AppCompatActivity implements IAbs
      * change the titlebar icon and text to show the current geocache
      */
     protected void setCacheTitleBar(@NonNull final Geocache cache) {
-        setTitle(TextUtils.coloredCacheText(cache, cache.getName() + " (" + cache.getGeocode() + ")"));
+        setTitle(TextUtils.coloredCacheText(cache, cache.getName() + " (" + cache.getShortGeocode() + ")"));
         final ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayShowHomeEnabled(true);
@@ -279,21 +287,6 @@ public abstract class AbstractActivity extends AppCompatActivity implements IAbs
             return;
         }
         setCacheTitleBar(cache);
-    }
-
-    protected ContentStorageActivityHelper getContentStorageHelper() {
-        if (this.contentStorageHelper == null) {
-            this.contentStorageHelper = new ContentStorageActivityHelper(this);
-        }
-        return this.contentStorageHelper;
-    }
-
-    @Override
-    protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (this.contentStorageHelper != null) {
-            this.contentStorageHelper.onActivityResult(requestCode, resultCode, data);
-        }
     }
 
     @Override

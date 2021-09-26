@@ -1,10 +1,12 @@
 package cgeo.geocaching;
 
 import cgeo.geocaching.activity.AbstractActivity;
-import cgeo.geocaching.activity.AbstractViewPagerActivity;
+import cgeo.geocaching.activity.TabbedViewPagerActivity;
+import cgeo.geocaching.activity.TabbedViewPagerFragment;
 import cgeo.geocaching.connector.ConnectorFactory;
 import cgeo.geocaching.connector.trackable.TrackableBrand;
 import cgeo.geocaching.connector.trackable.TrackableTrackingCode;
+import cgeo.geocaching.databinding.CachedetailImagesPageBinding;
 import cgeo.geocaching.databinding.TrackableDetailsViewBinding;
 import cgeo.geocaching.location.Units;
 import cgeo.geocaching.log.LogEntry;
@@ -20,7 +22,6 @@ import cgeo.geocaching.permission.RestartLocationPermissionGrantedCallback;
 import cgeo.geocaching.sensors.GeoData;
 import cgeo.geocaching.sensors.GeoDirHandler;
 import cgeo.geocaching.settings.Settings;
-import cgeo.geocaching.ui.AbstractCachingPageViewCreator;
 import cgeo.geocaching.ui.AnchorAwareLinkMovementMethod;
 import cgeo.geocaching.ui.CacheDetailsCreator;
 import cgeo.geocaching.ui.ImagesList;
@@ -30,6 +31,7 @@ import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.Formatter;
 import cgeo.geocaching.utils.HtmlUtils;
 import cgeo.geocaching.utils.Log;
+import cgeo.geocaching.utils.ShareUtils;
 import cgeo.geocaching.utils.TextUtils;
 import cgeo.geocaching.utils.UnknownTagsHandler;
 
@@ -47,12 +49,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.view.ActionMode;
 import androidx.core.text.HtmlCompat;
-import androidx.core.widget.NestedScrollView;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -62,10 +64,8 @@ import java.util.Locale;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
-public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivity.Page> implements AndroidBeam.ActivitySharingInterface {
+public class TrackableActivity extends TabbedViewPagerActivity implements AndroidBeam.ActivitySharingInterface {
 
     public enum Page {
         DETAILS(R.string.detail),
@@ -74,9 +74,20 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
 
         @StringRes
         private final int resId;
+        public final long id;
 
         Page(@StringRes final int resId) {
             this.resId = resId;
+            this.id = ordinal();
+        }
+
+        static Page find(final long pageId) {
+            for (Page page : Page.values()) {
+                if (page.id == pageId) {
+                    return page;
+                }
+            }
+            return null;
         }
     }
 
@@ -88,10 +99,10 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
     private String geocache = null;
     private String trackingCode = null;
     private TrackableBrand brand = null;
-    private LayoutInflater inflater = null;
     private ProgressDialog waitDialog = null;
     private CharSequence clickedItemText = null;
     private ImagesList imagesList = null;
+    private String fallbackKeywordSearch = null;
     private final CompositeDisposable createDisposables = new CompositeDisposable();
     private final CompositeDisposable geoDataDisposable = new CompositeDisposable();
     private static final GeoDirHandler locationUpdater = new GeoDirHandler() {
@@ -110,7 +121,7 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setThemeAndContentView(R.layout.cachedetail_activity);
+        setThemeAndContentView(R.layout.tabbed_viewpager_activity_refreshable);
 
         // set title in code, as the activity needs a hard coded title due to the intent filters
         setTitle(res.getString(R.string.trackable));
@@ -128,6 +139,7 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
             geocache = extras.getString(Intents.EXTRA_GEOCACHE);
             brand = TrackableBrand.getById(extras.getInt(Intents.EXTRA_BRAND));
             trackingCode = extras.getString(Intents.EXTRA_TRACKING_CODE);
+            fallbackKeywordSearch = extras.getString(Intents.EXTRA_KEYWORD);
         }
 
         // try to get data from URI
@@ -193,7 +205,8 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
         // If we have a newer Android device setup Android Beam for easy cache sharing
         AndroidBeam.enable(this, this);
 
-        createViewPager(0, position -> lazyLoadTrackableImages());
+        createViewPager(Page.DETAILS.id, getOrderedPages(), null, true);
+
         refreshTrackable(message);
     }
 
@@ -223,9 +236,8 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
     private void act(final Trackable newTrackable) {
         trackable = newTrackable;
         displayTrackable();
-        // reset imagelist
+        // reset imagelist // @todo mb: more to do?
         imagesList = null;
-        lazyLoadTrackableImages();
     }
 
     private void refreshTrackable(final String message) {
@@ -261,7 +273,7 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
         if (itemId == R.id.menu_log_touch) {
             startActivityForResult(LogTrackableActivity.getIntent(this, trackable, geocache), LogTrackableActivity.LOG_TRACKABLE);
         } else if (itemId == R.id.menu_browser_trackable) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(trackable.getUrl())));
+            ShareUtils.openUrl(this, trackable.getUrl(), true);
         } else if (itemId == R.id.menu_refresh_trackable) {
             refreshTrackable(StringUtils.defaultIfBlank(trackable.getName(), trackable.getGeocode()));
         } else {
@@ -289,10 +301,14 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
         if (trackable == null) {
             Dialogs.dismiss(waitDialog);
 
-            if (StringUtils.isNotBlank(geocode)) {
-                showToast(res.getString(R.string.err_tb_find) + " " + geocode + ".");
+            if (fallbackKeywordSearch != null) {
+                CacheListActivity.startActivityKeyword(this, fallbackKeywordSearch);
             } else {
-                showToast(res.getString(R.string.err_tb_find_that));
+                if (StringUtils.isNotBlank(geocode)) {
+                    showToast(res.getString(R.string.err_tb_not_found, geocode));
+                } else {
+                    showToast(res.getString(R.string.err_tb_find_that));
+                }
             }
 
             finish();
@@ -300,7 +316,6 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
         }
 
         try {
-            inflater = getLayoutInflater();
             geocode = trackable.getGeocode();
 
             if (StringUtils.isNotBlank(trackable.getName())) {
@@ -310,18 +325,18 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
             }
 
             invalidateOptionsMenuCompatible();
+            setOrderedPages(getOrderedPages());
             reinitializeViewPager();
 
         } catch (final Exception e) {
             Log.e("TrackableActivity.loadTrackableHandler: ", e);
         }
-
         Dialogs.dismiss(waitDialog);
     }
 
-    private void setupIcon(final ActionBar actionBar, final String url) {
+    private static void setupIcon(final TrackableActivity activity, final ActionBar actionBar, final String url) {
         final HtmlImage imgGetter = new HtmlImage(HtmlImage.SHARED, false, false, false);
-        AndroidRxUtils.bindActivity(this, imgGetter.fetchDrawable(url)).subscribe(image -> {
+        AndroidRxUtils.bindActivity(activity, imgGetter.fetchDrawable(url)).subscribe(image -> {
             if (actionBar != null) {
                 final int height = actionBar.getHeight();
                 //noinspection SuspiciousNameCombination
@@ -337,8 +352,7 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
         }
     }
 
-    public static void startActivity(final AbstractActivity fromContext,
-            final String guid, final String geocode, final String name, final String geocache, final int brandId) {
+    public static void startActivity(final AbstractActivity fromContext, final String guid, final String geocode, final String name, final String geocache, final int brandId) {
         final Intent trackableIntent = new Intent(fromContext, TrackableActivity.class);
         trackableIntent.putExtra(Intents.EXTRA_GUID, guid);
         trackableIntent.putExtra(Intents.EXTRA_GEOCODE, geocode);
@@ -349,90 +363,110 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
     }
 
     @Override
-    protected PageViewCreator createViewCreator(final Page page) {
-        switch (page) {
-            case DETAILS:
-                return new DetailsViewCreator();
-            case LOGS:
-                return new TrackableLogsViewCreator(this);
-            case IMAGES:
-                return new ImagesViewCreator();
+    @SuppressWarnings("rawtypes")
+    protected TabbedViewPagerFragment createNewFragment(final long pageId) {
+        if (pageId == Page.DETAILS.id) {
+            return new DetailsViewCreator();
+        } else if (pageId == Page.LOGS.id) {
+            return new TrackableLogsViewCreator();
+        } else if (pageId == Page.IMAGES.id) {
+            return new ImagesViewCreator();
         }
         throw new IllegalStateException(); // cannot happen as long as switch case is enum complete
     }
 
-    private class ImagesViewCreator extends AbstractCachingPageViewCreator<View> {
+    public static class ImagesViewCreator extends TabbedViewPagerFragment<CachedetailImagesPageBinding> {
 
         @Override
-        public View getDispatchedView(final ViewGroup parentView) {
-            view = getLayoutInflater().inflate(R.layout.cachedetail_images_page, parentView, false);
-            return view;
+        public CachedetailImagesPageBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return CachedetailImagesPageBinding.inflate(inflater, container, false);
         }
-    }
 
-    private void loadTrackableImages() {
-        if (imagesList != null) {
-            return;
+        @Override
+        public long getPageId() {
+            return Page.IMAGES.id;
         }
-        final PageViewCreator creator = getViewCreator(Page.IMAGES);
-        if (creator == null) {
-            return;
-        }
-        final View imageView = creator.getView(null);
-        if (imageView == null) {
-            return;
-        }
-        imagesList = new ImagesList(this, trackable.getGeocode(), null);
-        createDisposables.add(imagesList.loadImages(imageView, trackable.getImages()));
-    }
 
-    /**
-     * Start loading images only when on images tab
-     */
-    private void lazyLoadTrackableImages() {
-        if (isCurrentPage(Page.IMAGES)) {
-            loadTrackableImages();
-        }
-    }
+        @Override
+        public void setContent() {
+            final TrackableActivity activity = (TrackableActivity) getActivity();
+            if (activity == null) {
+                return;
+            }
+            final Trackable trackable = activity.getTrackable();
+            if (trackable == null) {
+                return;
+            }
+            binding.getRoot().setVisibility(View.VISIBLE);
 
-    @Override
-    protected String getTitle(final Page page) {
-        return res.getString(page.resId);
+            if (activity.imagesList == null) {
+                activity.imagesList = new ImagesList(activity, trackable.getGeocode(), null);
+                activity.createDisposables.add(activity.imagesList.loadImages(binding.getRoot(), trackable.getImages()));
+            }
+        }
+
     }
 
     @Override
-    protected Pair<List<? extends Page>, Integer> getOrderedPages() {
-        final List<Page> pages = new ArrayList<>();
-        pages.add(Page.DETAILS);
-        if (CollectionUtils.isNotEmpty(trackable.getLogs())) {
-            pages.add(Page.LOGS);
-        }
-        if (CollectionUtils.isNotEmpty(trackable.getImages())) {
-            pages.add(Page.IMAGES);
-        }
-        return new ImmutablePair<>(pages, 0);
+    protected String getTitle(final long pageId) {
+        return this.getString(Page.find(pageId).resId);
     }
 
-    public class DetailsViewCreator extends AbstractCachingPageViewCreator<NestedScrollView> {
-        private TrackableDetailsViewBinding binding;
+    protected long[] getOrderedPages() {
+        final List<Long> pages = new ArrayList<>();
+        pages.add(Page.DETAILS.id);
+        if (trackable != null) {
+            if (CollectionUtils.isNotEmpty(trackable.getLogs())) {
+                pages.add(Page.LOGS.id);
+            }
+            if (CollectionUtils.isNotEmpty(trackable.getImages())) {
+                pages.add(Page.IMAGES.id);
+            }
+        }
+        final long[] result = new long[pages.size()];
+        for (int i = 0; i < pages.size(); i++) {
+            result[i] = pages.get(i);
+        }
+        return result;
+    }
+
+    public static class DetailsViewCreator extends TabbedViewPagerFragment<TrackableDetailsViewBinding> {
+
+        @Override
+        public TrackableDetailsViewBinding createView(@NonNull final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+            return TrackableDetailsViewBinding.inflate(getLayoutInflater(), container, false);
+        }
+
+        @Override
+        public long getPageId() {
+            return Page.DETAILS.id;
+        }
+
         @Override
         @SuppressWarnings({"PMD.NPathComplexity", "PMD.ExcessiveMethodLength"}) // splitting up that method would not help improve readability
-        public NestedScrollView getDispatchedView(final ViewGroup parentView) {
-            binding = TrackableDetailsViewBinding.inflate(getLayoutInflater(), parentView, false);
-            view = binding.getRoot();
+        public void setContent() {
+            final TrackableActivity activity = (TrackableActivity) getActivity();
+            if (activity == null) {
+                return;
+            }
+            final Trackable trackable = activity.getTrackable();
+            if (trackable == null) {
+                return;
+            }
+            binding.getRoot().setVisibility(View.VISIBLE);
 
-            final CacheDetailsCreator details = new CacheDetailsCreator(TrackableActivity.this, binding.detailsList);
+            final CacheDetailsCreator details = new CacheDetailsCreator(activity, binding.detailsList);
 
             // action bar icon
             if (StringUtils.isNotBlank(trackable.getIconUrl())) {
-                setupIcon(getSupportActionBar(), trackable.getIconUrl());
+                setupIcon(activity, activity.getSupportActionBar(), trackable.getIconUrl());
             } else {
-                setupIcon(getSupportActionBar(), trackable.getIconBrand());
+                setupIcon(activity.getSupportActionBar(), trackable.getIconBrand());
             }
 
             // trackable name
-            final TextView nameTxtView = details.add(R.string.trackable_name, StringUtils.isNotBlank(trackable.getName()) ? TextUtils.stripHtml(trackable.getName()) : res.getString(R.string.trackable_unknown)).right;
-            addContextMenu(nameTxtView);
+            final TextView nameTxtView = details.add(R.string.trackable_name, StringUtils.isNotBlank(trackable.getName()) ? TextUtils.stripHtml(trackable.getName()) : activity.res.getString(R.string.trackable_unknown)).right;
+            activity.addContextMenu(nameTxtView);
 
             // missing status
             if (trackable.isMissing()) {
@@ -444,25 +478,25 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
             if (StringUtils.isNotBlank(trackable.getType())) {
                 tbType = TextUtils.stripHtml(trackable.getType());
             } else {
-                tbType = res.getString(R.string.trackable_unknown);
+                tbType = activity.res.getString(R.string.trackable_unknown);
             }
             details.add(R.string.trackable_brand, trackable.getBrand().getLabel());
             details.add(R.string.trackable_type, tbType);
 
             // trackable geocode
-            addContextMenu(details.add(R.string.trackable_code, trackable.getGeocode()).right);
+            activity.addContextMenu(details.add(R.string.trackable_code, trackable.getGeocode()).right);
 
             // retrieved status
             final Date logDate = trackable.getLogDate();
             final LogType logType = trackable.getLogType();
             if (logDate != null && logType != null) {
                 final Uri uri = new Uri.Builder().scheme("https").authority("www.geocaching.com").path("/track/log.aspx").encodedQuery("LUID=" + trackable.getLogGuid()).build();
-                final TextView logView = details.add(R.string.trackable_status, res.getString(R.string.trackable_found, logType.getL10n(), Formatter.formatDate(logDate.getTime()))).right;
-                logView.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, uri)));
+                final TextView logView = details.add(R.string.trackable_status, activity.res.getString(R.string.trackable_found, logType.getL10n(), Formatter.formatDate(logDate.getTime()))).right;
+                logView.setOnClickListener(v -> ShareUtils.openUrl(activity, uri.toString()));
             }
 
             // trackable owner
-            final TextView owner = details.add(R.string.trackable_owner, res.getString(R.string.trackable_unknown)).right;
+            final TextView owner = details.add(R.string.trackable_owner, activity.res.getString(R.string.trackable_unknown)).right;
             if (StringUtils.isNotBlank(trackable.getOwner())) {
                 owner.setText(HtmlCompat.fromHtml(trackable.getOwner(), HtmlCompat.FROM_HTML_MODE_LEGACY), TextView.BufferType.SPANNABLE);
                 owner.setOnClickListener(UserClickListener.forOwnerOf(trackable));
@@ -479,20 +513,20 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
                 switch (trackable.getSpottedType()) {
                     case Trackable.SPOTTED_CACHE:
                         // TODO: the whole sentence fragment should not be constructed, but taken from the resources
-                        text = new StringBuilder(res.getString(R.string.trackable_spotted_in_cache)).append(' ').append(HtmlCompat.fromHtml(trackable.getSpottedName(), HtmlCompat.FROM_HTML_MODE_LEGACY));
+                        text = new StringBuilder(activity.res.getString(R.string.trackable_spotted_in_cache)).append(' ').append(HtmlCompat.fromHtml(trackable.getSpottedName(), HtmlCompat.FROM_HTML_MODE_LEGACY));
                         break;
                     case Trackable.SPOTTED_USER:
                         // TODO: the whole sentence fragment should not be constructed, but taken from the resources
-                        text = new StringBuilder(res.getString(R.string.trackable_spotted_at_user)).append(' ').append(HtmlCompat.fromHtml(trackable.getSpottedName(), HtmlCompat.FROM_HTML_MODE_LEGACY));
+                        text = new StringBuilder(activity.res.getString(R.string.trackable_spotted_at_user)).append(' ').append(HtmlCompat.fromHtml(trackable.getSpottedName(), HtmlCompat.FROM_HTML_MODE_LEGACY));
                         break;
                     case Trackable.SPOTTED_UNKNOWN:
-                        text = new StringBuilder(res.getString(R.string.trackable_spotted_unknown_location));
+                        text = new StringBuilder(activity.res.getString(R.string.trackable_spotted_unknown_location));
                         break;
                     case Trackable.SPOTTED_OWNER:
-                        text = new StringBuilder(res.getString(R.string.trackable_spotted_owner));
+                        text = new StringBuilder(activity.res.getString(R.string.trackable_spotted_owner));
                         break;
                     case Trackable.SPOTTED_ARCHIVED:
-                        text = new StringBuilder(res.getString(R.string.trackable_spotted_archived));
+                        text = new StringBuilder(activity.res.getString(R.string.trackable_spotted_archived));
                         break;
                     default:
                         text = new StringBuilder("N/A");
@@ -515,12 +549,12 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
                 if (trackable.getSpottedType() == Trackable.SPOTTED_CACHE) {
                     spotted.setOnClickListener(arg0 -> {
                         if (StringUtils.isNotBlank(trackable.getSpottedGuid())) {
-                            CacheDetailActivity.startActivityGuid(TrackableActivity.this, trackable.getSpottedGuid(), trackable.getSpottedName());
+                            CacheDetailActivity.startActivityGuid(activity, trackable.getSpottedGuid(), trackable.getSpottedName());
                         } else {
                             // for GeoKrety we only know the cache geocode
                             final String cacheCode = trackable.getSpottedName();
                             if (ConnectorFactory.canHandle(cacheCode)) {
-                                CacheDetailActivity.startActivity(TrackableActivity.this, cacheCode);
+                                CacheDetailActivity.startActivity(activity, cacheCode);
                             }
                         }
                     });
@@ -535,52 +569,52 @@ public class TrackableActivity extends AbstractViewPagerActivity<TrackableActivi
             if (StringUtils.isNotBlank(trackable.getOrigin())) {
                 final TextView origin = details.add(R.string.trackable_origin, "").right;
                 origin.setText(HtmlCompat.fromHtml(trackable.getOrigin(), HtmlCompat.FROM_HTML_MODE_LEGACY), TextView.BufferType.SPANNABLE);
-                addContextMenu(origin);
+                activity.addContextMenu(origin);
             }
 
             // trackable released
             final Date releasedDate = trackable.getReleased();
             if (releasedDate != null) {
-                addContextMenu(details.add(R.string.trackable_released, Formatter.formatDate(releasedDate.getTime())).right);
+                activity.addContextMenu(details.add(R.string.trackable_released, Formatter.formatDate(releasedDate.getTime())).right);
             }
 
             // trackable distance
             if (trackable.getDistance() >= 0) {
-                addContextMenu(details.add(R.string.trackable_distance, Units.getDistanceFromKilometers(trackable.getDistance())).right);
+                activity.addContextMenu(details.add(R.string.trackable_distance, Units.getDistanceFromKilometers(trackable.getDistance())).right);
             }
 
             // trackable goal
             if (StringUtils.isNotBlank(HtmlUtils.extractText(trackable.getGoal()))) {
                 binding.goalBox.setVisibility(View.VISIBLE);
                 binding.goal.setVisibility(View.VISIBLE);
-                binding.goal.setText(HtmlCompat.fromHtml(trackable.getGoal(), HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(geocode, true, false, binding.goal, false), null), TextView.BufferType.SPANNABLE);
+                binding.goal.setText(HtmlCompat.fromHtml(trackable.getGoal(), HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(activity.geocode, true, false, binding.goal, false), null), TextView.BufferType.SPANNABLE);
                 binding.goal.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-                addContextMenu(binding.goal);
+                activity.addContextMenu(binding.goal);
             }
 
             // trackable details
             if (StringUtils.isNotBlank(HtmlUtils.extractText(trackable.getDetails()))) {
                 binding.detailsBox.setVisibility(View.VISIBLE);
                 binding.details.setVisibility(View.VISIBLE);
-                binding.details.setText(HtmlCompat.fromHtml(trackable.getDetails(), HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(geocode, true, false, binding.details, false), new UnknownTagsHandler()), TextView.BufferType.SPANNABLE);
+                binding.details.setText(HtmlCompat.fromHtml(trackable.getDetails(), HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(activity.geocode, true, false, binding.details, false), new UnknownTagsHandler()), TextView.BufferType.SPANNABLE);
                 binding.details.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-                addContextMenu(binding.details);
+                activity.addContextMenu(binding.details);
             }
 
             // trackable image
             if (StringUtils.isNotBlank(trackable.getImage())) {
                 binding.imageBox.setVisibility(View.VISIBLE);
-                final ImageView trackableImage = (ImageView) inflater.inflate(R.layout.trackable_image, binding.image, false);
+                final ImageView trackableImage = (ImageView) activity.getLayoutInflater().inflate(R.layout.trackable_image, binding.image, false);
 
                 trackableImage.setImageResource(R.drawable.image_not_loaded);
                 trackableImage.setClickable(true);
-                trackableImage.setOnClickListener(view -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(trackable.getImage()))));
+                trackableImage.setOnClickListener(view -> ShareUtils.openUrl(activity, trackable.getImage()));
 
-                AndroidRxUtils.bindActivity(TrackableActivity.this, new HtmlImage(geocode, true, false, false).fetchDrawable(trackable.getImage())).subscribe(trackableImage::setImageDrawable);
+                AndroidRxUtils.bindActivity(activity, new HtmlImage(activity.geocode, true, false, false).fetchDrawable(trackable.getImage())).subscribe(trackableImage::setImageDrawable);
 
+                binding.image.removeAllViews();
                 binding.image.addView(trackableImage);
             }
-            return view;
         }
 
     }

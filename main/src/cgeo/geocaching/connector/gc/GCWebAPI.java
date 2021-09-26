@@ -1,8 +1,12 @@
 package cgeo.geocaching.connector.gc;
 
+import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.connector.trackable.TrackableBrand;
+import cgeo.geocaching.enumerations.CacheAttribute;
+import cgeo.geocaching.enumerations.CacheSize;
 import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.StatusCode;
+import cgeo.geocaching.gcvote.GCVote;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.log.LogType;
@@ -11,19 +15,24 @@ import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Image;
 import cgeo.geocaching.network.Network;
 import cgeo.geocaching.network.Parameters;
-import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.utils.AndroidRxUtils;
+import cgeo.geocaching.utils.CollectionStream;
 import cgeo.geocaching.utils.Log;
 
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -33,6 +42,7 @@ import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.core.SingleSource;
 import io.reactivex.rxjava3.functions.Function;
 import okhttp3.Response;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -56,6 +66,332 @@ class GCWebAPI {
 
     private GCWebAPI() {
         // Utility class, do not instantiate
+    }
+
+    /** This class encapsulates, explains and mimics the search against gc.com WebApi at https://www.geocaching.com/api/proxy/web/search/v2 */
+    public static class WebApiSearch {
+
+        public enum SortType { DISTANCE, FAVORITEPOINT, DIFFICULTY, TERRAIN }
+
+        private static final DateFormat PARAM_DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        private static final long ONE_DAY_MILLISECONDS = 24 * 60 * 60 * 1000;
+
+        private Viewport box;
+        private Geopoint origin;
+
+        private Boolean statusOwn = null;
+        private Boolean statusFound = null;
+        private Boolean statusMembership = null;
+        private Boolean statusEnabled = null;
+        private Boolean statusCorrectedCoordinates = null;
+
+        private final Set<CacheType> cacheTypes = new HashSet<>();
+        private final Set<CacheSize> cacheSizes = new HashSet<>();
+        private final Set<CacheAttribute> cacheAttributes = new HashSet<>();
+
+        private String hiddenBy = null;
+        private String notFoundBy = null;
+        private String difficulty = null;
+        private String terrain = null;
+        private String placedFrom;
+        private String placedTo;
+        private String keywords;
+        private int minFavoritePoints = -1;
+
+        private SortType sort = SortType.DISTANCE;
+        private boolean sortAsc = true;
+
+        private int skip = 0;
+        private int take = 500;
+
+        public WebApiSearch setPage(final int take, final int skip) {
+            this.take = take;
+            this.skip = skip;
+            return this;
+        }
+
+        public WebApiSearch setSort(final SortType sort, final boolean sortAsc) {
+            this.sort = sort;
+            this.sortAsc = sortAsc;
+            return this;
+        }
+
+        public SortType getSort() {
+            return this.sort;
+        }
+
+        public boolean getSortAsc() {
+            return this.sortAsc;
+        }
+
+        /** filters for given cache types. Works for V1 */
+        public WebApiSearch addCacheTypes(final Collection<CacheType> ct) {
+            cacheTypes.addAll(CollectionStream.of(ct).filter(type -> type != CacheType.ALL).toList());
+            return this;
+        }
+
+        /** filters for given cache sizes. Works for V1 */
+        public WebApiSearch addCacheSizes(final Collection<CacheSize> cs) {
+            cacheSizes.addAll(cs);
+            return this;
+        }
+
+        /** filters for given cache attriutes. Only positive attributes can be filtered, no exclude possible
+         *  TODO does not work with V1, only works with V2!
+         * */
+        public WebApiSearch addCacheAttributes(final CacheAttribute ... ca) {
+            cacheAttributes.addAll(Arrays.asList(ca));
+            return this;
+        }
+
+        /**
+         * set to true to show ONLY own caches, false to HIDE own caches, null if both should be shown.
+         * Works only for Premium members!
+         * Works with V1
+         * */
+        public WebApiSearch setStatusOwn(final Boolean statusOwn) {
+            this.statusOwn = statusOwn;
+            return this;
+        }
+
+        /**
+         * set to true to show ONLY found caches, false to HIDE found caches, null if both should be shown.
+         * Works only for Premium members!
+         * Works with V1
+         */
+        public WebApiSearch setStatusFound(final Boolean statusFound) {
+            this.statusFound = statusFound;
+            return this;
+        }
+
+        /** set to true to show ONLY basic caches, false show ONLY premium caches, null if both should be shown.  */
+        public WebApiSearch setStatusMembership(final Boolean statusMembership) {
+            this.statusMembership = statusMembership;
+            return this;
+        }
+
+        /** set to true to show ONLY enabled caches, false show ONLY disabled caches, null if both should be shown. */
+        public WebApiSearch setStatusEnabled(final Boolean statusEnabled) {
+            this.statusEnabled = statusEnabled;
+            return this;
+        }
+
+        /** set to true to show ONLY caches with original coordinates, false show ONLY caches with corrected coordinates, null if both should be shown. */
+        public WebApiSearch setStatusCorrectedCoordinates(final Boolean statusCorrectedCoordinates) {
+            this.statusCorrectedCoordinates = statusCorrectedCoordinates;
+            return this;
+        }
+
+        /** Works only if 'hiddenBy' is the exact owner name, also case muist match! Withs with V1 */
+        public WebApiSearch setHiddenBy(final String hiddenBy) {
+            this.hiddenBy = hiddenBy;
+            return this;
+        }
+
+        /** Works only if 'notFoundBy' is the exact name of a geocache user. case does not need to match though. Works with V1 */
+        public WebApiSearch setNotFoundBy(final String notFoundBy) {
+            this.notFoundBy = notFoundBy;
+            return this;
+        }
+
+        /** set to a value > 0 to trigger search. Works with V1 */
+        public WebApiSearch setMinFavoritepoints(final int minFavoritePoints) {
+            this.minFavoritePoints = minFavoritePoints;
+            return this;
+        }
+
+        /** Searches on DAY level only. from or to may be null, then "before"/"After" search logic is used. Works for V1 */
+        public WebApiSearch setPlacementDate(final Date from, final Date to) {
+            // after: pad
+            // between: psd - ped
+            // before: pbd
+            // on: pod
+            //date format: yyyy-mm-dd
+            //Note: gc.com beans "before" and "after" literally: palcements on the given dates itself are NOT included in search result!
+            //in "between" search, given dates are included
+            if (from == null && to == null) {
+                placedFrom = null;
+                placedTo = null;
+            } else if (from == null) {
+                // -> before "to", set "placedTo" to one day AFTER
+                placedFrom = null;
+                placedTo = PARAM_DATE_FORMATTER.format(new Date(to.getTime() + ONE_DAY_MILLISECONDS));
+            } else if (to == null) {
+                // -> after "from", set "placedFrom" to one day BEFORE
+                placedFrom = PARAM_DATE_FORMATTER.format(new Date(from.getTime() - ONE_DAY_MILLISECONDS));
+                placedTo = null;
+            } else  {
+                final boolean fromBeforeTo = from.before(to);
+                placedFrom = PARAM_DATE_FORMATTER.format(fromBeforeTo ? from : to);
+                placedTo = PARAM_DATE_FORMATTER.format(fromBeforeTo ? to : from);
+            }
+            return this;
+        }
+
+        /**
+         * Searches for keywords in cache name only. Search uses "contains" logic.
+         * Must be whole word(s), e.g. "amburg" won't find caches with "Hamburg" in them.
+         * In case multiple words are given they must occur in this order. E.g. "Hamburger Hafen" will not find "Hafen in Hamburg"
+         * Is case insensitive
+         */
+        public WebApiSearch setKeywords(final String keywords) {
+            this.keywords = keywords;
+            return this;
+        }
+
+        /** Sets the area to search in. Woirks with V1 */
+        public WebApiSearch setBox(final Viewport box) {
+            this.box = box;
+            return this;
+        }
+
+        /** Sets the starting point of the search and the reference point for sort by distance. Does not restrict/filter the result. Works with V1 */
+        public WebApiSearch setOrigin(final Geopoint origin) {
+            this.origin = origin;
+            return this;
+        }
+
+        public Geopoint getOrigin() {
+            return this.origin;
+        }
+
+        /** Works with V1 */
+        public WebApiSearch setDifficulty(final Float pFrom, final Float pTo) {
+            this.difficulty = getRangeString(pFrom, pTo);
+            return this;
+        }
+
+        /** Works with V1 */
+        public WebApiSearch setTerrain(final Float pFrom, final Float pTo) {
+            this.terrain = getRangeString(pFrom, pTo);
+            return this;
+        }
+
+        /** Returns a string specifying a range from 1-5 (in 0.5-steps) as used for parameters difficulty and terrain */
+        private String getRangeString(final Float pFrom, final Float pTo) {
+            if (pFrom == null && pTo == null) {
+                return null;
+            }
+
+            final float from = pFrom == null ? 1f : Math.round(Math.max(1, Math.min(5, pFrom)) * 2f) / 2f;
+            final float to = pTo == null ? 5f : Math.round(Math.max(1, Math.min(5, pTo)) * 2f) / 2f;
+            if (from > to) {
+                return to + "-" + from;
+            }
+            return from + "-" + to;
+        }
+
+        MapSearchResultSet execute() {
+            final Parameters params = new Parameters();
+
+            if (box != null) {
+                // on empty viewport silently log stacktrace + return empty searchresult without calling search provider
+                if (box.isJustADot()) {
+                    try {
+                        throw new RuntimeException("searching map with empty viewport");
+                    } catch (RuntimeException e) {
+                        Log.d("searching map with empty viewport: " + ExceptionUtils.getStackTrace(e));
+                    }
+                    return new MapSearchResultSet();
+                }
+                params.put("box", String.valueOf(this.box.getLatitudeMax()) + ',' + this.box.getLongitudeMin() +
+                    ',' + this.box.getLatitudeMin() + ',' + this.box.getLongitudeMax());
+
+                //set origin to middle of viewport (will be overridden if origin is set explicitely later)
+                params.put("origin", String.valueOf(this.box.getCenter().getLatitude()) + ',' + this.box.getCenter().getLongitude());
+            }
+
+            if (origin != null) {
+                params.put("origin", String.valueOf(origin.getLatitude()) + ',' + origin.getLongitude());
+            }
+
+            if (!this.cacheTypes.isEmpty()) {
+                params.put("ct", CollectionStream.of(this.cacheTypes).map(ct -> ct.wptTypeId).toJoinedString(","));
+            }
+
+            if (!this.cacheSizes.isEmpty()) {
+                params.put("cs", CollectionStream.of(this.cacheSizes).filter(cs -> CacheSize.getGcIdsForSize(cs).length > 0)
+                    .map(cs -> CollectionStream.of(ArrayUtils.toObject(CacheSize.getGcIdsForSize(cs))).toJoinedString(",")).toJoinedString(","));
+            }
+
+            if (!this.cacheAttributes.isEmpty()) {
+                params.put("att", CollectionStream.of(this.cacheAttributes).map(ct -> ct.gcid).toJoinedString(","));
+            }
+
+            //Hide owned/hide found caches, only works for premium members
+            if (this.statusOwn != null) {
+                params.put("ho", this.statusOwn ? "0" : "1");
+            }
+
+            if (this.statusFound != null) {
+                params.put("hf", this.statusFound ? "0" : "1");
+            }
+
+            if (this.statusMembership != null) {
+                params.put("sp", this.statusMembership ? "0" : "1");
+            }
+
+            if (this.statusEnabled != null) {
+                params.put("sd", this.statusEnabled ? "0" : "1");
+            }
+
+            if (this.statusCorrectedCoordinates != null) {
+                params.put("cc", this.statusCorrectedCoordinates ? "0" : "1");
+            }
+
+            if (this.hiddenBy != null) {
+                params.put("hb", this.hiddenBy);
+            }
+
+            if (this.notFoundBy != null) {
+                params.put("nfb", this.notFoundBy);
+            }
+
+            if (this.minFavoritePoints > 0) {
+                params.put("fp", "" + this.minFavoritePoints);
+            }
+
+            if (this.difficulty != null) {
+                params.put("d", this.difficulty);
+            }
+
+            if (this.terrain != null) {
+                params.put("t", this.terrain);
+            }
+
+            if (this.placedFrom != null || this.placedTo != null) {
+                // after: pad
+                // between: psd - ped
+                // before: pbd
+                // on: pod (not used by us)
+                if (this.placedFrom == null) {
+                    params.put("pbd", this.placedTo);
+                } else if (this.placedTo == null) {
+                    params.put("pad", this.placedFrom);
+                } else {
+                    params.put("psd", this.placedFrom);
+                    params.put("ped", this.placedTo);
+                }
+            }
+
+            if (this.keywords != null) {
+                params.put("cn", this.keywords);
+            }
+
+            //paging / result size
+            params.put("take", "" + take);
+            params.put("skip", "" + skip);
+
+            //sort
+            params.put("sort", sort.name().toLowerCase(Locale.getDefault()));
+            params.put("asc", "" + sortAsc);
+
+            //ALWAYS send cgeo as an identifier
+            params.put("app", "cgeo"); //TODO: identification makes v2 not work (but something else too)
+
+            return getAPI("/web/search", params, MapSearchResultSet.class).blockingGet(); //TODO: v2 does not seem to work!
+        }
+
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -193,36 +529,76 @@ class GCWebAPI {
         int total;
     }
 
+    //Complete example for reference
+    //    {
+    //        "id": 3866836,
+    //        "name": "Ness Bridge",
+    //        "code": "GC4KJHJ",
+    //        "premiumOnly": true,
+    //        "favoritePoints": 723,
+    //        "geocacheType": 2,
+    //        "containerType": 6,
+    //        "difficulty": 2.0,
+    //        "terrain": 1.5,
+    //        "userFound": false,
+    //        "userDidNotFind": false,
+    //        "cacheStatus": 0,
+    //        "postedCoordinates": {
+    //        "latitude": 57.476967,
+    //            "longitude": -4.2278
+    //    },
+    //        "detailsUrl": "/geocache/GC4KJHJ",
+    //        "hasGeotour": false,
+    //        "hasLogDraft": false,
+    //        "placedDate": "2013-08-22T00:00:00",
+    //        "owner": {
+    //        "code": "PR1ZE74",
+    //            "username": "Ah!"
+    //    },
+    //        "lastFoundDate": "2021-02-26T20:17:59"
+    //    },
     @JsonIgnoreProperties(ignoreUnknown = true)
     static final class MapSearchResult {
-        @JsonProperty("code")
-        String code;
+        @JsonProperty
+        int id;
         @JsonProperty("name")
         String name;
-        @JsonProperty("postedCoordinates")
-        PostedCoordinates postedCoordinates;
-        @JsonProperty("userCorrectedCoordinates")
-        PostedCoordinates userCorrectedCoordinates;
-        @JsonProperty("owner")
-        CacheOwner owner;
+        @JsonProperty("code")
+        String code;
         @JsonProperty("premiumOnly")
         boolean premiumOnly;
+        @JsonProperty("favoritePoints")
+        int favoritePoints;
         @JsonProperty("geocacheType")
         int geocacheType;
+        @JsonProperty("containerType")
+        int containerType;
+        @JsonProperty("difficulty")
+        float difficulty;
+        @JsonProperty("terrain")
+        float terrain;
         @JsonProperty("userFound")
         boolean userFound;
         @JsonProperty("userDidNotFind")
         boolean userDidNotFind;
         @JsonProperty("cacheStatus")
         int cacheStatus;
-        @JsonProperty("difficulty")
-        float difficulty;
-        @JsonProperty("terrain")
-        float terrain;
-        @JsonProperty("containerType")
-        int containerType;
-        @JsonProperty("favoritePoints")
-        int favoritePoints;
+        @JsonProperty("postedCoordinates")
+        PostedCoordinates postedCoordinates;
+        @JsonProperty("userCorrectedCoordinates")
+        PostedCoordinates userCorrectedCoordinates;
+        @JsonProperty("detailsUrl")
+        String detailsUrl;
+        @JsonProperty("hasGeotour")
+        boolean hasGeotour;
+        @JsonProperty("hasLogDraft")
+        boolean hasLogDraft;
+        @JsonProperty("placedDate")
+        Date placedDate;
+        @JsonProperty("owner")
+        CacheOwner owner;
+        @JsonProperty("lastFoundDate")
+        Date lastFoundDate;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -385,45 +761,119 @@ class GCWebAPI {
         return getAPI("/web/v1/geocache/" + StringUtils.lowerCase(geocode), CacheDetails.class);
     }
 
-    static MapSearchResultSet searchMap(@NonNull final Viewport viewport) {
-        final Parameters params = new Parameters();
+    static SearchResult searchCaches(final WebApiSearch search, final boolean includeGcVote) {
+        final SearchResult result = new SearchResult();
 
-        // on empty viewport silently log stacktrace + return empty searchresult without calling search provider
-        if (viewport.isJustADot()) {
-            try {
-                throw new RuntimeException("searching map with empty viewport");
-            } catch (RuntimeException e) {
-                Log.d("searching map with empty viewport: " + ExceptionUtils.getStackTrace(e));
+        final MapSearchResultSet mapSearchResultSet = search.execute();
+        final List<Geocache> foundCaches = new ArrayList<>();
+
+        if (mapSearchResultSet.results != null) {
+            for (final GCWebAPI.MapSearchResult r : mapSearchResultSet.results) {
+
+                final Geopoint cacheCoord = r.postedCoordinates == null ? null : new Geopoint(r.postedCoordinates.latitude, r.postedCoordinates.longitude);
+
+                final Geocache c = new Geocache();
+                c.setDetailed(false);
+                c.setGeocode(r.code);
+                c.setName(r.name);
+                if (r.userCorrectedCoordinates != null) {
+                    c.setCoords(new Geopoint(r.userCorrectedCoordinates.latitude, r.userCorrectedCoordinates.longitude));
+                    c.setUserModifiedCoords(true);
+                } else if (cacheCoord != null) {
+                    c.setCoords(cacheCoord);
+                    c.setUserModifiedCoords(false);
+                } else {
+                    //this can only happen for PREMIUM caches when searched by BASIC members.
+                    //Open issue: what to do with those?
+                    c.setCoords(null);
+                }
+                c.setType(CacheType.getByWaypointType(Integer.toString(r.geocacheType)));
+                c.setDifficulty(r.difficulty);
+                c.setTerrain(r.terrain);
+                c.setSize(CacheSize.getByGcId(r.containerType));
+                c.setPremiumMembersOnly(r.premiumOnly);
+                c.setHidden(r.placedDate);
+                c.setLastFound(r.lastFoundDate);
+
+                //Only set found if the map returns a "found",
+                //the map API will possibly lag behind and break
+                //cache merging if "not found" is set
+                if (r.userFound) {
+                    c.setFound(true);
+                } else if (r.userDidNotFind) {
+                    c.setDNF(true);
+                }
+
+                c.setFavoritePoints(r.favoritePoints);
+                c.setDisabled(r.cacheStatus == 1);
+                if (r.owner != null) {
+                    c.setOwnerDisplayName(r.owner.username);
+                    c.setOwnerUserId(r.owner.username);
+                }
+
+                foundCaches.add(c);
             }
-            return new MapSearchResultSet();
+
         }
 
-        final StringBuilder box = new StringBuilder();
-        box.append(viewport.getLatitudeMax()).append(',').append(viewport.getLongitudeMin());
-        box.append(',').append(viewport.getLatitudeMin()).append(',').append(viewport.getLongitudeMax());
-        params.put("box", box.toString());
+        tryGuessMissingDistances(foundCaches, search);
 
-        final StringBuilder origin = new StringBuilder();
-        origin.append(viewport.getCenter().getLatitude()).append(',').append(viewport.getCenter().getLongitude());
-        params.put("take", "500");
-        params.put("asc", "true");
-        params.put("skip", "0");
-        params.put("sort", "distance");
-        params.put("origin", origin.toString());
-
-        if (!Settings.getCacheType().equals(CacheType.ALL)) {
-            params.put("ct", Settings.getCacheType().wptTypeId);
+        result.addAndPutInCache(foundCaches);
+        if (includeGcVote) {
+            GCVote.loadRatings(foundCaches);
         }
-
-        //Hide owned/hide found caches, only works for premium members
-        if (Settings.isGCPremiumMember() && Settings.isExcludeMyCaches()) {
-            params.put("ho", "1");
-            params.put("hf", "1");
-        }
-
-        params.put("app", "cgeo");
-        return getAPI("/web/search", params, MapSearchResultSet.class).blockingGet();
+        return result;
     }
+
+    /** For BASIC members, PREMIUM caches don't contain coordinates. This helper methods guesses distances for those caches */
+    @SuppressWarnings({"PMD.NPathComplexity"}) // splitting up that method would not help improve readability
+    private static void tryGuessMissingDistances(final List<Geocache> caches, final WebApiSearch search) {
+        if (caches == null || caches.isEmpty()) {
+            return;
+        }
+        //This heuristic only works if origin is given and sort is of type DISTANCE
+        if (search.getOrigin() == null || search.getSort() != WebApiSearch.SortType.DISTANCE) {
+            return;
+        }
+
+        //inverse the list in case of inverse sort
+        List<Geocache> loopCaches = caches;
+        if (!search.getSortAsc()) {
+            loopCaches = new ArrayList<>(caches);
+            Collections.reverse(loopCaches);
+        }
+
+        //This heuristic will assign each cache without coordinates the middle of the distance of two surrounding caches with known coordinates
+        //    to given pos
+        //All caches AFTER the last cache with know coords will get assigend its distance to pos plus 1
+        //If ALL caches have no coordinates, they get assigned a distance of 1
+        float lastDistance = 0;
+        final List<Geocache> emptyCoordCaches = new ArrayList<>();
+
+        for (Geocache c : loopCaches) {
+            if (c.getCoords() != null) {
+                final float newDistance = search.getOrigin().distanceTo(c.getCoords());
+                for (Geocache emptyC : emptyCoordCaches) {
+                    emptyC.setDistance((newDistance + lastDistance) / 2);
+                }
+                emptyCoordCaches.clear();
+                lastDistance = newDistance;
+            } else {
+                emptyCoordCaches.add(c);
+            }
+        }
+
+        if (!emptyCoordCaches.isEmpty()) {
+            for (Geocache emptyC : emptyCoordCaches) {
+                emptyC.setDistance(lastDistance == 0 ? 1 : lastDistance + 1);
+            }
+        }
+    }
+
+    static SearchResult searchMap(@NonNull final Viewport viewport) {
+        return searchCaches(new WebApiSearch().setBox(viewport), false);
+    }
+
 
     @NonNull
     static ImmutablePair<StatusCode, String> postLog(final Geocache geocache,

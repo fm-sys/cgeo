@@ -5,10 +5,11 @@ import cgeo.geocaching.address.AndroidGeocoder;
 import cgeo.geocaching.connector.ConnectorFactory;
 import cgeo.geocaching.connector.IConnector;
 import cgeo.geocaching.connector.capability.ILogin;
+import cgeo.geocaching.connector.gc.BookmarkListActivity;
 import cgeo.geocaching.connector.gc.PocketQueryListActivity;
 import cgeo.geocaching.connector.internal.InternalConnector;
 import cgeo.geocaching.databinding.MainActivityBinding;
-import cgeo.geocaching.enumerations.CacheType;
+import cgeo.geocaching.downloader.DownloaderUtils;
 import cgeo.geocaching.enumerations.StatusCode;
 import cgeo.geocaching.helper.UsefulAppsActivity;
 import cgeo.geocaching.list.PseudoList;
@@ -17,6 +18,7 @@ import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Units;
 import cgeo.geocaching.maps.DefaultMap;
 import cgeo.geocaching.maps.mapsforge.v6.RenderThemeHelper;
+import cgeo.geocaching.models.Download;
 import cgeo.geocaching.network.Network;
 import cgeo.geocaching.permission.PermissionGrantedCallback;
 import cgeo.geocaching.permission.PermissionHandler;
@@ -30,13 +32,17 @@ import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.settings.SettingsActivity;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.storage.LocalStorage;
+import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.storage.extension.FoundNumCounter;
 import cgeo.geocaching.storage.extension.OneTimeDialogs;
+import cgeo.geocaching.ui.TextParam;
 import cgeo.geocaching.ui.WeakReferenceHandler;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.BackupUtils;
 import cgeo.geocaching.utils.DebugUtils;
+import cgeo.geocaching.utils.FileUtils;
 import cgeo.geocaching.utils.Formatter;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.ProcessUtils;
@@ -45,7 +51,6 @@ import cgeo.geocaching.utils.Version;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -76,7 +81,6 @@ import java.util.Locale;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.jakewharton.processphoenix.ProcessPhoenix;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
@@ -84,6 +88,9 @@ import io.reactivex.rxjava3.functions.Consumer;
 import org.apache.commons.lang3.StringUtils;
 
 public class MainActivity extends AbstractActionBarActivity {
+
+    private static final String STATE_BACKUPUTILS = "backuputils";
+
     private MainActivityBinding binding;
 
     /**
@@ -103,6 +110,8 @@ public class MainActivity extends AbstractActionBarActivity {
      * initialization with an empty subscription
      */
     private final CompositeDisposable resumeDisposables = new CompositeDisposable();
+
+    private BackupUtils backupUtils = null;
 
     private static final class UpdateUserInfoHandler extends WeakReferenceHandler<MainActivity> {
 
@@ -261,11 +270,15 @@ public class MainActivity extends AbstractActionBarActivity {
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
+        /* @todo
         if (Settings.isTransparentBackground()) {
             setTheme(R.style.cgeo_main_transparent);
         }
+        */
         // don't call the super implementation with the layout argument, as that would set the wrong theme
         super.onCreate(savedInstanceState);
+
+        backupUtils = new BackupUtils(this, savedInstanceState == null ? null : savedInstanceState.getBundle(STATE_BACKUPUTILS));
 
         //check database
         final String errorMsg = DataStore.initAndCheck(false);
@@ -282,9 +295,6 @@ public class MainActivity extends AbstractActionBarActivity {
 
         binding = MainActivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        if (!Settings.isTransparentBackground()) {
-            binding.mainscreen.setBackgroundColor(getResources().getColor(Settings.isLightSkin() ? R.color.background_light_notice : R.color.background_dark_notice));
-        }
 
         if ((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0) {
             // If we had been open already, start from the last used activity.
@@ -322,7 +332,7 @@ public class MainActivity extends AbstractActionBarActivity {
 
         LocalStorage.initGeocacheDataDir();
         if (LocalStorage.isRunningLowOnDiskSpace()) {
-            Dialogs.message(this, res.getString(R.string.init_low_disk_space), res.getString(R.string.init_low_disk_space_message));
+            SimpleDialog.of(this).setTitle(R.string.init_low_disk_space).setMessage(R.string.init_low_disk_space_message).show();
         }
 
         confirmDebug();
@@ -330,7 +340,8 @@ public class MainActivity extends AbstractActionBarActivity {
         // infobox "not logged in" with link to service config; display delayed by 10 seconds
         final Handler handler = new Handler();
         handler.postDelayed(this::checkLoggedIn, 10000);
-        binding.infoNotloggedin.setOnClickListener(v -> Dialogs.confirmYesNo(this, R.string.warn_notloggedin_title, R.string.warn_notloggedin_long, (dialog, which) -> SettingsActivity.openForScreen(R.string.preference_screen_services, this)));
+        binding.infoNotloggedin.setOnClickListener(v ->
+            SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm((dialog, which) -> SettingsActivity.openForScreen(R.string.preference_screen_services, this)));
 
         //do file migrations if necessary
         LocalStorage.migrateLocalStorage(this);
@@ -340,10 +351,24 @@ public class MainActivity extends AbstractActionBarActivity {
 
         // reactivate dialogs which are set to show later
         OneTimeDialogs.nextStatus();
+
+        checkForRoutingTileUpdates();
+        checkForMapUpdates();
     }
 
     @Override
+
+    public void onSaveInstanceState(@NonNull final Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putBundle(STATE_BACKUPUTILS, backupUtils.getState());
+    }
+
+
+
+
+    @Override
     public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             PermissionHandler.executeCallbacksFor(permissions);
         } else {
@@ -366,7 +391,7 @@ public class MainActivity extends AbstractActionBarActivity {
     @SuppressWarnings("unused") // in Eclipse, BuildConfig.DEBUG is always true
     private void confirmDebug() {
         if (Settings.isDebug() && !BuildConfig.DEBUG) {
-            Dialogs.confirmYesNo(this, R.string.init_confirm_debug, R.string.list_confirm_debug_message, (dialog, whichButton) -> Settings.setDebug(false));
+            SimpleDialog.of(this).setTitle(R.string.init_confirm_debug).setMessage(R.string.list_confirm_debug_message).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm((dialog, whichButton) -> Settings.setDebug(false));
         }
     }
 
@@ -418,6 +443,26 @@ public class MainActivity extends AbstractActionBarActivity {
                 });
             }
         }
+    }
+
+    private void checkForRoutingTileUpdates() {
+        if (Settings.useInternalRouting() && Settings.isBrouterAutoTileDownloads() && !PersistableFolder.ROUTING_TILES.isLegacy() && Settings.brouterAutoTileDownloadsNeedUpdate()) {
+            DownloaderUtils.checkForUpdatesAndDownloadAll(this, Download.DownloadType.DOWNLOADTYPE_BROUTER_TILES, R.string.updates_check, R.string.tileupdate_info, this::returnFromTileUpdateCheck);
+        }
+    }
+
+    private void returnFromTileUpdateCheck(final boolean updateCheckAllowed) {
+        Settings.setBrouterAutoTileDownloadsLastCheck(!updateCheckAllowed);
+    }
+
+    private void checkForMapUpdates() {
+        if (Settings.isMapAutoDownloads() && Settings.mapAutoDownloadsNeedUpdate()) {
+            DownloaderUtils.checkForUpdatesAndDownloadAll(this, Download.DownloadType.DOWNLOADTYPE_ALL_MAPRELATED, R.string.updates_check, R.string.mapupdate_info, this::returnFromMapUpdateCheck);
+        }
+    }
+
+    private void returnFromMapUpdateCheck(final boolean updateCheckAllowed) {
+        Settings.setMapAutoDownloadsLastCheck(!updateCheckAllowed);
     }
 
     @Override
@@ -510,7 +555,10 @@ public class MainActivity extends AbstractActionBarActivity {
     public boolean onPrepareOptionsMenu(final Menu menu) {
         super.onPrepareOptionsMenu(menu);
         menu.findItem(R.id.menu_wizard).setVisible(!InstallWizardActivity.isConfigurationOk(this));
-        menu.findItem(R.id.menu_pocket_queries).setVisible(Settings.isGCConnectorActive() && Settings.isGCPremiumMember());
+        final boolean isPremiumActive = Settings.isGCConnectorActive() && Settings.isGCPremiumMember();
+        menu.findItem(R.id.menu_pocket_queries).setVisible(isPremiumActive);
+        menu.findItem(R.id.menu_bookmarklists).setVisible(isPremiumActive);
+        menu.findItem(R.id.menu_update_routingdata).setEnabled(Settings.useInternalRouting());
         return true;
     }
 
@@ -539,6 +587,14 @@ public class MainActivity extends AbstractActionBarActivity {
             if (Settings.isGCPremiumMember()) {
                 startActivity(new Intent(this, PocketQueryListActivity.class));
             }
+        } else if (id == R.id.menu_bookmarklists) {
+            if (Settings.isGCPremiumMember()) {
+                startActivity(new Intent(this, BookmarkListActivity.class));
+            }
+        } else if (id == R.id.menu_update_routingdata) {
+            DownloaderUtils.checkForUpdatesAndDownloadAll(this, Download.DownloadType.DOWNLOADTYPE_BROUTER_TILES, R.string.updates_check, this::returnFromTileUpdateCheck);
+        } else if (id == R.id.menu_update_mapdata) {
+            DownloaderUtils.checkForUpdatesAndDownloadAll(this, Download.DownloadType.DOWNLOADTYPE_ALL_MAPRELATED, R.string.updates_check, this::returnFromMapUpdateCheck);
         } else {
             return super.onOptionsItemSelected(item);
         }
@@ -558,9 +614,12 @@ public class MainActivity extends AbstractActionBarActivity {
     @Override
     public void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);  // call super to make lint happy
+        if (backupUtils.onActivityResult(requestCode, resultCode, intent)) {
+            return;
+        }
         if (requestCode == Intents.SETTINGS_ACTIVITY_REQUEST_CODE) {
             if (resultCode == SettingsActivity.RESTART_NEEDED) {
-                ProcessPhoenix.triggerRebirth(this);
+                ProcessUtils.restartApplication(this);
             }
         } else {
             final IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
@@ -577,14 +636,10 @@ public class MainActivity extends AbstractActionBarActivity {
                     if (query == null) {
                         query = "";
                     }
-                    Dialogs.message(this, res.getString(R.string.unknown_scan) + "\n\n" + query);
+                    SimpleDialog.of(this).setMessage(TextParam.text(res.getString(R.string.unknown_scan) + "\n\n" + query)).show();
                 }
             }
         }
-    }
-
-    private void setFilterTitle() {
-        binding.filterButtonTitle.setText(Settings.getCacheType().getL10n());
     }
 
     private void init() {
@@ -620,21 +675,18 @@ public class MainActivity extends AbstractActionBarActivity {
 
         binding.filterButton.setClickable(true);
         binding.filterButton.setOnClickListener(v -> selectGlobalTypeFilter());
-        binding.filterButton.setOnLongClickListener(v -> {
-            Settings.setCacheType(CacheType.ALL);
-            setFilterTitle();
-            return true;
-        });
 
         updateCacheCounter();
 
-        setFilterTitle();
         checkRestore();
         DataStore.cleanIfNeeded(this);
     }
 
     protected void selectGlobalTypeFilter() {
-        Dialogs.selectGlobalTypeFilter(this, cacheType -> setFilterTitle());
+        // TODO: remove all legacy code parts related to the old global cache type filter
+        //Dialogs.selectGlobalTypeFilter(this, cacheType -> setFilterTitle());
+
+        SimpleDialog.of(this).setTitle(R.string.search_filter_temporary_user_information_title).setMessage(R.string.search_filter_temporary_user_information).show();
     }
 
     public void updateCacheCounter() {
@@ -650,21 +702,20 @@ public class MainActivity extends AbstractActionBarActivity {
     }
 
     private void checkRestore() {
-        final BackupUtils backupUtils = new BackupUtils(MainActivity.this);
 
         if (DataStore.isNewlyCreatedDatebase() && !restoreMessageShown) {
 
             if (BackupUtils.hasBackup(BackupUtils.newestBackupFolder())) {
 
                 restoreMessageShown = true;
-                new AlertDialog.Builder(this)
+                Dialogs.newBuilder(this)
                         .setTitle(res.getString(R.string.init_backup_restore))
                         .setMessage(res.getString(R.string.init_restore_confirm))
                         .setCancelable(false)
                         .setPositiveButton(getString(android.R.string.yes), (dialog, id) -> {
                             dialog.dismiss();
                             DataStore.resetNewlyCreatedDatabase();
-                            backupUtils.restore(BackupUtils.newestBackupFolder(), getContentStorageHelper());
+                            backupUtils.restore(BackupUtils.newestBackupFolder());
                         })
                         .setNegativeButton(getString(android.R.string.no), (dialog, id) -> {
                             dialog.cancel();
@@ -783,7 +834,7 @@ public class MainActivity extends AbstractActionBarActivity {
         //TODO: understand and avoid if possible
         try {
             final long lastChecksum = Settings.getLastChangelogChecksum();
-            final long checksum = TextUtils.checksum(getString(R.string.changelog_master) + getString(R.string.changelog_release));
+            final long checksum = TextUtils.checksum(FileUtils.getChangelogMaster(this) + FileUtils.getChangelogRelease(this));
             Settings.setLastChangelogChecksum(checksum);
 
             if (lastChecksum == 0) {

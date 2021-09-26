@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class OCConnector extends AbstractConnector implements SmileyCapability {
 
@@ -31,6 +32,7 @@ public class OCConnector extends AbstractConnector implements SmileyCapability {
     @NonNull
     private final String name;
     private final Pattern codePattern;
+    private final String[] sqlLikeExpressions;
     private static final Pattern GPX_ZIP_FILE_PATTERN = Pattern.compile("oc[a-z]{2,3}\\d{5,}\\.zip", Pattern.CASE_INSENSITIVE);
 
     private static final List<LogType> STANDARD_LOG_TYPES = Arrays.asList(LogType.FOUND_IT, LogType.DIDNT_FIND_IT, LogType.NOTE);
@@ -43,11 +45,18 @@ public class OCConnector extends AbstractConnector implements SmileyCapability {
         this.https = https;
         this.abbreviation = abbreviation;
         codePattern = Pattern.compile(prefix + "[A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+        sqlLikeExpressions = new String[]{prefix + "%"};
     }
 
     @Override
     public boolean canHandle(@NonNull final String geocode) {
         return codePattern.matcher(geocode).matches();
+    }
+
+    @NotNull
+    @Override
+    public String[] getGeocodeSqlLikeExpressions() {
+        return sqlLikeExpressions;
     }
 
     @Override
@@ -72,7 +81,7 @@ public class OCConnector extends AbstractConnector implements SmileyCapability {
     @Nullable
     public String getCacheLogUrl(@NonNull final Geocache cache, final @NonNull LogEntry logEntry) {
         final String internalId = getServiceSpecificLogId(logEntry.serviceLogId);
-        if (!StringUtils.isBlank(internalId)) {
+        if (StringUtils.isNotBlank(internalId)) {
             return getCacheUrl(cache) + "&log=A#log" + internalId;
         }
         return null;
@@ -115,8 +124,23 @@ public class OCConnector extends AbstractConnector implements SmileyCapability {
     }
 
     @Override
-    public int getCacheMapMarkerId(final boolean disabled) {
-        return disabled ? R.drawable.marker_disabled_oc : R.drawable.marker_oc;
+    public int getCacheMapMarkerId() {
+        return R.drawable.marker_oc;
+    }
+
+    @Override
+    public int getCacheMapMarkerBackgroundId() {
+        return R.drawable.background_oc;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerId() {
+        return R.drawable.dot_marker_oc;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerBackgroundId() {
+        return R.drawable.dot_background_oc;
     }
 
     @Override

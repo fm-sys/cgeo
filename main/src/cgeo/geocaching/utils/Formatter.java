@@ -4,9 +4,10 @@ import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
 import cgeo.geocaching.enumerations.CacheSize;
 import cgeo.geocaching.enumerations.WaypointType;
+import cgeo.geocaching.models.GCList;
 import cgeo.geocaching.models.Geocache;
-import cgeo.geocaching.models.PocketQuery;
 import cgeo.geocaching.models.Waypoint;
+import cgeo.geocaching.storage.extension.PocketQueryHistory;
 
 import android.content.Context;
 import android.text.format.DateUtils;
@@ -25,6 +26,8 @@ import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 
 public final class Formatter {
+
+    private static final int SHORT_GEOCODE_MAX_LENGTH = 8;
 
     /** Text separator used for formatting texts */
     public static final String SEPARATOR = " · ";
@@ -183,7 +186,7 @@ public final class Formatter {
     public static String formatCacheInfoLong(final Geocache cache) {
         final List<String> infos = new ArrayList<>();
         if (StringUtils.isNotBlank(cache.getGeocode())) {
-            infos.add(cache.getGeocode());
+            infos.add(cache.getShortGeocode());
         }
 
         addShortInfos(cache, infos);
@@ -232,7 +235,7 @@ public final class Formatter {
     @NonNull
     public static String formatCacheInfoHistory(final Geocache cache) {
         final List<String> infos = new ArrayList<>(3);
-        infos.add(StringUtils.upperCase(cache.getGeocode()));
+        infos.add(StringUtils.upperCase(cache.getShortGeocode()));
         infos.add(formatDate(cache.getVisitedDate()));
         infos.add(formatTime(cache.getVisitedDate()));
         return StringUtils.join(infos, SEPARATOR);
@@ -327,11 +330,19 @@ public final class Formatter {
 
     @NonNull
     public static String formatMapSubtitle(final Geocache cache) {
-        return "D " + formatDT(cache.getDifficulty()) + SEPARATOR + "T " + formatDT(cache.getTerrain()) + SEPARATOR + cache.getGeocode();
+        final StringBuilder title = new StringBuilder();
+        if (cache.hasDifficulty()) {
+            title.append("D ").append(formatDT(cache.getDifficulty())).append(SEPARATOR);
+        }
+        if (cache.hasTerrain()) {
+            title.append("T ").append(formatDT(cache.getTerrain())).append(SEPARATOR);
+        }
+        title.append(cache.getSize().getShortName()).append(SEPARATOR).append(cache.getShortGeocode());
+        return title.toString();
     }
 
     @NonNull
-    public static String formatPocketQueryInfo(final PocketQuery pocketQuery) {
+    public static String formatPocketQueryInfo(final GCList pocketQuery) {
         if (!pocketQuery.isDownloadable()) {
             return StringUtils.EMPTY;
         }
@@ -344,14 +355,18 @@ public final class Formatter {
 
         final long lastGenerationTime = pocketQuery.getLastGenerationTime();
         if (lastGenerationTime > 0) {
-            infos.add(Formatter.formatShortDateVerbally(lastGenerationTime));
+            infos.add(Formatter.formatShortDateVerbally(lastGenerationTime) + (PocketQueryHistory.isNew(pocketQuery) ? " (" + CgeoApplication.getInstance().getString(R.string.search_pocket_is_new) + ")" : ""));
         }
 
         final int daysRemaining = pocketQuery.getDaysRemaining();
         if (daysRemaining == 0) {
             infos.add(CgeoApplication.getInstance().getString(R.string.last_day_available));
-        } else {
-            infos.add(daysRemaining > 0 ? CgeoApplication.getInstance().getResources().getQuantityString(R.plurals.days_remaining, daysRemaining, daysRemaining) : StringUtils.EMPTY);
+        } else if (daysRemaining > 0) {
+            infos.add(CgeoApplication.getInstance().getResources().getQuantityString(R.plurals.days_remaining, daysRemaining, daysRemaining));
+        }
+
+        if (pocketQuery.isBookmarkList()) {
+            infos.add(CgeoApplication.getInstance().getResources().getString(R.string.search_bookmark_list));
         }
 
         return StringUtils.join(infos, SEPARATOR);
@@ -395,6 +410,11 @@ public final class Formatter {
             truncatedDirs.add(title.subSequence(0, title.length() - commonEnding.length() + 1) + "\u2026");
         }
         return truncatedDirs;
+    }
+
+    @NonNull
+    public static String generateShortGeocode(final String fullGeocode) {
+        return (fullGeocode.length() <= SHORT_GEOCODE_MAX_LENGTH) ? fullGeocode : (fullGeocode.substring(0, SHORT_GEOCODE_MAX_LENGTH) + "…");
     }
 
 }

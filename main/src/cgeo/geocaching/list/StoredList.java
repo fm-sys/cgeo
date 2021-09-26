@@ -5,18 +5,20 @@ import cgeo.geocaching.R;
 import cgeo.geocaching.activity.ActivityMixin;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.ui.TextParam;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.EmojiUtils;
 import cgeo.geocaching.utils.functions.Action1;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.view.View;
 import android.widget.ListView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 
 import java.lang.ref.WeakReference;
 import java.text.Collator;
@@ -30,14 +32,16 @@ import org.apache.commons.lang3.StringUtils;
 
 public final class StoredList extends AbstractList {
     private static final int TEMPORARY_LIST_ID = 0;
-    public static final StoredList TEMPORARY_LIST = new StoredList(TEMPORARY_LIST_ID, "<temporary>", EmojiUtils.NO_EMOJI, 0); // Never displayed
+    public static final StoredList TEMPORARY_LIST = new StoredList(TEMPORARY_LIST_ID, "<temporary>", EmojiUtils.NO_EMOJI, true, 0); // Never displayed
     public static final int STANDARD_LIST_ID = 1;
     public final int markerId;
+    public final boolean preventAskForDeletion;
     private final int count; // this value is only valid as long as the list is not changed by other database operations
 
-    public StoredList(final int id, final String title, final int markerId, final int count) {
+    public StoredList(final int id, final String title, final int markerId, final boolean preventAskForDeletion, final int count) {
         super(id, title);
         this.markerId = markerId;
+        this.preventAskForDeletion = preventAskForDeletion;
         this.count = count;
     }
 
@@ -108,7 +112,8 @@ public final class StoredList extends AbstractList {
             }
 
             final Activity activity = activityRef.get();
-            final AlertDialog.Builder builder = Dialogs.newBuilder(activity);
+
+            final AlertDialog.Builder builder = Dialogs.newBuilder(activity, R.style.cgeo_compactDialogs);
             builder.setTitle(res.getString(titleId));
             builder.setMultiChoiceItems(listTitles, selectedItems, new MultiChoiceClickListener(lists, selectedListIds));
             builder.setPositiveButton(android.R.string.ok, new OnOkClickListener(selectedListIds, runAfterwards, listNameMemento));
@@ -117,7 +122,6 @@ public final class StoredList extends AbstractList {
                 // onClickListener is null because it is handled below to prevent closing of the dialog
                 builder.setNeutralButton(R.string.cache_list_select_last, null);
             }
-            builder.setNegativeButton(android.R.string.cancel, null);
             final AlertDialog dialog = builder.create();
             dialog.show();
             dialog.getButton(DialogInterface.BUTTON_POSITIVE).setEnabled(!selectedListIds.isEmpty());
@@ -135,7 +139,7 @@ public final class StoredList extends AbstractList {
             final CharSequence[] items = new CharSequence[listsTitle.size()];
 
             final Activity activity = activityRef.get();
-            final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+            final AlertDialog.Builder builder = Dialogs.newBuilder(activity, R.style.cgeo_compactDialogs);
             builder.setTitle(res.getString(titleId));
             builder.setItems(listsTitle.toArray(items), (dialogInterface, itemId) -> {
                 final AbstractList list = lists.get(itemId);
@@ -212,7 +216,7 @@ public final class StoredList extends AbstractList {
                     return;
                 }
                 final int newId = DataStore.createList(listName);
-                new StoredList(newId, listName, EmojiUtils.NO_EMOJI, 0);
+                new StoredList(newId, listName, EmojiUtils.NO_EMOJI, false, 0);
 
                 if (newId >= DataStore.customListIdOffset) {
                     runAfterwards.call(newId);
@@ -230,7 +234,7 @@ public final class StoredList extends AbstractList {
                     return;
                 }
                 final int newId = DataStore.createList(listName);
-                new StoredList(newId, listName, EmojiUtils.NO_EMOJI, 0);
+                new StoredList(newId, listName, EmojiUtils.NO_EMOJI, false, 0);
 
                 if (newId >= DataStore.customListIdOffset) {
                     selectedLists.remove(PseudoList.NEW_LIST.id);
@@ -248,11 +252,10 @@ public final class StoredList extends AbstractList {
             if (activity == null) {
                 return;
             }
-            Dialogs.input(activity, dialogTitle, defaultValue, buttonTitle, input -> {
-                // remove whitespaces added by autocompletion of Android keyboard
-                final String listName = StringUtils.trim(input);
-                if (StringUtils.isNotBlank(listName)) {
-                    runnable.call(listName);
+            SimpleDialog.of(activity).setTitle(dialogTitle).setPositiveButton(TextParam.id(buttonTitle))
+                .input(-1, defaultValue, null, null, input -> {
+                if (StringUtils.isNotBlank(input)) {
+                    runnable.call(input);
                 }
             });
         }

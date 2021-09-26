@@ -35,6 +35,7 @@ public class Intents {
     public static final String EXTRA_PQ_LIST_IMPORT = PREFIX + "pq_list_import";
     public static final String EXTRA_COORD_DESCRIPTION = PREFIX + "coord_description";
     public static final String EXTRA_WPT_PAGE_UPDATE = PREFIX + "wpt_page_update";
+    public static final String EXTRA_FILTER_CONTEXT = "filter_context";
 
     public static final String EXTRA_WPTTYPE = PREFIX + "wpttype";
     public static final String EXTRA_MAPSTATE = PREFIX + "mapstate";
@@ -54,11 +55,13 @@ public class Intents {
     public static final String EXTRA_MAP_FILE = PREFIX + "map_file";
     public static final String EXTRA_GPX_FILE = PREFIX + "gpx_file";
     public static final String EXTRA_NAME = PREFIX + "name";
+    public static final String EXTRA_FILENAME = "filename";
     public static final String EXTRA_SEARCH = PREFIX + "search";
     public static final String EXTRA_START_DIR = PREFIX + "start_dir";
     public static final String EXTRA_SELECTDIR = PREFIX + "selectDir";
     public static final String EXTRA_TRACKING_CODE = PREFIX + "tracking_code";
     public static final String EXTRA_USERNAME = PREFIX + "username";
+    public static final String EXTRA_FILTER = PREFIX + "filter";
     public static final String EXTRA_WAYPOINT_ID = PREFIX + "waypoint_id";
     public static final String EXTRA_POCKET_GUID = PREFIX + "pocket_guid";
 
@@ -93,6 +96,18 @@ public class Intents {
 
     private static final String PREFIX_INTERNAL = "cgeo.geocaching.intent.internal.";
     public static final String INTENT_CACHE_CHANGED = PREFIX_INTERNAL + "cache-changed";
+
+    /**
+     * To be used together with {@link android.content.Intent#ACTION_OPEN_DOCUMENT_TREE}
+     *
+     * The value is decide whether to show advance mode or not.
+     * If the value is true, the local/device storage root must be
+     * visible in DocumentsUI. Otherwise it depends on the users preference.
+     *
+     * This is a system internal Api, which is not officially supported and not accessible from outside. Therefore, we need to define it ourselves.
+     * Anyway, the usage of it should be uncritical. The worst thing which could happen is that the EXTRA is simply ignored.
+     */
+    public static final String EXTRA_SHOW_ADVANCED = "android.provider.extra.SHOW_ADVANCED";
 
     private Intents() {
         // Do not instantiate

@@ -8,8 +8,8 @@ import cgeo.geocaching.list.StoredList;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Waypoint;
-import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.ui.dialog.Dialogs;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.MatcherWrapper;
 
@@ -41,7 +41,7 @@ public class NavigateAnyPointActivity extends AbstractActionBarActivity {
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTheme(Settings.isLightSkin() ? R.style.light : R.style.dark);
+        setTheme(R.style.cgeo);
 
         InternalConnector.assertHistoryCacheExists(this);
 
@@ -104,7 +104,7 @@ public class NavigateAnyPointActivity extends AbstractActionBarActivity {
 
                 if (null != item) {
                     title.setCompoundDrawablesWithIntrinsicBounds(item.getType().markerId, 0, 0, 0);
-                    detail.setText(item.getGeocode());
+                    detail.setText(item.getShortGeocode());
                 } else {
                     detail.setText(context.getString(R.string.create_internal_cache));
                 }
@@ -112,13 +112,13 @@ public class NavigateAnyPointActivity extends AbstractActionBarActivity {
             }
         };
 
-        final AlertDialog dialog = new AlertDialog.Builder(context)
+        final AlertDialog dialog = Dialogs.newBuilder(context)
             .setTitle(R.string.add_target_to)
             .setAdapter(adapter, (dialog1, which) -> {
                 final String geocode;
                 if (which == 0) {
                     // create new UDC
-                    geocode = InternalConnector.createCache(context, name, null, new Geopoint(latitude, longitude), StoredList.STANDARD_LIST_ID);
+                    geocode = InternalConnector.createCache(context, name, null, 0, new Geopoint(latitude, longitude), StoredList.STANDARD_LIST_ID);
                 } else {
                     // add to an existing UDC
                     geocode = items.get(which).getGeocode();

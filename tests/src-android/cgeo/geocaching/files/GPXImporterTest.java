@@ -4,8 +4,8 @@ import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.connector.ConnectorFactory;
 import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.connector.gc.GCUtils;
-import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
+import cgeo.geocaching.list.PseudoList;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Waypoint;
 import cgeo.geocaching.storage.DataStore;
@@ -113,9 +113,12 @@ public class GPXImporterTest extends AbstractResourceInstrumentationTestCase {
 
         final List<Waypoint> waypointList = cache.getWaypoints();
         assertThat(waypointList).isNotNull();
-        assertThat(waypointList).as("Number of imported waypoints").hasSize(5);
+        assertThat(waypointList).as("Number of imported waypoints").hasSize(8);
         assertThat(waypointList.get(3).getCoords()).as("Not empty coordinates").isNotNull();
         assertThat(waypointList.get(4).getCoords()).as("Empty coordinates").isNull();
+        assertThat(waypointList.get(5).getCoords()).as("Empty coordinates").isNull();
+        assertThat(waypointList.get(6).getCoords()).as("Not empty coordinates").isNotNull();
+        assertThat(waypointList.get(7).getCoords()).as("Blank coordinates").isNull();
     }
 
     public void testImportGpxWithWaypoints() throws IOException {
@@ -211,7 +214,6 @@ public class GPXImporterTest extends AbstractResourceInstrumentationTestCase {
     private static void assertCacheProperties(final Geocache cache) {
         assertThat(cache).isNotNull();
         assertThat(cache.getLocation().startsWith(",")).isFalse();
-        assertThat(cache.isReliableLatLon()).isTrue();
         if (GCConnector.getInstance().equals(ConnectorFactory.getConnector(cache))) {
             assertThat(String.valueOf(GCUtils.gcCodeToGcId(cache.getGeocode()))).isEqualTo(cache.getCacheId());
         }
@@ -394,13 +396,13 @@ public class GPXImporterTest extends AbstractResourceInstrumentationTestCase {
         FileUtils.mkdirs(tempDir);
         assertThat(tempDir).overridingErrorMessage("Could not create directory %s", tempDir.getPath()).exists();
         // workaround to get storage initialized
-        DataStore.getAllHistoryCachesCount();
+        DataStore.getAllStoredCachesCount(PseudoList.HISTORY_LIST.id);
         listId = DataStore.createList("cgeogpxesTest");
     }
 
     @Override
     protected void tearDown() throws Exception {
-        final SearchResult search = DataStore.getBatchOfStoredCaches(null, CacheType.ALL, listId);
+        final SearchResult search = DataStore.getBatchOfStoredCaches(null, listId);
         final List<Geocache> cachesInList = new ArrayList<>(search.getCachesFromSearchResult(LoadFlags.LOAD_CACHE_OR_DB));
         DataStore.markDropped(cachesInList);
         DataStore.removeList(listId);

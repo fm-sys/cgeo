@@ -10,13 +10,14 @@
 
     <ImageView
         style="@style/filter_bar_image"
-        android:src="@drawable/main_filter_default" >
+        android:src="@drawable/ic_menu_filter" >
     </ImageView>
 
     <TextView
         android:id="@+id/filter_text"
         style="@style/filter_bar_text"
         android:textIsSelectable="false"
+	android:textSize="@dimen/textSize_detailsSecondary"
         tools:text="currently active filter"/>
 
 </LinearLayout>

@@ -4,10 +4,13 @@ import cgeo.geocaching.R;
 import cgeo.geocaching.activity.ActivityMixin;
 import cgeo.geocaching.storage.ContentStorage;
 import cgeo.geocaching.storage.PersistableFolder;
-import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.TextParam;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -31,7 +34,7 @@ public class DebugUtils {
         // utility class
     }
 
-    public static void createMemoryDump(@NonNull final Context context) {
+    public static void createMemoryDump(@NonNull final Activity context) {
         Toast.makeText(context, R.string.init_please_wait, Toast.LENGTH_LONG).show();
         final File file = ContentStorage.get().createTempFile();
 
@@ -56,17 +59,14 @@ public class DebugUtils {
         }
         message.append(context.getString(R.string.debug_user_error_explain_options));
 
-        Dialogs.confirmPositiveNegativeNeutral(
-            context,
-            context.getString(R.string.debug_user_error_report_title),
-            message.toString(),
-            context.getString(R.string.about_system_info_send_button),
-            null,
-            context.getString(android.R.string.cancel),
-            (dialog, which) -> createLogcatHelper(context, true, true,
-                errorMsg == null ? null : context.getString(R.string.debug_user_error_report_title) + ": " + errorMsg),
-            null,
-            null);
+        SimpleDialog.of(context)
+            .setTitle(R.string.debug_user_error_report_title)
+            .setMessage(TextParam.text(message.toString()))
+            .setPositiveButton(TextParam.id(R.string.about_system_info_send_button))
+            .confirm(
+                (dialog, which) -> createLogcatHelper(context, true, true, errorMsg == null ? null : context.getString(R.string.debug_user_error_report_title) + ": " + errorMsg),
+                SimpleDialog.DO_NOTHING
+            );
     }
 
     public static void createLogcat(@NonNull final Activity activity) {
@@ -74,18 +74,98 @@ public class DebugUtils {
             // no differentiation possible on older systems, so no need to ask
             createLogcatHelper(activity, true, false, null);
         } else {
-            Dialogs.confirmPositiveNegativeNeutral(
-                    activity,
-                    activity.getString(R.string.about_system_write_logcat),
-                    activity.getString(R.string.about_system_write_logcat_type),
-                    activity.getString(R.string.about_system_write_logcat_type_standard),
-                    null,
-                    activity.getString(R.string.about_system_write_logcat_type_extended),
+            SimpleDialog.of(activity)
+                .setTitle(R.string.about_system_write_logcat)
+                .setMessage(R.string.about_system_write_logcat_type)
+                .setButtons(R.string.about_system_write_logcat_type_standard, 0, R.string.about_system_write_logcat_type_extended)
+                .confirm(
                     (dialog, which) -> createLogcatHelper(activity, false, false, null),
-                    null,
-                    (dialog, which) -> createLogcatHelper(activity, true, false, null));
+                    SimpleDialog.DO_NOTHING,
+                    (dialog, which) -> createLogcatHelper(activity, true, false, null)
+                );
         }
     }
+
+    public static void dumpDownloadmanagerInfos(@NonNull final Activity activity) {
+        final DownloadManager downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+        final DownloadManager.Query query = new DownloadManager.Query();
+        final StringBuilder sb = new StringBuilder();
+        try (Cursor c = downloadManager.query(query)) {
+            final int columnStatus = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+            final int columnReason = c.getColumnIndex(DownloadManager.COLUMN_REASON);
+            final int[] columns = {
+                c.getColumnIndex(DownloadManager.COLUMN_ID),
+                c.getColumnIndex(DownloadManager.COLUMN_TITLE),
+                columnStatus,
+                columnReason,
+                c.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR),
+                c.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES),
+                c.getColumnIndex(DownloadManager.COLUMN_LAST_MODIFIED_TIMESTAMP),
+                c.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE),
+                c.getColumnIndex(DownloadManager.COLUMN_URI),
+                c.getColumnIndex(DownloadManager.COLUMN_MEDIAPROVIDER_URI),
+                c.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
+            };
+            while (c.moveToNext()) {
+                for (int column : columns) {
+                    sb.append("- ").append(c.getColumnName(column)).append(" = ");
+                    if (column == columnStatus) {
+                        sb.append(c.getString(column));
+                        final int status = c.getInt(column);
+                        if (status == DownloadManager.STATUS_FAILED) {
+                            sb.append(" - download has failed (and will not be retried)");
+                        } else if (status == DownloadManager.STATUS_PAUSED) {
+                            sb.append(" - download is waiting to retry or resume");
+                        } else if (status == DownloadManager.STATUS_PENDING) {
+                            sb.append(" - download is waiting to start");
+                        } else if (status == DownloadManager.STATUS_RUNNING) {
+                            sb.append(" - download is currently running");
+                        } else if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                            sb.append(" - download has successfully completed");
+                        }
+                    } else if (column == columnReason) {
+                        final int reason = c.getInt(column);
+                        sb.append(reason);
+                        if (reason == DownloadManager.PAUSED_QUEUED_FOR_WIFI) {
+                            sb.append(" - paused: download exceeds a size limit for downloads over mobile network / waiting for Wifi");
+                        } else if (reason == DownloadManager.PAUSED_UNKNOWN) {
+                            sb.append(" - paused: for some other reason");
+                        } else if (reason == DownloadManager.PAUSED_WAITING_FOR_NETWORK) {
+                            sb.append(" - paused: waiting for network connectivity to proceed");
+                        } else if (reason == DownloadManager.PAUSED_WAITING_TO_RETRY) {
+                            sb.append(" - paused: some network error occurred and the download manager is waiting before retrying the request");
+                        } else if (reason == DownloadManager.ERROR_CANNOT_RESUME) {
+                            sb.append(" - error: some possibly transient error occurred but we can't resume the download");
+                        } else if (reason == DownloadManager.ERROR_DEVICE_NOT_FOUND) {
+                            sb.append(" - error: no external storage device was found. SD card mounted?");
+                        } else if (reason == DownloadManager.ERROR_FILE_ALREADY_EXISTS) {
+                            sb.append(" - error: requested destination file already exists, will not be overwritten");
+                        } else if (reason == DownloadManager.ERROR_FILE_ERROR) {
+                            sb.append(" - error: unknown storage issue");
+                        } else if (reason == DownloadManager.ERROR_HTTP_DATA_ERROR) {
+                            sb.append(" - error: HTTP processing error at data level");
+                        } else if (reason == DownloadManager.ERROR_INSUFFICIENT_SPACE) {
+                            sb.append(" - error: insufficient storage space");
+                        } else if (reason == DownloadManager.ERROR_TOO_MANY_REDIRECTS) {
+                            sb.append(" - error: too many redirects");
+                        } else if (reason == DownloadManager.ERROR_UNHANDLED_HTTP_CODE) {
+                            sb.append(" - error: unhandled HTTP cod");
+                        } else if (reason == DownloadManager.ERROR_UNKNOWN) {
+                            sb.append(" - error: unknown error");
+                        }
+
+                    } else {
+                        sb.append(c.getString(column));
+                    }
+                    sb.append("\n");
+                }
+                sb.append("\n---\n\n");
+            }
+        }
+
+        SimpleDialog.of(activity).setTitle(R.string.debug_current_downloads).setMessage(TextParam.text(sb.toString()).setMarkdown(true)).show();
+    }
+
 
     private static void createLogcatHelper(@NonNull final Activity activity, final boolean fullInfo, final boolean forceEmail, final String additionalMessage) {
         final AtomicReference<Uri> result = new AtomicReference(null);
@@ -121,10 +201,16 @@ public class DebugUtils {
                 if (forceEmail) {
                     shareLogfileAsEmail(activity, additionalMessage, result.get());
                 } else {
-                    Dialogs.confirmPositiveNegativeNeutral(activity, activity.getString(R.string.about_system_write_logcat),
-                        String.format(activity.getString(R.string.about_system_write_logcat_success), UriUtils.getLastPathSegment(result.get()), PersistableFolder.LOGFILES.getFolder().toUserDisplayableString()),
-                        activity.getString(android.R.string.ok), null, activity.getString(R.string.about_system_info_send_button),
-                        null, null, (dialog, which) -> shareLogfileAsEmail(activity, additionalMessage, result.get()));
+                    SimpleDialog.of(activity)
+                        .setTitle(R.string.about_system_write_logcat)
+                        .setMessage(R.string.about_system_write_logcat_success, UriUtils.getLastPathSegment(result.get()), PersistableFolder.LOGFILES.getFolder().toUserDisplayableString())
+                        .setButtons(0, 0, R.string.about_system_info_send_button)
+                        .confirm(
+                            SimpleDialog.DO_NOTHING,
+                            null,
+                            (dialog, which) -> shareLogfileAsEmail(activity, additionalMessage, result.get())
+                        );
+
                 }
             } else {
                 ActivityMixin.showToast(activity, R.string.about_system_write_logcat_error);
@@ -135,7 +221,7 @@ public class DebugUtils {
     private static void shareLogfileAsEmail(@NonNull final Activity activity, final String additionalMessage, final Uri logfileUri) {
         final String systemInfo = SystemInformation.getSystemInformation(activity);
         final String emailText = additionalMessage == null ? systemInfo : additionalMessage + "\n\n" + systemInfo;
-        ShareUtils.shareAsEmail(activity, activity.getString(R.string.mailsubject_problem_report), emailText, logfileUri, R.string.about_system_info_send_chooser);
+        ShareUtils.shareAsEmail(activity, String.format(activity.getString(R.string.mailsubject_problem_report), Version.getVersionName(activity)), emailText, logfileUri, R.string.about_system_info_send_chooser);
     }
 
 

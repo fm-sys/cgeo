@@ -3,17 +3,20 @@ package cgeo.geocaching.helper;
 import cgeo.geocaching.R;
 import cgeo.geocaching.storage.PersistableFolder;
 
-import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Helper activity for WhereYouGo to request the current mf map dir
  * Only returns if there is a map file set or forceAndFeedback=true
  */
-public class QueryMapFile extends Activity {
+public class QueryMapFile extends AppCompatActivity {
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,7 +25,7 @@ public class QueryMapFile extends Activity {
         final boolean forceAndFeedback = null != bundle && bundle.getBoolean(getString(R.string.cgeo_queryMapFile_actionParam));
 
         final String mapFile = PersistableFolder.OFFLINE_MAPS.getUri().toString();
-        if (forceAndFeedback || (mapFile != null && !"".equals(mapFile))) {
+        if (forceAndFeedback || StringUtils.isNotEmpty(mapFile)) {
             try {
                 final Intent intent = new Intent(Intent.ACTION_SENDTO);
                 intent.setComponent(new ComponentName(getString(R.string.package_whereyougo), getString(R.string.whereyougo_action_Mapsforge)));

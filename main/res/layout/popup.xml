@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="?background_color_transparent"
+    android:background="@color/colorBackgroundDialog"
+    android:windowBackground="@color/colorBackgroundTransparent"
     android:orientation="vertical"
-    tools:context=".CachePopupFragment" >
+    tools:context=".CachePopupFragment">
 
-    <include layout="@layout/actionbar_popup" />
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/actionbar_popup" />
     <ScrollView
         android:id="@+id/details_list_box"
         android:layout_width="wrap_content"
@@ -19,6 +23,16 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" >
+
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorText"
+                android:textSize="@dimen/textSize_headingPrimary"
+                android:gravity="center">
+            </TextView>
+            <View style="@style/separator_horizontal" />
 
             <LinearLayout
                 android:id="@+id/details_list"
@@ -33,20 +47,22 @@
 
                 <Button
                     android:id="@+id/more_details"
-                    style="@style/button_small"
-                    android:layout_width="fill_parent"
-                    android:layout_height="40dip"
+                    style="@style/button_full"
+                    android:layout_height="@dimen/buttonSize_iconButton"
+                    android:layout_centerVertical="true"
+                    android:layout_margin="3dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
                     android:layout_toLeftOf="@id/offline_hint"
-                    android:layout_gravity="center_horizontal"
                     android:text="@string/popup_more" />
 
-                <ImageButton
+                <Button
                     android:id="@+id/offline_hint"
-                    style="@style/button_small"
-                    android:src="@drawable/ic_menu_hint"
-                    android:layout_width="40dip"
-                    android:layout_height="40dip"
+                    style="@style/button_icon"
+                    app:icon="@drawable/ic_menu_hint"
                     android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_alignBaseline="@id/more_details"
                     android:layout_marginLeft="0dp"
                     android:visibility="gone"
                     tools:visibility="visible"/>
@@ -72,16 +88,14 @@
                     android:layout_marginLeft="6dip"
                     android:layout_marginRight="51dip"
                     android:paddingRight="3dip"
-                    android:textColor="?text_color"
                     android:textIsSelectable="false"
-                    android:textSize="14sp" />
+                    android:textSize="@dimen/textSize_detailsSecondary"
+                    android:textColor="@color/colorText"/>
 
-                <ImageButton
+                <Button
                     android:id="@+id/offline_refresh"
-                    style="@style/button_small"
-                    android:src="@drawable/ic_menu_refresh"
-                    android:layout_width="40dip"
-                    android:layout_height="40dip"
+                    style="@style/button_icon"
+                    app:icon="@drawable/ic_menu_refresh"
                     android:layout_alignParentRight="true"/>
             </RelativeLayout>
 
@@ -97,30 +111,34 @@
                     android:layout_marginLeft="6dip"
                     android:layout_toLeftOf="@id/offline_edit"
                     android:paddingRight="3dip"
-                    android:textColor="?text_color"
                     android:textIsSelectable="false"
-                    android:textSize="14sp"
-                    tools:text="list 1, list 2"/>
+                    android:textSize="@dimen/textSize_detailsSecondary"
+                    tools:text="list 1, list 2"
+                    android:textColor="@color/colorText"/>
 
-                <ImageButton
+                <Button
                     android:id="@+id/offline_edit"
-                    style="@style/button_small"
-                    android:src="@drawable/ic_menu_edit"
-                    android:layout_width="40dip"
-                    android:layout_height="40dip"
-                    android:layout_toLeftOf="@id/offline_store_drop"
+                    style="@style/button_icon"
+                    app:icon="@drawable/ic_menu_edit"
+                    android:layout_toLeftOf="@id/offline_drop"
                     android:layout_marginLeft="0dp"
                     android:visibility="gone"
                     tools:visibility="visible"/>
 
-                <ImageButton
-                    android:id="@+id/offline_store_drop"
-                    style="@style/button_small"
-                    android:src="@drawable/ic_menu_save"
-                    android:layout_width="40dip"
-                    android:layout_height="40dip"
+                <Button
+                    android:id="@+id/offline_drop"
+                    style="@style/button_icon"
+                    app:icon="@drawable/ic_menu_delete"
                     android:layout_marginLeft="0dp"
                     android:layout_alignParentRight="true"/>
+
+                <Button
+                    android:id="@+id/offline_store"
+                    style="@style/button_icon"
+                    app:icon="@drawable/ic_menu_save"
+                    android:layout_marginLeft="0dp"
+                    android:layout_alignParentRight="true"/>
+
             </RelativeLayout>
 
             <RelativeLayout
@@ -136,11 +154,11 @@
                 android:layout_marginLeft="6dip"
                 android:layout_marginRight="6dip"
                 android:paddingRight="3dip"
-                android:textColor="?text_color"
                 android:textIsSelectable="false"
-                android:textSize="14sp"
+                android:textSize="@dimen/textSize_detailsSecondary"
                 android:visibility="gone"
-                tools:text="hint"/>
+                tools:text="hint"
+                android:textColor="@color/colorText"/>
 
         </LinearLayout>
     </ScrollView>

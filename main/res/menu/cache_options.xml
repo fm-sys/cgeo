@@ -10,6 +10,13 @@
         app:showAsAction="always">
     </item>
     <item
+        android:id="@+id/menu_target"
+        android:icon="@drawable/ic_menu_near_me"
+        android:title="@string/cache_menu_target"
+        android:visible="false"
+        app:showAsAction="always">
+    </item>
+    <item
         android:id="@+id/menu_navigate"
         android:icon="@drawable/ic_menu_goto"
         android:title="@string/cache_menu_navigate"
@@ -29,6 +36,21 @@
         android:title="@string/cache_menu_visit"
         android:visible="false"
         app:showAsAction="ifRoom">
+    </item>
+    <item
+        android:id="@+id/menu_set_found"
+        android:title="@string/cache_menu_set_found"
+        android:visible="false">
+    </item>
+    <item
+        android:id="@+id/menu_set_DNF"
+        android:title="@string/cache_menu_set_DNF"
+        android:visible="false">
+    </item>
+    <item
+        android:id="@+id/menu_reset_foundstate"
+        android:title="@string/cache_menu_reset_foundstate"
+        android:visible="false">
     </item>
     <item
         android:id="@+id/menu_tts_toggle"
@@ -66,7 +88,7 @@
     </item>
     <item
         android:id="@+id/menu_edit_fieldnote"
-        android:icon="@drawable/ic_menu_rotate"
+        android:icon="@drawable/ic_menu_edit"
         android:title="@string/cache_personal_note"
         android:visible="false">
     </item>
@@ -143,6 +165,11 @@
             <item
                 android:id="@+id/menu_ignore"
                 android:title="@string/cache_menu_ignore"
+                android:visible="false">
+            </item>
+            <item
+                android:id="@+id/menu_upload_bookmarklist"
+                android:title="@string/caches_upload_bookmarklist"
                 android:visible="false">
             </item>
             <item

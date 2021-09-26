@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    android:layout_width="match_parent"
+<LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     xmlns:android="http://schemas.android.com/apk/res/android">
@@ -55,15 +54,15 @@
             android:layout_toRightOf="@id/detail_box"
             android:orientation="vertical"
             android:paddingTop="3dip"
-            android:paddingLeft="3dip"
-            android:textSize="14sp" >
+            android:paddingLeft="3dip">
 
             <TextView
                 android:id="@+id/gcinfo"
                 style="@style/logitem_property"
                 android:visibility="gone"
                 android:gravity="left"
-                android:layout_gravity="left"/>
+                android:layout_gravity="left"
+                android:textSize="@dimen/textSize_detailsPrimary" />
 
             <TextView
                 android:id="@+id/log"
@@ -71,8 +70,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="left"
                 android:gravity="left"
-                android:textColor="?text_color"
-                android:textSize="14sp"/>
+                android:textSize="@dimen/textSize_detailsPrimary"
+                android:textColor="@color/colorText"/>
 
             <TextView
                 android:id="@+id/log_images"
@@ -80,10 +79,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="left|top"
                 android:layout_marginTop="3dip"
-                android:drawableLeft="?log_img_icon"
                 android:drawablePadding="3dip"
-                android:textColor="?text_color"
-                android:textSize="14sp"/>
+                android:textSize="@dimen/textSize_detailsPrimary"
+                app:drawableLeftCompat="@drawable/log_img_icon" />
         </LinearLayout>
 
     </RelativeLayout>

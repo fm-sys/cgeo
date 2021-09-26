@@ -2,12 +2,12 @@ package cgeo.geocaching.maps.mapsforge.v6.caches;
 
 import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.enumerations.LoadFlags;
+import cgeo.geocaching.filters.core.GeocacheFilterContext;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.maps.MapUtils;
 import cgeo.geocaching.maps.mapsforge.v6.MapHandlers;
 import cgeo.geocaching.maps.mapsforge.v6.NewMap;
 import cgeo.geocaching.models.Geocache;
-import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.utils.Log;
 
@@ -25,8 +25,9 @@ public class StoredCachesOverlay extends AbstractCachesOverlay {
 
     private final Disposable timer;
 
-    public StoredCachesOverlay(final NewMap map, final int overlayId, final Set<GeoEntry> geoEntries, final CachesBundle bundle, final Layer anchorLayer, final MapHandlers mapHandlers) {
+    public StoredCachesOverlay(final NewMap map, final int overlayId, final Set<GeoEntry> geoEntries, final CachesBundle bundle, final Layer anchorLayer, final MapHandlers mapHandlers, final GeocacheFilterContext filterContext) {
         super(map, overlayId, geoEntries, bundle, anchorLayer, mapHandlers);
+        setFilterContext(filterContext);
         this.timer = startTimer();
     }
 
@@ -83,11 +84,11 @@ public class StoredCachesOverlay extends AbstractCachesOverlay {
         try {
             showProgress();
 
-            final SearchResult searchResult = new SearchResult(DataStore.loadCachedInViewport(getViewport().resize(1.2), Settings.getCacheType()));
+            final SearchResult searchResult = new SearchResult(DataStore.loadCachedInViewport(getViewport().resize(1.2)));
 
             final Set<Geocache> cachesFromSearchResult = searchResult.getCachesFromSearchResult(LoadFlags.LOAD_WAYPOINTS);
 
-            MapUtils.filter(cachesFromSearchResult);
+            MapUtils.filter(cachesFromSearchResult, getFilterContext());
 
             // render
             update(cachesFromSearchResult);

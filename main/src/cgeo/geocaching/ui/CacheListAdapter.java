@@ -4,7 +4,7 @@ import cgeo.geocaching.CacheDetailActivity;
 import cgeo.geocaching.R;
 import cgeo.geocaching.databinding.CacheslistItemBinding;
 import cgeo.geocaching.enumerations.CacheListType;
-import cgeo.geocaching.filter.IFilter;
+import cgeo.geocaching.filters.core.GeocacheFilter;
 import cgeo.geocaching.list.AbstractList;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.models.Geocache;
@@ -12,10 +12,10 @@ import cgeo.geocaching.sensors.GeoData;
 import cgeo.geocaching.sensors.Sensors;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.sorting.CacheComparator;
-import cgeo.geocaching.sorting.DistanceComparator;
 import cgeo.geocaching.sorting.EventDateComparator;
-import cgeo.geocaching.sorting.InverseComparator;
-import cgeo.geocaching.sorting.SeriesNameComparator;
+import cgeo.geocaching.sorting.GlobalGPSDistanceConparator;
+import cgeo.geocaching.sorting.NameComparator;
+import cgeo.geocaching.sorting.TargetDistanceComparator;
 import cgeo.geocaching.sorting.VisitComparator;
 import cgeo.geocaching.utils.AngleUtils;
 import cgeo.geocaching.utils.CalendarUtils;
@@ -38,12 +38,11 @@ import android.widget.SectionIndexer;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -60,10 +59,11 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
     private LayoutInflater inflater = null;
     private static CacheComparator cacheComparator = null;
     private Geopoint coords;
+    private Geopoint targetCoords;
     private float azimuth = 0;
     private long lastSort = 0L;
     private boolean selectMode = false;
-    private IFilter currentFilter = null;
+    private GeocacheFilter currentGeocacheFilter = null;
     private List<Geocache> originalList = null;
     private final boolean isLiveList = Settings.isLiveList();
 
@@ -89,23 +89,11 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
      */
     private static final int PAUSE_BETWEEN_LIST_SORT = 1000;
 
-    private static final int[] RATING_BACKGROUND = new int[3];
     /**
      * automatically order cache series by name, if they all have a common suffix or prefix at least these many
      * characters
      */
     private static final int MIN_COMMON_CHARACTERS_SERIES = 4;
-    static {
-        if (Settings.isLightSkin()) {
-            RATING_BACKGROUND[0] = R.drawable.favorite_background_red_light;
-            RATING_BACKGROUND[1] = R.drawable.favorite_background_orange_light;
-            RATING_BACKGROUND[2] = R.drawable.favorite_background_green_light;
-        } else {
-            RATING_BACKGROUND[0] = R.drawable.favorite_background_red_dark;
-            RATING_BACKGROUND[1] = R.drawable.favorite_background_orange_dark;
-            RATING_BACKGROUND[2] = R.drawable.favorite_background_green_dark;
-        }
-    }
 
     // variables for section indexer
     private HashMap<String, Integer> mapFirstPosition;
@@ -127,15 +115,17 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         }
     }
 
-    public CacheListAdapter(final Activity activity, final List<Geocache> list, final CacheListType cacheListType) {
+    public CacheListAdapter(final Activity activity, final List<Geocache> list, final CacheListType cacheListType, final @Nullable Geopoint targetCoords) {
         super(activity, 0, list);
         final GeoData currentGeo = Sensors.getInstance().currentGeo();
         coords = currentGeo.getCoords();
+        this.targetCoords = targetCoords;
         this.res = activity.getResources();
         this.list = list;
         this.cacheListType = cacheListType;
         checkSpecialSortOrder();
         buildFastScrollIndex();
+        GlobalGPSDistanceConparator.updateGlobalGps(coords);
     }
 
     public void setStoredLists(final List<AbstractList> storedLists) {
@@ -191,10 +181,13 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             return EventDateComparator.INSTANCE;
         }
         if (cacheComparator == null && series) {
-            return SeriesNameComparator.INSTANCE;
+            return NameComparator.INSTANCE;
+        }
+        if (cacheComparator == null && targetCoords != null) {
+            return new TargetDistanceComparator(targetCoords);
         }
         if (cacheComparator == null) {
-            return DistanceComparator.INSTANCE;
+            return GlobalGPSDistanceConparator.INSTANCE;
         }
         return cacheComparator;
     }
@@ -216,18 +209,24 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
      * Called when a new page of caches was loaded.
      */
     public void reFilter() {
-        if (currentFilter != null) {
+        if (hasActiveFilter()) {
             // Back up the list again
             originalList = new ArrayList<>(list);
 
-            currentFilter.filter(list);
+            performFiltering();
         }
     }
 
     /**
      * Called after a user action on the filter menu.
      */
-    public void setFilter(final IFilter filter) {
+    public void setFilter(final GeocacheFilter advancedFilter) {
+
+        GeocacheFilter gcFilter = null;
+        if (advancedFilter != null) {
+            gcFilter = advancedFilter;
+         }
+
         // Backup current caches list if it isn't backed up yet
         if (originalList == null) {
             originalList = new ArrayList<>(list);
@@ -235,26 +234,31 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
 
         // If there is already a filter in place, this is a request to change or clear the filter, so we have to
         // replace the original cache list
-        if (currentFilter != null) {
+        if (hasActiveFilter()) {
             list.clear();
             list.addAll(originalList);
         }
 
-        // Do the filtering or clear it
-        if (filter != null) {
-            filter.filter(list);
-        }
-        currentFilter = filter;
+        currentGeocacheFilter = gcFilter;
+
+        performFiltering();
 
         notifyDataSetChanged();
     }
 
-    public boolean isFiltered() {
-        return currentFilter != null;
+    private void performFiltering() {
+        // Do the filtering or clear it
+        if (currentGeocacheFilter != null && currentGeocacheFilter.isFiltering()) {
+            currentGeocacheFilter.filterList(list);
+        }
+    }
+
+    public boolean hasActiveFilter() {
+        return currentGeocacheFilter != null && currentGeocacheFilter.isFiltering();
     }
 
     public String getFilterName() {
-        return currentFilter.getName();
+        return !hasActiveFilter() ? "-" : currentGeocacheFilter.toUserDisplayableString();
     }
 
     public int getCheckedCount() {
@@ -302,7 +306,7 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             lastSort = 0;
             updateSortByDistance();
         } else {
-            Collections.sort(list, getPotentialInversion(getCacheComparator()));
+            getCacheComparator().sort(list, inverseSort);
         }
 
         notifyDataSetChanged();
@@ -334,7 +338,8 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             return;
         }
         final List<Geocache> oldList = new ArrayList<>(list);
-        Collections.sort(list, getPotentialInversion(new DistanceComparator(coords, list)));
+        GlobalGPSDistanceConparator.updateGlobalGps(coords);
+        GlobalGPSDistanceConparator.INSTANCE.sort(list, inverseSort);
 
         // avoid an update if the list has not changed due to location update
         if (list.equals(oldList)) {
@@ -344,26 +349,9 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         lastSort = System.currentTimeMillis();
     }
 
-    private Comparator<? super Geocache> getPotentialInversion(final CacheComparator comparator) {
-        if (inverseSort) {
-            return new InverseComparator(comparator);
-        }
-        return comparator;
-    }
-
     private boolean isSortedByDistance() {
         final CacheComparator comparator = getCacheComparator();
-        return comparator == null || comparator instanceof DistanceComparator;
-    }
-
-    private boolean isSortedByEvent() {
-        final CacheComparator comparator = getCacheComparator();
-        return comparator == null || comparator instanceof EventDateComparator;
-    }
-
-    private boolean isSortedBySeries() {
-        final CacheComparator comparator = getCacheComparator();
-        return comparator == null || comparator instanceof SeriesNameComparator;
+        return comparator == null || comparator instanceof GlobalGPSDistanceConparator;
     }
 
     public void setActualHeading(final float direction) {
@@ -416,8 +404,6 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         }
         holder.cache = cache;
 
-        final boolean lightSkin = Settings.isLightSkin();
-
         final TouchListener touchListener = new TouchListener(cache, this);
         v.setOnClickListener(touchListener);
         v.setOnLongClickListener(touchListener);
@@ -428,7 +414,9 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         holder.binding.checkbox.setOnClickListener(new SelectionCheckBoxListener(cache));
 
         distances.add(holder.binding.distance);
-        holder.binding.distance.setContent(cache.getCoords());
+        holder.binding.distance.setCacheData(cache.getCoords(), cache.getDistance());
+        holder.binding.distance.update(coords);
+
         compasses.add(holder.binding.direction);
         holder.binding.direction.setTargetCoords(cache.getCoords());
 
@@ -440,7 +428,7 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         if (cache.isArchived()) { // red color
             holder.binding.text.setTextColor(ContextCompat.getColor(getContext(), R.color.archived_cache_color));
         } else {
-            holder.binding.text.setTextColor(ContextCompat.getColor(getContext(), lightSkin ? R.color.text_light : R.color.text_dark));
+            holder.binding.text.setTextColor(ContextCompat.getColor(getContext(), R.color.colorText));
         }
 
         holder.binding.text.setText(cache.getName(), TextView.BufferType.NORMAL);
@@ -453,14 +441,6 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             holder.binding.inventory.setVisibility(View.VISIBLE);
         } else {
             holder.binding.inventory.setVisibility(View.GONE);
-        }
-
-        if (cache.getDistance() != null) {
-            holder.binding.distance.setDistance(cache.getDistance());
-        }
-
-        if (cache.getCoords() != null && coords != null) {
-            holder.binding.distance.update(coords);
         }
 
         // only show the direction if this is enabled in the settings
@@ -494,23 +474,8 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
 
         final int favCount = cache.getFavoritePoints();
         holder.binding.favorite.setText(Formatter.formatFavCount(favCount));
-
-        int favoriteBack;
-        // set default background, neither vote nor rating may be available
-        if (lightSkin) {
-            favoriteBack = R.drawable.favorite_background_light;
-        } else {
-            favoriteBack = R.drawable.favorite_background_dark;
-        }
         final float rating = cache.getRating();
-        if (rating >= 3.5) {
-            favoriteBack = RATING_BACKGROUND[2];
-        } else if (rating >= 2.1) {
-            favoriteBack = RATING_BACKGROUND[1];
-        } else if (rating > 0.0) {
-            favoriteBack = RATING_BACKGROUND[0];
-        }
-        holder.binding.favorite.setBackgroundResource(favoriteBack);
+        holder.binding.favorite.setBackgroundResource(rating >= 3.5 ? R.drawable.favorite_background_green : rating >= 2.1 ? R.drawable.favorite_background_orange : rating > 0.0 ? R.drawable.favorite_background_red : R.drawable.favorite_background);
 
         if (isHistory() && cache.getVisitedDate() > 0) {
             holder.binding.info.setText(Formatter.formatCacheInfoHistory(cache));
@@ -683,16 +648,10 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
     public void checkSpecialSortOrder() {
         checkEvents();
         checkSeries();
-        if (!eventsOnly && isSortedByEvent()) {
-            setComparator(DistanceComparator.INSTANCE);
-        }
-        if (!series && isSortedBySeries()) {
-            setComparator(DistanceComparator.INSTANCE);
-        }
     }
 
     private void checkEvents() {
-        eventsOnly = true;
+        eventsOnly = !list.isEmpty();
         for (final Geocache cache : list) {
             if (!cache.isEventCache()) {
                 eventsOnly = false;
@@ -716,22 +675,23 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             names.add(name);
             reverseNames.add(StringUtils.reverse(name));
         }
-        final String commonPrefix = StringUtils.getCommonPrefix(names.toArray(new String[names.size()]));
+        final String commonPrefix = StringUtils.getCommonPrefix(names.toArray(new String[0]));
         if (StringUtils.length(commonPrefix) >= MIN_COMMON_CHARACTERS_SERIES) {
             series = true;
         } else {
-            final String commonSuffix = StringUtils.getCommonPrefix(reverseNames.toArray(new String[reverseNames.size()]));
+            final String commonSuffix = StringUtils.getCommonPrefix(reverseNames.toArray(new String[0]));
             if (StringUtils.length(commonSuffix) >= MIN_COMMON_CHARACTERS_SERIES) {
                 series = true;
             }
-        }
-        if (series) {
-            setComparator(new SeriesNameComparator());
         }
     }
 
     public boolean isEventsOnly() {
         return eventsOnly;
+    }
+
+    public Geopoint getTargetCoords() {
+        return targetCoords;
     }
 
     // methods for section indexer

@@ -5,15 +5,18 @@ import cgeo.geocaching.SearchResult;
 import cgeo.geocaching.connector.ILoggingManager;
 import cgeo.geocaching.connector.UserInfo;
 import cgeo.geocaching.connector.UserInfo.UserInfoStatus;
+import cgeo.geocaching.connector.capability.IIgnoreCapability;
 import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.connector.capability.ISearchByCenter;
+import cgeo.geocaching.connector.capability.ISearchByFilter;
 import cgeo.geocaching.connector.capability.ISearchByFinder;
 import cgeo.geocaching.connector.capability.ISearchByKeyword;
 import cgeo.geocaching.connector.capability.ISearchByOwner;
 import cgeo.geocaching.connector.capability.ISearchByViewPort;
-import cgeo.geocaching.connector.capability.IgnoreCapability;
 import cgeo.geocaching.connector.capability.PersonalNoteCapability;
 import cgeo.geocaching.connector.capability.WatchListCapability;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilterType;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.log.LogCacheActivity;
@@ -31,11 +34,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
+import java.util.EnumSet;
 import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class OCApiLiveConnector extends OCApiConnector implements ISearchByCenter, ISearchByViewPort, ILogin, ISearchByKeyword, ISearchByOwner, ISearchByFinder, WatchListCapability, IgnoreCapability, PersonalNoteCapability {
+public class OCApiLiveConnector extends OCApiConnector implements ISearchByCenter, ISearchByViewPort, ILogin, ISearchByKeyword, ISearchByOwner, ISearchByFinder, ISearchByFilter, WatchListCapability, IIgnoreCapability, PersonalNoteCapability {
 
     private final String cS;
     private final int isActivePrefKeyId;
@@ -193,6 +197,23 @@ public class OCApiLiveConnector extends OCApiConnector implements ISearchByCente
         return new SearchResult(OkapiClient.getCachesNamed(Sensors.getInstance().currentGeo().getCoords(), name, this));
     }
 
+    @NonNull
+    @Override
+    public EnumSet<GeocacheFilterType> getFilterCapabilities() {
+        return EnumSet.of(GeocacheFilterType.DISTANCE, GeocacheFilterType.ORIGIN,
+            GeocacheFilterType.NAME, GeocacheFilterType.OWNER,
+            GeocacheFilterType.TYPE, GeocacheFilterType.SIZE,
+            GeocacheFilterType.DIFFICULTY, GeocacheFilterType.TERRAIN, GeocacheFilterType.DIFFICULTY_TERRAIN,
+            GeocacheFilterType.RATING,
+            GeocacheFilterType.FAVORITES, GeocacheFilterType.STATUS, GeocacheFilterType.LOG_ENTRY,
+            GeocacheFilterType.LOGS_COUNT);
+    }
+
+    @Override
+    public SearchResult searchByFilter(@NonNull final GeocacheFilter filter) {
+        return new SearchResult(OkapiClient.getCachesByFilter(filter, this));
+    }
+
     @Override
     public boolean isSearchForMyCaches(final String username) {
         return StringUtils.equalsIgnoreCase(username, getUserName());
@@ -219,12 +240,24 @@ public class OCApiLiveConnector extends OCApiConnector implements ISearchByCente
     }
 
     @Override
-    public void ignoreCache(@NonNull final Geocache cache) {
+    public boolean canRemoveFromIgnoreCache(@NonNull final Geocache cache) {
+        return false;
+    }
+
+    @Override
+    public boolean addToIgnorelist(@NonNull final Geocache cache) {
         final boolean ignored = OkapiClient.setIgnored(cache, this);
 
         if (ignored) {
             DataStore.saveChangedCache(cache);
         }
+        return ignored;
+    }
+
+    @Override
+    public boolean removeFromIgnorelist(@NonNull final Geocache cache) {
+        // Not supported
+        return false;
     }
 
 }

@@ -37,6 +37,7 @@ import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.BaseJsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
@@ -233,6 +234,20 @@ public final class Network {
     }
 
     /**
+     *  DELETE HTTP request with Json POST DATA
+     *
+     * @param uri the URI to request
+     * @param json the json object to add to the POST request
+     * @return a single with the HTTP response, or an IOException
+     */
+    @NonNull
+    public static Single<Response> deleteJsonRequest(final String uri, final ObjectNode json) {
+        final Request request = new Request.Builder().url(uri).delete(RequestBody.create(MEDIA_TYPE_APPLICATION_JSON,
+                json.toString())).build();
+        return RxOkHttpUtils.request(OK_HTTP_CLIENT, request);
+    }
+
+    /**
      *  POST HTTP request with Json POST DATA
      *
      * @param uri the URI to request
@@ -242,6 +257,20 @@ public final class Network {
     @NonNull
     public static Single<Response> postJsonRequest(final String uri, final ObjectNode json) {
         final Request request = new Request.Builder().url(uri).post(RequestBody.create(MEDIA_TYPE_APPLICATION_JSON,
+                json.toString())).build();
+        return RxOkHttpUtils.request(OK_HTTP_CLIENT, request);
+    }
+
+    /**
+     *  PUT HTTP request with Json POST DATA
+     *
+     * @param uri the URI to request
+     * @param json the json object to add to the POST request
+     * @return a single with the HTTP response, or an IOException
+     */
+    @NonNull
+    public static Single<Response> putJsonRequest(final String uri, final BaseJsonNode json) {
+        final Request request = new Request.Builder().url(uri).put(RequestBody.create(MEDIA_TYPE_APPLICATION_JSON,
                 json.toString())).build();
         return RxOkHttpUtils.request(OK_HTTP_CLIENT, request);
     }
@@ -314,6 +343,10 @@ public final class Network {
         }
 
         addHeaders(builder, headers, cacheFile);
+        final Request request = builder.build();
+        if (Log.isDebug()) {
+            Log.d("HTTP-" + request.method() + ": " + request.url());
+        }
         return RxOkHttpUtils.request(OK_HTTP_CLIENT, builder.build());
     }
 

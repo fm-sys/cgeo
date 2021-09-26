@@ -102,6 +102,7 @@ class DocumentContentAccessor extends AbstractContentAccessor {
             try {
                 return createInternal(folder, name, true);
             } catch (IllegalArgumentException iae2) {
+                Log.w("Problem creating document '" + name + "' in folder '" + folder + "'", iae2);
                 return null;
             }
         }
@@ -350,7 +351,11 @@ class DocumentContentAccessor extends AbstractContentAccessor {
             }
         }
         if (createIfNotExisting) {
-            return DocumentsContract.createDocument(getContext().getContentResolver(), dirUri, DocumentsContract.Document.MIME_TYPE_DIR, dirName);
+            try {
+                return DocumentsContract.createDocument(getContext().getContentResolver(), dirUri, DocumentsContract.Document.MIME_TYPE_DIR, dirName);
+            } catch (RuntimeException re) {
+                Log.e("Could not create dir '" + dirName + "' in '" + dirUri + "'", re);
+            }
         }
         return null;
     }

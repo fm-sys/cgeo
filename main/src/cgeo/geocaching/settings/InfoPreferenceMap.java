@@ -1,8 +1,7 @@
 package cgeo.geocaching.settings;
 
 import cgeo.geocaching.R;
-import cgeo.geocaching.downloader.MapDownloadSelectorActivity;
-import static cgeo.geocaching.downloader.MapDownloaderUtils.REQUEST_CODE;
+import cgeo.geocaching.downloader.DownloadSelectorActivity;
 
 import android.app.Activity;
 import android.content.Context;
@@ -29,10 +28,10 @@ public class InfoPreferenceMap extends AbstractInfoPreference {
     public InfoPreferenceMap(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs, defStyle);
         activity = (Activity) context;
-        init(activity, R.layout.preference_map_icon, this::startActivityForResult);
+        init(activity, R.layout.preference_map_icon, this::startActivity);
     }
 
-    private void startActivityForResult() {
-        activity.startActivityForResult(new Intent(activity, MapDownloadSelectorActivity.class), REQUEST_CODE);
+    private void startActivity() {
+        activity.startActivity(new Intent(activity, DownloadSelectorActivity.class));
     }
 }

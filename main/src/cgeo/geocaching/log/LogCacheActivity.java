@@ -29,8 +29,11 @@ import cgeo.geocaching.ui.AbstractViewHolder;
 import cgeo.geocaching.ui.CacheVotingBar;
 import cgeo.geocaching.ui.DateTimeEditor;
 import cgeo.geocaching.ui.ImageListFragment;
+import cgeo.geocaching.ui.TextParam;
 import cgeo.geocaching.ui.TextSpinner;
+import cgeo.geocaching.ui.ViewUtils;
 import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.AsyncTaskWithProgressText;
 import cgeo.geocaching.utils.CalendarUtils;
@@ -39,19 +42,13 @@ import cgeo.geocaching.utils.ContextLogger;
 import cgeo.geocaching.utils.ImageUtils;
 import cgeo.geocaching.utils.Log;
 import cgeo.geocaching.utils.TextUtils;
-import cgeo.geocaching.utils.ViewUtils;
 
-import android.R.string;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -210,45 +207,13 @@ public class LogCacheActivity extends AbstractLoggingActivity {
         setThemeAndContentView(R.layout.logcache_activity);
         binding = LogcacheActivityBinding.bind(findViewById(R.id.logcache_viewroot));
 
-        date.init(binding.date, null, getSupportFragmentManager());
+        date.init(binding.date, null, null, getSupportFragmentManager());
         logType.setTextView(binding.type).setDisplayMapper(LogType::getL10n);
         reportProblem.setTextView(binding.reportProblem)
                 .setTextDisplayMapper(rp -> rp.getL10n() + " ▼")
                 .setDisplayMapper(ReportProblemType::getL10n);
 
         this.imageListFragment = (ImageListFragment) getSupportFragmentManager().findFragmentById(R.id.imagelist_fragment);
-
-        // show remaining characters
-        binding.log.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void beforeTextChanged(final CharSequence s, final int st, final int c, final int a) {
-                // do nothing
-            }
-
-            @Override
-            public void onTextChanged(final CharSequence s, final int st, final int b, final int c) {
-                // do nothing
-            }
-
-            @SuppressLint("SetTextI18n")
-            @Override
-            public void afterTextChanged(final Editable editable) {
-                final int count = TextUtils.getNormalizedStringLength(editable.toString());
-
-                if (count >= 3000) {
-                    binding.logCharactersCounter.setVisibility(View.VISIBLE);
-                    binding.logCharactersCounter.setText(count + "/" + LOG_MAX_LENGTH);
-                    binding.logCharactersCounter.setTextColor(count > LOG_MAX_LENGTH ? Color.RED : getResources().getColor(Settings.isLightSkin() ? R.color.text_light : R.color.text_dark));
-
-                } else {
-                    binding.logCharactersCounter.setVisibility(View.GONE);
-                }
-            }
-
-
-
-        });
 
         //init trackable "change all" button
         trackableActionsChangeAll.setTextView(binding.changebutton)
@@ -552,17 +517,17 @@ public class LogCacheActivity extends AbstractLoggingActivity {
 
     private void sendLogAndConfirm() {
         if (!sendButtonEnabled) {
-            Dialogs.message(this, R.string.log_post_not_possible);
+            SimpleDialog.of(this).setMessage(R.string.log_post_not_possible).show();
             return;
         }
         if (CalendarUtils.isFuture(date.getCalendar())) {
-            Dialogs.message(this, R.string.log_date_future_not_allowed);
+            SimpleDialog.of(this).setMessage(R.string.log_date_future_not_allowed).show();
             return;
         }
         if (logType.get().mustConfirmLog()) {
-            Dialogs.confirm(this, R.string.confirm_log_title, res.getString(R.string.confirm_log_message, logType.get().getL10n()), (dialog, which) -> sendLogInternal());
+            SimpleDialog.of(this).setTitle(R.string.confirm_log_title).setMessage(R.string.confirm_log_message, logType.get().getL10n()).confirm((dialog, which) -> sendLogInternal());
         } else if (reportProblem.get() != ReportProblemType.NO_PROBLEM) {
-            Dialogs.confirm(this, R.string.confirm_report_problem_title, res.getString(R.string.confirm_report_problem_message, reportProblem.get().getL10n()), (dialog, which) -> sendLogInternal());
+            SimpleDialog.of(this).setTitle(TextParam.id(R.string.confirm_report_problem_title)).setMessage(TextParam.id(R.string.confirm_report_problem_message, reportProblem.get().getL10n())).confirm((dialog, which) -> sendLogInternal());
         } else {
             sendLogInternal();
         }
@@ -746,7 +711,7 @@ public class LogCacheActivity extends AbstractLoggingActivity {
                     final IConnector cacheConnector = ConnectorFactory.getConnector(cache);
                     if (cacheConnector instanceof ILogin) {
                         final String username = ((ILogin) cacheConnector).getUserName();
-                        if (!"".equals(username)) {
+                        if (StringUtils.isNotBlank(username)) {
                             logBuilder.setAuthor(username);
                         }
                     }
@@ -782,8 +747,6 @@ public class LogCacheActivity extends AbstractLoggingActivity {
                             for (Image img : imageListFragment.getImages()) {
                                 ImageUtils.deleteImage(img.getUri());
                             }
-                            imageListFragment.clearImages();
-                            imageListFragment.adjustImagePersistentState();
                         }
                     }
 
@@ -871,6 +834,9 @@ public class LogCacheActivity extends AbstractLoggingActivity {
                 refreshGui();
                 lastSavedState = getEntryFromView();
 
+                imageListFragment.clearImages();
+                imageListFragment.adjustImagePersistentState();
+
                 showToast(res.getString(R.string.info_log_posted));
                 // Prevent from saving log after it was sent successfully.
                 finish(SaveMode.SKIP);
@@ -878,19 +844,13 @@ public class LogCacheActivity extends AbstractLoggingActivity {
                 showToast(res.getString(R.string.info_log_saved));
                 finish(SaveMode.SKIP);
             } else {
-                Dialogs.confirmPositiveNegativeNeutral(activity, R.string.info_log_post_failed,
-                        res.getString(R.string.info_log_post_failed_reason, status.getErrorString(res)),
-                        R.string.info_log_post_retry, // Positive Button
-                        string.cancel,                // Negative Button
-                        R.string.info_log_post_save,  // Neutral Button
-                        // Positive button: Retry
-                        (dialog, which) -> sendLogInternal(),
-                        // Negative button: dismiss popup
-                        null,
-                        // Neutral Button: SaveLog
-                        (dialogInterface, i) -> {
-                            finish(SaveMode.FORCE);
-                        });
+                SimpleDialog.of(activity)
+                    .setTitle(R.string.info_log_post_failed)
+                    .setMessage(TextParam.concat(TextParam.id(R.string.info_log_post_failed_reason, ""),
+                        TextParam.id(StatusCode.UNKNOWN_ERROR.errorString)).setMovement(true))
+                    .setButtons(R.string.info_log_post_retry, 0, R.string.info_log_post_save)
+                    .confirm((dialog, which) -> sendLogInternal(), SimpleDialog.DO_NOTHING, (dialogInterface, i) -> finish(SaveMode.FORCE));
+
             }
         }
     }

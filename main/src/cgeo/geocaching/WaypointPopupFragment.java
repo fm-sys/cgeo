@@ -11,6 +11,7 @@ import cgeo.geocaching.speech.SpeechService;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.ui.CacheDetailsCreator;
 import cgeo.geocaching.utils.Log;
+import cgeo.geocaching.utils.TextUtils;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -76,29 +77,25 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
         }
 
         try {
-            if (StringUtils.isNotBlank(waypoint.getName())) {
-                setTitle(waypoint.getName());
-            } else {
-                setTitle(waypoint.getGeocode());
-            }
+            final String wpCode = waypoint.getPrefix() + waypoint.getShortGeocode().substring(2);
+            binding.toolbar.toolbar.setTitle(wpCode);
+            binding.toolbar.toolbar.setLogo(ResourcesCompat.getDrawable(getResources(), waypoint.getWaypointType().markerId, null));
 
-
-            binding.actionBar.actionbarTitle.setCompoundDrawablesWithIntrinsicBounds(ResourcesCompat.getDrawable(getResources(), waypoint.getWaypointType().markerId, null), null, null, null);
-
-            //getSupportActionBar().setIcon(getResources().getDrawable(waypoint.getWaypointType().markerId));
-
+            binding.title.setText(TextUtils.coloredCacheText(cache, cache.getName()));
             details = new CacheDetailsCreator(getActivity(), binding.waypointDetailsList);
 
-            //Waypoint geocode
-            details.add(R.string.cache_geocode, waypoint.getPrefix() + waypoint.getGeocode().substring(2));
+            //Waypoint name
+            if (StringUtils.isNotBlank(waypoint.getName())) {
+                details.add(R.string.cache_name, waypoint.getName());
+            }
             waypointDistance = details.addDistance(waypoint, waypointDistance);
             final String note = waypoint.getNote();
             if (StringUtils.isNotBlank(note)) {
-                details.addHtml(R.string.waypoint_note, note, waypoint.getGeocode());
+                details.addHtml(R.string.waypoint_note, note, waypoint.getShortGeocode());
             }
             final String userNote = waypoint.getUserNote();
             if (StringUtils.isNotBlank(userNote)) {
-                details.addHtml(R.string.waypoint_user_note, userNote, waypoint.getGeocode());
+                details.addHtml(R.string.waypoint_user_note, userNote, waypoint.getShortGeocode());
             }
 
             binding.toggleVisited.setChecked(waypoint.isVisited());
@@ -114,9 +111,7 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
             });
 
             details = new CacheDetailsCreator(getActivity(), binding.detailsList);
-            details.add(R.string.cache_name, cache.getName());
-
-            addCacheDetails();
+            addCacheDetails(true);
 
             final View view = getView();
             assert view != null;
@@ -145,8 +140,11 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
         super.onDestroy();
     }
 
+    /**
+     * Tries to navigate to the {@link Geocache} of this activity.
+     */
     @Override
-    public void navigateTo() {
+    public void startDefaultNavigation() {
         NavigationAppFactory.startDefaultNavigationApplication(1, getActivity(), waypoint);
     }
 

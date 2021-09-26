@@ -15,7 +15,6 @@ import cgeo.geocaching.brouter.util.CheapAngleMeter;
 import cgeo.geocaching.brouter.util.CheapRulerHelper;
 
 import java.io.DataOutput;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -124,23 +123,14 @@ public final class RoutingContext {
         if (name.endsWith(BRouterConstants.BROUTER_PROFILE_FILEEXTENSION)) {
             name = name.substring(0, profileFilename.length() - BRouterConstants.BROUTER_PROFILE_FILEEXTENSION.length());
         }
-        final int idx = name.lastIndexOf(File.separatorChar);
-        if (idx >= 0) {
-            name = name.substring(idx + 1);
-        }
         return name;
     }
 
-    private void setModel(final String className) {
-        if (className == null) {
-            pm = new StdModel();
-        } else {
-            try {
-                final Class clazz = Class.forName(className);
-                pm = (OsmPathModel) clazz.newInstance();
-            } catch (Exception e) {
-                throw new RuntimeException("Cannot create path-model: " + e);
-            }
+    private void setModel(final boolean useKinematicModel) {
+        try {
+            pm = useKinematicModel ? new KinematicModel() : new StdModel();
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot create path-model: " + e);
         }
         initModel();
     }
@@ -162,7 +152,7 @@ public final class RoutingContext {
     public void readGlobalConfig() {
         final BExpressionContext expctxGlobal = expctxWay; // just one of them...
 
-        setModel(expctxGlobal.modelClass);
+        setModel(expctxGlobal.useKinematicModel);
 
         downhillcostdiv = (int) expctxGlobal.getVariableValue("downhillcost", 0.f);
         downhillcutoff = (int) (expctxGlobal.getVariableValue("downhillcutoff", 0.f) * 10000);

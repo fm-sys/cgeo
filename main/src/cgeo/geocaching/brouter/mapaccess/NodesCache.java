@@ -5,25 +5,30 @@
  */
 package cgeo.geocaching.brouter.mapaccess;
 
+import cgeo.geocaching.brouter.BRouterConstants;
 import cgeo.geocaching.brouter.codec.DataBuffers;
 import cgeo.geocaching.brouter.codec.MicroCache;
 import cgeo.geocaching.brouter.codec.WaypointMatcher;
 import cgeo.geocaching.brouter.expressions.BExpressionContextWay;
+import cgeo.geocaching.storage.ContentStorage;
+import cgeo.geocaching.storage.PersistableFolder;
+import cgeo.geocaching.utils.Log;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.Closeable;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 
-public final class NodesCache {
+import org.apache.commons.io.IOUtils;
+
+public final class NodesCache implements Closeable {
     public OsmNodesMap nodesMap;
     public WaypointMatcher waypointMatcher;
     public boolean firstFileAccessFailed = false;
     public String firstFileAccessName;
-    private final File segmentDir;
     private final BExpressionContextWay expCtxWay;
     private final int lookupVersion;
-    private final int lookupMinorVersion;
     private String currentFileName;
     private final HashMap<String, PhysicalFile> fileCache;
     private final DataBuffers dataBuffers;
@@ -42,14 +47,12 @@ public final class NodesCache {
 
     private final boolean directWeaving = !Boolean.getBoolean("disableDirectWeaving");
 
-    public NodesCache(final String segmentDir, final BExpressionContextWay ctxWay, final long maxmem, final NodesCache oldCache, final boolean detailed) {
+    public NodesCache(final BExpressionContextWay ctxWay, final long maxmem, final NodesCache oldCache, final boolean detailed) {
         this.maxmemtiles = maxmem / 8;
-        this.segmentDir = new File(segmentDir);
         this.nodesMap = new OsmNodesMap();
         this.nodesMap.maxmem = (2L * maxmem) / 3L;
         this.expCtxWay = ctxWay;
         this.lookupVersion = ctxWay.meta.lookupVersion;
-        this.lookupMinorVersion = ctxWay.meta.lookupMinorVersion;
         this.detailed = detailed;
 
         if (ctxWay != null) {
@@ -58,10 +61,6 @@ public final class NodesCache {
 
         firstFileAccessFailed = false;
         firstFileAccessName = null;
-
-        if (!this.segmentDir.isDirectory()) {
-            throw new RuntimeException("segment directory " + segmentDir + " does not exist");
-        }
 
         if (oldCache != null) {
             fileCache = oldCache.fileCache;
@@ -316,18 +315,21 @@ public final class NodesCache {
         final String slat = lat < 0 ? "S" + (-lat) : "N" + lat;
         final String filenameBase = slon + "_" + slat;
 
-        currentFileName = filenameBase + ".rd5";
+        currentFileName = filenameBase + BRouterConstants.BROUTER_TILE_FILEEXTENSION;
 
         PhysicalFile ra = null;
         if (!fileCache.containsKey(filenameBase)) {
-            File f = null;
-            final File primary = new File(segmentDir, filenameBase + ".rd5");
-            if (primary.exists()) {
-                f = primary;
-            }
-            if (f != null) {
-                currentFileName = f.getName();
-                ra = new PhysicalFile(f, dataBuffers, lookupVersion, lookupMinorVersion);
+            final ContentStorage.FileInformation fi = ContentStorage.get().getFileInfo(PersistableFolder.ROUTING_TILES.getFolder(), filenameBase + BRouterConstants.BROUTER_TILE_FILEEXTENSION);
+            if (fi != null && !fi.isDirectory) {
+                currentFileName = fi.name;
+
+                final InputStream is = ContentStorage.get().openForRead(fi.uri);
+                if (is instanceof FileInputStream) {
+                    ra = new PhysicalFile(fi.name, (FileInputStream) is, dataBuffers, lookupVersion);
+                } else {
+                    Log.w("Problem opening tile file " + fi + ", is = " + is);
+                    IOUtils.closeQuietly(is);
+                }
             }
             fileCache.put(filenameBase, ra);
         }
@@ -342,14 +344,11 @@ public final class NodesCache {
         return osmf;
     }
 
+    @Override
     public void close() {
         for (PhysicalFile f : fileCache.values()) {
-            try {
-                if (f != null) {
-                    f.ra.close();
-                }
-            } catch (IOException ioe) {
-                // ignore
+            if (f != null) {
+                f.close();
             }
         }
     }

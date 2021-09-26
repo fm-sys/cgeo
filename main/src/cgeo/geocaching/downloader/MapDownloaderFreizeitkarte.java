@@ -3,7 +3,7 @@ package cgeo.geocaching.downloader;
 import cgeo.geocaching.CgeoApplication;
 import cgeo.geocaching.R;
 import cgeo.geocaching.files.InvalidXMLCharacterFilterReader;
-import cgeo.geocaching.models.OfflineMap;
+import cgeo.geocaching.models.Download;
 import cgeo.geocaching.utils.Formatter;
 import cgeo.geocaching.utils.Log;
 
@@ -14,12 +14,14 @@ import android.sax.RootElement;
 import android.util.Xml;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.SAXException;
@@ -30,7 +32,8 @@ public class MapDownloaderFreizeitkarte extends AbstractMapDownloader {
     private static final MapDownloaderFreizeitkarte INSTANCE = new MapDownloaderFreizeitkarte();
 
     private MapDownloaderFreizeitkarte() {
-        super (OfflineMap.OfflineMapType.MAP_DOWNLOAD_TYPE_FREIZEITKARTE, R.string.mapserver_freizeitkarte_downloadurl, R.string.mapserver_freizeitkarte_name, R.string.mapserver_freizeitkarte_info, R.string.mapserver_freizeitkarte_projecturl, R.string.mapserver_freizeitkarte_likeiturl);
+        super (Download.DownloadType.DOWNLOADTYPE_MAP_FREIZEITKARTE, R.string.mapserver_freizeitkarte_downloadurl, R.string.mapserver_freizeitkarte_name, R.string.mapserver_freizeitkarte_info, R.string.mapserver_freizeitkarte_projecturl, R.string.mapserver_freizeitkarte_likeiturl);
+        companionType = Download.DownloadType.DOWNLOADTYPE_THEME_FREIZEITKARTE;
     }
 
     private static class FZKParser {
@@ -40,7 +43,7 @@ public class MapDownloaderFreizeitkarte extends AbstractMapDownloader {
         private String description;
         private String dateInfo;
 
-        private void parse(@NonNull final String page, final List<OfflineMap> result, final OfflineMap.OfflineMapType offlineMapType) {
+        private void parse(@NonNull final String page, final List<Download> result, final Download.DownloadType offlineMapType) {
             final RootElement root = new RootElement("", "Freizeitkarte");
             final Element map = root.getChild("", "Map");
             map.setStartElementListener(attr -> {
@@ -55,7 +58,7 @@ public class MapDownloaderFreizeitkarte extends AbstractMapDownloader {
             map.getChild("", "MapsforgeDateOfCreation").setEndTextElementListener(body -> dateInfo = body);
             map.setEndElementListener(() -> {
                 if (StringUtils.isNotBlank(url) && StringUtils.isNotBlank(dateInfo)) {
-                    result.add(new OfflineMap(description, Uri.parse(url), false, dateInfo.substring(0, 10), Formatter.formatBytes(size), offlineMapType));
+                    result.add(new Download(description, Uri.parse(url), false, dateInfo.substring(0, 10), Formatter.formatBytes(size), offlineMapType, ICONRES_MAP));
                 }
             });
 
@@ -69,15 +72,16 @@ public class MapDownloaderFreizeitkarte extends AbstractMapDownloader {
     }
 
     @Override
-    protected void analyzePage(final Uri uri, final List<OfflineMap> list, final String page) {
+    protected void analyzePage(final Uri uri, final List<Download> list, final @NonNull String page) {
         new FZKParser().parse(page, list, offlineMapType);
     }
 
+    @Nullable
     @Override
-    protected OfflineMap checkUpdateFor(final String page, final String remoteUrl, final String remoteFilename) {
-        final List<OfflineMap> list = new ArrayList<>();
+    protected Download checkUpdateFor(final @NonNull String page, final String remoteUrl, final String remoteFilename) {
+        final List<Download> list = new ArrayList<>();
         new FZKParser().parse(page, list, offlineMapType);
-        for (OfflineMap map : list) {
+        for (Download map : list) {
             if (map.getUri().getLastPathSegment().equals(remoteFilename)) {
                 return map;
             }
@@ -93,13 +97,12 @@ public class MapDownloaderFreizeitkarte extends AbstractMapDownloader {
 
     @Override
     protected String toVisibleFilename(final String filename) {
-        return toInfixedString(CompanionFileUtils.getDisplayName((filename.startsWith("Freizeitkarte_") ? filename.substring(14) : filename).toLowerCase()), " (FZK)");
+        return toInfixedString(CompanionFileUtils.getDisplayName((filename.startsWith("Freizeitkarte_") ? filename.substring(14) : filename).toLowerCase(Locale.getDefault())), " (FZK)");
     }
 
     @Override
-    protected void onFollowup(final Activity activity, final Runnable callback) {
-        // check whether a FZK theme exists in theme folder and ask whether user wants to download it as well, if it does not exist yet
-        findOrDownload(activity, THEME_FILES, activity.getString(R.string.mapserver_freizeitkarte_themes_downloadurl), OfflineMap.OfflineMapType.MAP_DOWNLOAD_TYPE_FREIZEITKARTE_THEMES, callback);
+    public DownloaderUtils.DownloadDescriptor getExtrafile(final Activity activity) {
+        return getExtrafile(THEME_FILES, activity.getString(R.string.mapserver_freizeitkarte_themes_downloadurl), Download.DownloadType.DOWNLOADTYPE_THEME_FREIZEITKARTE);
     }
 
     @NonNull

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- fixes -->
+    <!-- This entry shall solve a bug with material.io Date picker, see https://github.com/material-components/material-components-android/issues/1346 -->
     <!-- basics -->
     <string name="detail">Rincian</string>
     <string name="search">Pencarian</string>
@@ -159,7 +161,6 @@
     <string name="err_tb_display">c:geo tidak dapat menampilkan pelacak yang anda inginkan. Apakah itu benar-benar dapat dilacak?</string>
     <string name="err_tb_details_open">c: geo tidak bisa membuka rincian yang dapat dilacak.</string>
     <string name="err_tb_not_loggable">Ini hanya bisa dilacak tidak bisa ditukar.</string>
-    <string name="err_tb_find">c:geo tidak bisa menemukan yang dilacak</string>
     <string name="err_tb_find_that">c: geo tidak dapat menemukan yang bisa dilacak.</string>
     <string name="err_waypoint_cache_unknown">c:geo tidak tahu ke cache mana titik arah ingin anda tambahkan.</string>
     <string name="err_waypoint_add_failed">c:geo gagal untuk menambahkan titik arah anda.</string>
@@ -228,7 +229,6 @@
     <string name="menu_helpers">Program utilitas</string>
     <string name="menu_settings">Pengaturan</string>
     <string name="menu_history">Riwayat</string>
-    <string name="menu_pocket_queries">Pocket pertanyaan</string>
     <string name="menu_scan_description">c: geo dapat memindai geocodes yang tercetak sebagai QR code. Aplikasi yang diperlukan tidak terpasang Apakah Anda ingin membuka Google Play untuk menginstalnya?</string>
     <!-- main screen -->
     <string name="live_map_button">Peta online</string>
@@ -276,8 +276,6 @@
     <string name="caches_select_mode_exit">Pilih mode keluar</string>
     <string name="caches_select_invert">Balikkan seleksi</string>
     <string name="caches_nearby">Dekat</string>
-    <string name="caches_remove_all">Hapus semua</string>
-    <string name="caches_remove_selected">Hapus yang telah dipilih</string>
     <string name="caches_delete_events">Hapus acara sebelumnya</string>
     <string name="caches_refresh_selected">Segarkan yang telah dipilih</string>
     <string name="caches_refresh_all">Segarkan semua</string>
@@ -287,22 +285,6 @@
     <string name="caches_copy_all">Salin semua</string>
     <string name="caches_map_locus_export">Ekspor ke lokus</string>
     <string name="caches_filter_title">Filter menurut</string>
-    <string name="caches_filter_size">Ukuran</string>
-    <string name="caches_filter_type">Jenis</string>
-    <string name="caches_filter_track">Dengan yang bisa dilacak</string>
-    <string name="caches_filter_clear">Hapus filter</string>
-    <string name="caches_filter_modified">Dengan koordinat yang dimodifikasi</string>
-    <string name="caches_filter_offline_log">Dengan offline log</string>
-    <string name="caches_filter_origin">Asal</string>
-    <string name="caches_filter_distance">Jarak</string>
-    <string name="caches_filter_personal_note">Dengan catatan pribadi</string>
-    <string name="caches_filter_popularity">Favorit</string>
-    <string name="caches_filter_popularity_ratio">Favorit [%]</string>
-    <string name="caches_filter_personal_data">Dengan catatan pribadi</string>
-    <string name="caches_filter_rating">Dengan rating</string>
-    <string name="caches_filter_own_rating">Dengan penilaian sendiri</string>
-    <string name="caches_filter_multi_listing">Multi listing dengan keadaan berbeda</string>
-    <string name="caches_filter_missing_gcvote">Cache ditemukan tidak memilih</string>
     <string name="caches_removing_from_history">Menghapus dari riwayat&#8230;</string>
     <string name="caches_clear_offlinelogs">Hapus log offline</string>
     <string name="caches_clear_offlinelogs_message">Apakah anda ingin menghapus log offline?</string>
@@ -328,6 +310,7 @@
     <string name="list_dialog_rename_title">Ganti nama daftar</string>
     <string name="list_dialog_rename">Ubah nama</string>
     <string name="list_not_available">Daftar tidak lagi tersedia, beralih ke daftar standar</string>
+    <!-- caches lists filter -->
     <!-- about -->
     <string name="about_version">Versi</string>
     <string name="about_changelog">Perubahan</string>
@@ -361,43 +344,32 @@
     <string name="settings_data_dir_item">%1$s (%2$s gratis)</string>
     <string name="confirm_data_dir_move">Memindahkan data geocache mungkin memerlukan waktu yang sangat lama, tergantung pada perangkat dan jumlah data anda.</string>
     <string name="settings_title_basicmembers">Pilihan untuk Anggota Dasar</string>
-    <string name="settings_title_navigation">Navigasi</string>
-    <string name="settings_summary_navigation">Memilih metode navigasi yang lebih disukai dan pilih aplikasi navigasi eksternal.</string>
     <string name="settings_title_system">Sistem</string>
     <string name="settings_title_navigation_menu">Menu Navigasi</string>
     <string name="settings_category_browser">Peramban</string>
     <string name="settings_category_social">Media sosial</string>
     <string name="settings_category_logging_other">Pilihan login lainnya</string>
     <string name="settings_goto_url_button">lebih banyak &#8230;</string>
-    <string name="settings_activate_gc">Aktifkan</string>
-    <string name="settings_activate_ec">Aktifkan</string>
+    <string name="settings_service_activate">Aktifkan</string>
     <string name="settings_gc_legal_note">Dengan menggunakan layanan dari geocaching.com, anda menerima Syarat Penggunaan Groundspeak.</string>
     <string name="settings_authorize">Mengizinkan c:geo</string>
     <string name="settings_gc_description">Otorisasi c:geo dengan geocaching.com untuk mencari cache.</string>
     <string name="settings_ec_description">Otorisasi c:geo dengan extremcaching.com untuk mencari cache dan akses/filter cache yang anda temukan.</string>
     <string name="settings_su_description">Otorisasi c:geo dengan geocaching.su untuk mencari cache.</string>
-    <string name="settings_activate_oc">Aktifkan</string>
     <string name="init_summary_oc_de">Muat cache dari opencaching.de</string>
     <string name="init_oc_de_description">Mengizinkan c:geo dengan opencaching.de untuk mencari cache dan akses/filter cache yang anda temukan.</string>
-    <string name="settings_activate_oc_pl">Aktifkan</string>
     <string name="init_summary_oc_pl">Muat cache dari opencaching.pl</string>
     <string name="init_oc_pl_description">Mengizinkan c:geo dengan opencaching.pl untuk mencari cache dan akses/filter cache yang anda temukan.</string>
-    <string name="settings_activate_oc_nl">Aktifkan</string>
     <string name="init_summary_oc_nl">Muat cache dari opencaching.nl</string>
     <string name="init_oc_nl_description">Mengizinkan c:geo dengan opencaching.nl untuk mencari cache dan akses/filter cache yang anda temukan.</string>
-    <string name="settings_activate_oc_us">Aktifkan</string>
     <string name="init_summary_oc_us">Muat cache dari opencaching.us</string>
     <string name="init_oc_us_description">Otorisasi c:geo dengan opencaching.kami untuk mencari cache dan akses/filter anda menemukan cache.</string>
-    <string name="settings_activate_oc_ro">Mengaktifkan</string>
     <string name="init_summary_oc_ro">Muat cache dari opencaching.ro</string>
     <string name="init_oc_ro_description">Mengizinkan c:geo dengan opencaching.ro untuk mencari cache dan akses/filter anda menemukan cache.</string>
-    <string name="settings_activate_oc_uk">Aktifkan</string>
     <string name="init_summary_oc_uk">Muat cache dari opencache.uk</string>
     <string name="init_oc_uk_description">Otorisasi c:geo dengan opencache.uk untuk mencari cache dan akses/filter cache yang anda temukan.</string>
     <string name="init_summary_su">Muat cache dari Geocaching.su</string>
-    <string name="settings_activate_su">Aktifkan</string>
     <string name="init_gcvote_password_description">Untuk bisa menilai sebuah cache, anda perlu mengikuti petunjuk di GCVote.com dan masukkan kata sandi GCVote anda di sini.</string>
-    <string name="settings_activate_twitter">Aktifkan</string>
     <string name="init_login_popup_working">Sedang masuk&#8230;</string>
     <string name="init_login_popup_ok">Masuk Ok</string>
     <string name="init_login_popup_failed">Gagal masuk</string>
@@ -425,16 +397,10 @@
     <string name="init_summary_friends_and_own_logs_wanted">Tampilan tambahan halaman logbook untuk teman dan log sendiri</string>
     <string name="init_openlastdetailspage">Halaman Rincian Terakhir</string>
     <string name="init_summary_openlastdetailspage">Buka rincian dengan halaman terakhir yang di gunakan</string>
-    <string name="init_skin">Kulit putih</string>
-    <string name="init_summary_skin">Gunakan kulit ringan (Restart diperlukan)</string>
     <string name="init_address">Tampilkan Alamat</string>
     <string name="init_summary_address">Tampilkan alamat alternatif dari koordinat pada layar utama</string>
-    <string name="init_exclude">Kecualikan Sendiri dan Ditemukan</string>
-    <string name="init_summary_exclude">Kecualikan cache yang Anda miliki atau temukan</string>
     <string name="init_showwaypoints">Tampilkan Titik arah</string>
     <string name="init_showwaypoint_description">Jika kurang dari jumlah cache yang diberikan ditampilkan di peta, titik arah mereka ditunjukkan juga.</string>
-    <string name="init_disabled">Tidak termasuk cacat</string>
-    <string name="init_summary_disabled">Kecualikan cache yang dinonaktifkan</string>
     <string name="init_save_log_img">Simpan gambar</string>
     <string name="init_summary_save_log_img">Simpan Gambar dari log</string>
     <string name="init_units">Gunakan Unit Imperial</string>
@@ -444,13 +410,13 @@
     <string name="init_choose_list">Meminta Daftar</string>
     <string name="init_summary_choose_list">Tanyakan daftar mana yang menyimpan cache di dalamnya</string>
     <string name="init_livelist">Menunjukkan Arah</string>
+    <!-- app theme -->
     <!-- backup / restore -->
     <string name="init_backup_backup">Cadangan</string>
     <string name="init_backup_running">Membuat cadangan dari basis data cache&#8230;</string>
     <string name="init_backup_restore">Pulihkan</string>
     <string name="init_backup_success">c:geo\'s database telah berhasil di salin ke:</string>
     <string name="init_backup_failed">Cadangan data dari c:geo database yang gagal.</string>
-    <string name="init_backup_unnecessary">Database kosong, tidak perlu cadangan.</string>
     <string name="init_backup_no_backup_available">Tidak ada file cadangan yang tersedia.</string>
     <string name="init_restore_success">Pemulihan selesai.</string>
     <string name="init_restore_running">Pemulihan cache database&#8230;</string>
@@ -538,7 +504,7 @@
     <string name="sendToCgeo_download_fail">c:geo gagal untuk mendownload cache. Tidak ada koneksi internet, atau send2cgeo turun.</string>
     <string name="sendToCgeo_no_registration">c:geo gagal untuk mendownload cache. Pendaftaran untuk send2cgeo berakhir. Silakan mendaftar di pengaturan.</string>
     <!-- Content Storage -->
-    <!-- Persistable Folders -->
+    <!-- Persistable Folders and Uris -->
     <!-- FolderUtils: async processing -->
     <!-- FolderUtils: copy/move -->
     <!-- auth generic -->
@@ -570,7 +536,6 @@
     <!-- days remaining -->
     <string name="last_day_available">tersedia dihari terakhir</string>
     <string name="cache_offline_refresh">Segarkan</string>
-    <string name="cache_offline_drop">Hapus</string>
     <string name="cache_offline_store">Toko</string>
     <string name="cache_offline_stored">Disimpan dalam perangkat</string>
     <string name="cache_offline_not_ready">Tidak tersedia secara offline</string>
@@ -585,7 +550,6 @@
         <item quantity="other">sekitar %d hari yang lalu</item>
     </plurals>
     <string name="cache_premium">Meningkatkan</string>
-    <string name="cache_attributes">Atribut</string>
     <string name="cache_inventory">Persediaan</string>
     <string name="cache_log_images_title">Gambar log</string>
     <string name="cache_log_image_default_title">Foto</string>
@@ -669,14 +633,9 @@
     <string name="cache_status_offline_log">Log disimpan</string>
     <string name="cache_status_found">Ditemukan</string>
     <string name="cache_not_status_found">Tidak ditemukan</string>
-    <string name="cache_never_found">Tidak Pernah Ditemukan</string>
-    <string name="cache_found_last_30_days">Berdasarkan 30 hari terakhir</string>
     <string name="cache_status_archived">Diarsipkan</string>
     <string name="cache_status_disabled">Cacat</string>
     <string name="cache_status_premium">Anggota Premium saja</string>
-    <string name="cache_status_not_premium">Semua Akses Anggota</string>
-    <string name="cache_status_stored">Disimpan</string>
-    <string name="cache_status_not_stored">Tidak disimpan</string>
     <string name="cache_geocode">Kode geo</string>
     <string name="cache_name">Nama</string>
     <string name="cache_type">Jenis</string>
@@ -692,7 +651,6 @@
     <string name="cache_event">Tanggal</string>
     <string name="cache_location">Lokasi</string>
     <string name="cache_coordinates">Koordinat</string>
-    <string name="cache_calculator">Kalkulator</string>
     <string name="cache_coordinates_original">Koordinat Asli</string>
     <string name="cache_spoiler_images_title">Gambar spoiler</string>
     <string name="cache_log_types">Tipe log</string>
@@ -776,7 +734,6 @@
     <string name="map_map">Peta</string>
     <string name="map_live">Peta hidup</string>
     <string name="map_view_map">Tampilan peta</string>
-    <string name="map_show_circles">Tampilkan lingkaran</string>
     <string name="map_theme_select">Pilih tema peta</string>
     <string name="map_live_enable">Aktifkan hidup</string>
     <string name="map_live_disable">Nonaktifkan hidup</string>
@@ -793,8 +750,6 @@
     <string name="search_kw">Kata kunci</string>
     <string name="search_kw_prefill">Kata kunci</string>
     <string name="search_kw_button">Pencarian berdasarkan kata kunci</string>
-    <string name="search_fbu_prefill">Nama pengguna</string>
-    <string name="search_fbu_button">Pencarian berdasarkan nama pengguna</string>
     <string name="search_hbu_prefill">Pemilik</string>
     <string name="search_hbu_button">Cari berdasarkan nama pemilik</string>
     <string name="search_tb">Dilacak</string>
@@ -804,7 +759,6 @@
     <string name="search_address_result">Tempat ditemukan</string>
     <string name="search_own_caches">Pencarian cache saya</string>
     <string name="search_pocket_title">Kantong Pertanyaan</string>
-    <string name="search_pocket_loading">Memuat daftar Pertanyaan Pocket</string>
     <!-- trackable -->
     <string name="trackable">Bisa dilacak</string>
     <string name="trackable_details_loading">Memuat rincian yang dilacak&#8230;</string>
@@ -840,7 +794,6 @@
     <!-- user -->
     <string name="user_menu_title">Tentang</string>
     <string name="user_menu_view_hidden">Cache tersembunyi</string>
-    <string name="user_menu_view_found">Cache ditemukan</string>
     <string name="user_menu_open_browser">Buka profil di browser</string>
     <string name="user_menu_send_message">Kirim pesan</string>
     <string name="user_menu_open_contact">Kartu kontak yang terbuka</string>
@@ -867,7 +820,6 @@
     <string name="helper_gpsstatus_description">Anda dapat menggunakan radar di aplikasi ini bersamaan dengan c:geo. Ini juga menawarkan banyak informasi terkait GPS lainnya.</string>
     <string name="helper_bluetoothgps_description">Memungkinkan Anda untuk menggunakan penerima GPS eksternal untuk mendapatkan data lokasi yang lebih tepat, dan dapat menghemat baterai perangkat Anda.</string>
     <string name="helper_barcode_description">Ada script Greasemonkey dan situs web yang memungkinkan tampilan geocodes sebagai barcode. Dengan aplikasi ini, c:geo dapat membaca geocode tersebut secara langsung dari layar komputer Anda.</string>
-    <string name="helper_pocketquery_description">Memungkinkan pembuatan dan download mudah dari Pocket Queries yang berpusat pada posisi Anda saat ini atau titik yang dipilih dari sebuah peta. Membutuhkan akun Premium Geocaching.com.</string>
     <string name="helper_google_translate_title">Google Terjemahan</string>
     <string name="helper_google_translate_description">Jika Anda mendownload paket terjemahan di aplikasi Google Terjemahan, Anda dapat dengan mudah menerjemahkan deskripsi cache di c:geo dengan ketukan panjang pada teks deskripsi cache (tanpa koneksi internet).</string>
     <string name="helper_where_you_go_description">WhereYouGo memungkinkan bermain dan mencari geocaches dari tipe Wherigo. c:geo secara otomatis dapat memicu download kartrid dalam aplikasi ini.</string>
@@ -1123,9 +1075,6 @@
     <string name="about_twitter">Harus <b>c:geo</b> mempublikasikan sebuah status baru di Twitter setiap kali anda log cache?</string>
     <string name="faq_title">Tanya jawab</string>
     <!-- status (used via string based resource loading) -->
-    <string name="status_geocaching_change" tools:ignore="UnusedResources">Perubahan terbaru pada geocaching.com pecah c:geo.\nKami bekerja di atasnya, segera periksa kembali.</string>
-    <string name="status_geocaching_livemap" tools:ignore="UnusedResources">Perubahan terbaru pada geocaching.com fitur peta hidup pecah.\nKami bekerja di atasnya, segera periksa kembali.</string>
-    <string name="status_geocaching_maintenance" tools:ignore="UnusedResources">geocaching.com berada di bawah pemeliharaan.\nanda mungkin mengalami berbagai masalah.</string>
     <!-- text-to-speech for compass view -->
     <string name="tts_service">Kompas yang dibicarakan</string>
     <string name="tts_started">Mulai pidato</string>
@@ -1151,7 +1100,6 @@
     <plurals name="favorite_points">
         <item quantity="other">%s favorit</item>
     </plurals>
-    <string name="more_than_percent_favorite_points">&gt; %d%% favorit</string>
     <!-- shortcuts -->
     <string name="cgeo_shortcut">c: jalan pintas geo</string>
     <string name="create_shortcut">Buat jalan pintas</string>
@@ -1159,7 +1107,6 @@
     <string name="confirm_log_title">Jenis log khusus</string>
     <string name="confirm_log_message">Anda ingin log \'%s\'. Apakah anda yakin?</string>
     <!-- Geokrety -->
-    <string name="settings_activate_geokrety">Aktifkan</string>
     <string name="init_summary_geokrety">Mengaktifkan yang bisa dilacak dari GeoKrety.org</string>
     <string name="init_geokrety_description">Otorisasi c: geo dengan GeoKrety.org untuk catatan GeoKrety yang bisa dilacak.</string>
     <string name="init_geokrety_userid">Id pengguna: %s</string>
@@ -1199,14 +1146,14 @@
     <!-- permission handling -->
     <!-- colors -->
     <!-- number input -->
-    <!-- text notification channel infos & proximity notification title -->
+    <!-- notification / channel texts -->
     <!-- individual routes -->
     <!-- individual track -->
     <!-- distance units -->
     <!-- switch settings -->
     <!-- view settings -->
     <!-- HandleLocalFilesActivity -->
-    <!-- ReceiveMapFileActivity -->
+    <!-- ReceiveDownloadActivity -->
     <!-- Download map preference and menu entry -->
     <!-- history track -->
     <!-- history track export -->
@@ -1214,4 +1161,5 @@
     <!-- install wizard -->
     <!-- Map Theme helper -->
     <!-- default actions in dialogs -->
+    <!-- ChipChoiceGroup -->
 </resources>

@@ -1,7 +1,7 @@
 package cgeo.geocaching.downloader;
 
 import cgeo.geocaching.R;
-import cgeo.geocaching.models.OfflineMap;
+import cgeo.geocaching.models.Download;
 import cgeo.geocaching.utils.CalendarUtils;
 import cgeo.geocaching.utils.Formatter;
 import cgeo.geocaching.utils.MatcherWrapper;
@@ -10,6 +10,7 @@ import android.app.Activity;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,33 +23,35 @@ public class MapDownloaderOpenAndroMaps extends AbstractMapDownloader {
     private static final MapDownloaderOpenAndroMaps INSTANCE = new MapDownloaderOpenAndroMaps();
 
     private MapDownloaderOpenAndroMaps() {
-        super (OfflineMap.OfflineMapType.MAP_DOWNLOAD_TYPE_OPENANDROMAPS, R.string.mapserver_openandromaps_downloadurl, R.string.mapserver_openandromaps_name, R.string.mapserver_openandromaps_info, R.string.mapserver_openandromaps_projecturl, R.string.mapserver_openandromaps_likeiturl);
+        super (Download.DownloadType.DOWNLOADTYPE_MAP_OPENANDROMAPS, R.string.mapserver_openandromaps_downloadurl, R.string.mapserver_openandromaps_name, R.string.mapserver_openandromaps_info, R.string.mapserver_openandromaps_projecturl, R.string.mapserver_openandromaps_likeiturl);
+        companionType = Download.DownloadType.DOWNLOADTYPE_THEME_OPENANDROMAPS;
     }
 
     @Override
-    protected void analyzePage(final Uri uri, final List<OfflineMap> list, final String page) {
+    protected void analyzePage(final Uri uri, final List<Download> list, final @NonNull String page) {
         basicUpMatcher(uri, list, page, PATTERN_UP);
 
         final MatcherWrapper matchDir = new MatcherWrapper(PATTERN_DIR, page);
         while (matchDir.find()) {
-            final OfflineMap offlineMap = new OfflineMap(matchDir.group(2), Uri.parse(uri + matchDir.group(1)), true, "", "", offlineMapType);
+            final Download offlineMap = new Download(matchDir.group(2), Uri.parse(uri + matchDir.group(1)), true, "", "", offlineMapType, ICONRES_FOLDER);
             list.add(offlineMap);
         }
 
         final MatcherWrapper matchMap = new MatcherWrapper(PATTERN_MAP, page);
         while (matchMap.find()) {
-            final OfflineMap offlineMap = new OfflineMap(matchMap.group(2), Uri.parse(uri + matchMap.group(1)), false, CalendarUtils.yearMonthDay(CalendarUtils.parseDayMonthYearUS(matchMap.group(3))), Formatter.formatBytes(Long.parseLong(matchMap.group(4))), offlineMapType);
+            final Download offlineMap = new Download(matchMap.group(2), Uri.parse(uri + matchMap.group(1)), false, CalendarUtils.yearMonthDay(CalendarUtils.parseDayMonthYearUS(matchMap.group(3))), Formatter.formatBytes(Long.parseLong(matchMap.group(4))), offlineMapType, iconRes);
             list.add(offlineMap);
         }
     }
 
+    @Nullable
     @Override
-    protected OfflineMap checkUpdateFor(final String page, final String remoteUrl, final String remoteFilename) {
+    protected Download checkUpdateFor(final @NonNull String page, final String remoteUrl, final String remoteFilename) {
         final MatcherWrapper matchMap = new MatcherWrapper(PATTERN_MAP, page);
         while (matchMap.find()) {
             final String filename = matchMap.group(1);
             if (filename.equals(remoteFilename)) {
-                return new OfflineMap(matchMap.group(2), Uri.parse(remoteUrl + "/" + filename), false, CalendarUtils.yearMonthDay(CalendarUtils.parseDayMonthYearUS(matchMap.group(3))), Formatter.formatBytes(Long.parseLong(matchMap.group(4))), offlineMapType);
+                return new Download(matchMap.group(2), Uri.parse(remoteUrl + "/" + filename), false, CalendarUtils.yearMonthDay(CalendarUtils.parseDayMonthYearUS(matchMap.group(3))), Formatter.formatBytes(Long.parseLong(matchMap.group(4))), offlineMapType, iconRes);
             }
         }
         return null;
@@ -61,9 +64,8 @@ public class MapDownloaderOpenAndroMaps extends AbstractMapDownloader {
     }
 
     @Override
-    protected void onFollowup(final Activity activity, final Runnable callback) {
-        // check whether Elevate.zip exists in theme folder and ask whether user wants to download it as well, if it does not exist yet
-        findOrDownload(activity, THEME_FILES, activity.getString(R.string.mapserver_openandromaps_themes_downloadurl), OfflineMap.OfflineMapType.MAP_DOWNLOAD_TYPE_OPENANDROMAPS_THEMES, callback);
+    public DownloaderUtils.DownloadDescriptor getExtrafile(final Activity activity) {
+        return getExtrafile(THEME_FILES, activity.getString(R.string.mapserver_openandromaps_themes_downloadurl), Download.DownloadType.DOWNLOADTYPE_THEME_OPENANDROMAPS);
     }
 
     @NonNull

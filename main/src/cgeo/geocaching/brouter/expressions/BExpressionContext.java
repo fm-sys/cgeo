@@ -10,10 +10,13 @@ import cgeo.geocaching.brouter.util.BitCoderContext;
 import cgeo.geocaching.brouter.util.Crc32Utils;
 import cgeo.geocaching.brouter.util.IByteArrayUnifier;
 import cgeo.geocaching.brouter.util.LruMap;
+import cgeo.geocaching.storage.ContentStorage;
+
+import android.net.Uri;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,7 +29,7 @@ import java.util.TreeMap;
 public abstract class BExpressionContext implements IByteArrayUnifier {
     private static final String CONTEXT_TAG = "---context:";
     private static final String MODEL_TAG = "---model:";
-    public String modelClass;
+    public boolean useKinematicModel;
     public BExpressionMetaData meta;
     private String context;
     private boolean inOurContext = false;
@@ -626,16 +629,19 @@ public abstract class BExpressionContext implements IByteArrayUnifier {
         return foreignContext.getOutputVariableIndex(name, true);
     }
 
-    public void parseFile(final File file, final String readOnlyContext) {
-        if (!file.exists()) {
-            throw new IllegalArgumentException("profile " + file + " does not exist");
+    public void parseFile(final Uri uri, final String readOnlyContext) {
+        final InputStream is = ContentStorage.get().openForRead(uri);
+        if (is == null) {
+            throw new IllegalArgumentException("profile " + uri + " does not exist");
         }
         try {
             if (readOnlyContext != null) {
                 linenr = 1;
                 final String realContext = context;
                 context = readOnlyContext;
-                expressionList = parseFileHelper(file);
+
+                final InputStream is2 = ContentStorage.get().openForRead(uri);
+                expressionList = parseFileHelper(is2);
                 variableData = new float[variableNumbers.size()];
                 evaluate(lookupData); // lookupData is dummy here - evaluate just to create the variables
                 context = realContext;
@@ -643,7 +649,7 @@ public abstract class BExpressionContext implements IByteArrayUnifier {
             linenr = 1;
             minWriteIdx = variableData == null ? 0 : variableData.length;
 
-            expressionList = parseFileHelper(file);
+            expressionList = parseFileHelper(is);
 
             // determine the build-in variable indices
             final String[] varNames = getBuildInVariableNames();
@@ -664,13 +670,12 @@ public abstract class BExpressionContext implements IByteArrayUnifier {
             throw new RuntimeException(e);
         }
         if (expressionList.size() == 0) {
-            throw new IllegalArgumentException(file.getAbsolutePath()
-                + " does not contain expressions for context " + context + " (old version?)");
+            throw new IllegalArgumentException("profile does not contain expressions for context " + context + " (old version?)");
         }
     }
 
-    private List<BExpression> parseFileHelper(final File file) throws Exception {
-        br = new BufferedReader(new FileReader(file));
+    private List<BExpression> parseFileHelper(final InputStream is) throws Exception {
+        br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
         readerDone = false;
         final List<BExpression> result = new ArrayList<BExpression>();
         for (; ; ) {
@@ -759,7 +764,8 @@ public abstract class BExpressionContext implements IByteArrayUnifier {
             if (token.startsWith(CONTEXT_TAG)) {
                 inOurContext = token.substring(CONTEXT_TAG.length()).equals(context);
             } else if (token.startsWith(MODEL_TAG)) {
-                modelClass = token.substring(MODEL_TAG.length()).trim();
+                // no need to parse the name, as c:geo will only support the builtin model class (also prevents class injection)
+                useKinematicModel = true;
             } else if (inOurContext) {
                 return token;
             }

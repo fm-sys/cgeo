@@ -5,7 +5,8 @@ import cgeo.geocaching.R;
 import cgeo.geocaching.activity.Progress;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.settings.SettingsActivity;
-import cgeo.geocaching.ui.dialog.Dialogs;
+import cgeo.geocaching.ui.TextParam;
+import cgeo.geocaching.ui.dialog.SimpleDialog;
 import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.AsyncTaskWithProgressText;
 import cgeo.geocaching.utils.EnvironmentUtils;
@@ -357,7 +358,7 @@ public final class LocalStorage {
         }).subscribeOn(Schedulers.io())).subscribe(success -> {
             progress.dismiss();
             final String message = success ? fromActivity.getString(R.string.init_datadirmove_success) : fromActivity.getString(R.string.init_datadirmove_failed);
-            Dialogs.message(fromActivity, R.string.init_datadirmove_datadirmove, message);
+            SimpleDialog.of(fromActivity).setTitle(R.string.init_datadirmove_datadirmove).setMessage(TextParam.text(message)).show();
         });
     }
 
@@ -440,10 +441,13 @@ public final class LocalStorage {
 
                 //migrate existing Offline Log Image paths
                 if (legacyOfflineLogImagesDir.isDirectory()) {
-                    for (File offlineImage : legacyOfflineLogImagesDir.listFiles()) {
-                        if (offlineImage.isFile()) {
-                            displayProgress(offlineImage.getName());
-                            FileUtils.copy(offlineImage, ImageUtils.getFileForOfflineLogImage(offlineImage.getName()));
+                    final File[] files = legacyOfflineLogImagesDir.listFiles();
+                    if (files != null) {
+                        for (File offlineImage : files) {
+                            if (offlineImage.isFile()) {
+                                displayProgress(offlineImage.getName());
+                                FileUtils.copy(offlineImage, ImageUtils.getFileForOfflineLogImage(offlineImage.getName()));
+                            }
                         }
                     }
                 }

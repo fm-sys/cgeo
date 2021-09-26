@@ -7,9 +7,12 @@ import cgeo.geocaching.connector.ILoggingManager;
 import cgeo.geocaching.connector.capability.ICredentials;
 import cgeo.geocaching.connector.capability.ILogin;
 import cgeo.geocaching.connector.capability.ISearchByCenter;
+import cgeo.geocaching.connector.capability.ISearchByFilter;
 import cgeo.geocaching.connector.capability.ISearchByGeocode;
 import cgeo.geocaching.connector.capability.ISearchByViewPort;
 import cgeo.geocaching.enumerations.StatusCode;
+import cgeo.geocaching.filters.core.GeocacheFilter;
+import cgeo.geocaching.filters.core.GeocacheFilterType;
 import cgeo.geocaching.location.Geopoint;
 import cgeo.geocaching.location.Viewport;
 import cgeo.geocaching.log.LogCacheActivity;
@@ -27,12 +30,13 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class ECConnector extends AbstractConnector implements ISearchByGeocode, ISearchByCenter, ISearchByViewPort, ILogin, ICredentials {
+public class ECConnector extends AbstractConnector implements ISearchByGeocode, ISearchByCenter, ISearchByFilter, ISearchByViewPort, ILogin, ICredentials {
 
     @NonNull
     private static final String CACHE_URL = "https://extremcaching.com/index.php/output-2/";
@@ -66,6 +70,13 @@ public class ECConnector extends AbstractConnector implements ISearchByGeocode, 
     public boolean canHandle(@NonNull final String geocode) {
         return PATTERN_EC_CODE.matcher(geocode).matches();
     }
+
+    @NonNull
+    @Override
+    public String[] getGeocodeSqlLikeExpressions() {
+        return new String[]{"EC%"};
+    }
+
 
     @Override
     @NonNull
@@ -108,7 +119,7 @@ public class ECConnector extends AbstractConnector implements ISearchByGeocode, 
     public SearchResult searchByViewport(@NonNull final Viewport viewport) {
         final Collection<Geocache> caches = ECApi.searchByBBox(viewport);
         final SearchResult searchResult = new SearchResult(caches);
-        return searchResult.filterSearchResults(false, false, Settings.getCacheType());
+        return searchResult.putInCacheAndLoadRating();
     }
 
     @Override
@@ -116,7 +127,20 @@ public class ECConnector extends AbstractConnector implements ISearchByGeocode, 
     public SearchResult searchByCenter(@NonNull final Geopoint center) {
         final Collection<Geocache> caches = ECApi.searchByCenter(center);
         final SearchResult searchResult = new SearchResult(caches);
-        return searchResult.filterSearchResults(false, false, Settings.getCacheType());
+        return searchResult.putInCacheAndLoadRating();
+    }
+
+
+    @NonNull
+    @Override
+    public EnumSet<GeocacheFilterType> getFilterCapabilities() {
+        return EnumSet.of(GeocacheFilterType.DISTANCE, GeocacheFilterType.ORIGIN);
+    }
+
+    @NonNull
+    @Override
+    public SearchResult searchByFilter(@NonNull final GeocacheFilter filter) {
+        return new SearchResult(ECApi.searchByFilter(filter, this));
     }
 
     @Override
@@ -169,12 +193,39 @@ public class ECConnector extends AbstractConnector implements ISearchByGeocode, 
     }
 
     @Override
-    public int getCacheMapMarkerId(final boolean disabled) {
+    public int getCacheMapMarkerId() {
         final String icons = Settings.getECIconSet();
         if (StringUtils.equals(icons, "1")) {
-            return disabled ? R.drawable.marker_disabled_other : R.drawable.marker_other;
+            return R.drawable.marker_other;
         }
-        return disabled ? R.drawable.marker_disabled_oc : R.drawable.marker_oc;
+        return R.drawable.marker_oc;
+    }
+
+    @Override
+    public int getCacheMapMarkerBackgroundId() {
+        final String icons = Settings.getECIconSet();
+        if (StringUtils.equals(icons, "1")) {
+            return R.drawable.background_other;
+        }
+        return R.drawable.background_oc;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerId() {
+        final String icons = Settings.getECIconSet();
+        if (StringUtils.equals(icons, "1")) {
+            return R.drawable.dot_marker_other;
+        }
+        return R.drawable.dot_marker_oc;
+    }
+
+    @Override
+    public int getCacheMapDotMarkerBackgroundId() {
+        final String icons = Settings.getECIconSet();
+        if (StringUtils.equals(icons, "1")) {
+            return R.drawable.dot_background_other;
+        }
+        return R.drawable.dot_background_oc;
     }
 
     @Override
