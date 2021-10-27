@@ -627,6 +627,26 @@
         <item name="android:textSize">@dimen/textSize_detailsWizard</item>
     </style>
 
+    <!-- main activity shortcut bar -->
+    <style name="shortcutbar_image">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:layout_marginStart">12dp</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:background">@drawable/image_button_background_squircle</item>
+    </style>
+    <style name="shortcutbar_text">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:textSize">@dimen/textSize_detailsSecondary</item>
+        <item name="android:maxLines">1</item>
+    </style>
+
     <!-- about pages styles -->
     <style name="about_base">
         <item name="android:textSize">@dimen/textSize_detailsPrimary</item>

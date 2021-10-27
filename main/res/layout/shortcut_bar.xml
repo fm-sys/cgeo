@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/shortcutbar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:paddingTop="24dp"
+    android:paddingBottom="16dp">
+
+    <ImageView
+        android:id="@+id/shortcut_history"
+        style="@style/shortcutbar_image"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/shortcut_goto"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_menu_recent_history" />
+
+    <TextView
+        style="@style/shortcutbar_text"
+        app:layout_constraintTop_toBottomOf="@id/shortcut_history"
+        app:layout_constraintStart_toStartOf="@+id/shortcut_history"
+        app:layout_constraintEnd_toEndOf="@+id/shortcut_history"
+        android:text="@string/caches_history" />
+
+    <ImageView
+        android:id="@+id/shortcut_goto"
+        style="@style/shortcutbar_image"
+        app:layout_constraintStart_toEndOf="@id/shortcut_history"
+        app:layout_constraintEnd_toStartOf="@id/shortcut_pocket"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_menu_goto" />
+
+    <TextView
+        style="@style/shortcutbar_text"
+        app:layout_constraintTop_toBottomOf="@id/shortcut_goto"
+        app:layout_constraintStart_toStartOf="@+id/shortcut_goto"
+        app:layout_constraintEnd_toEndOf="@+id/shortcut_goto"
+        android:text="@string/any_button" />
+
+    <ImageView
+        android:id="@+id/shortcut_pocket"
+        style="@style/shortcutbar_image"
+        app:layout_constraintStart_toEndOf="@id/shortcut_goto"
+        app:layout_constraintEnd_toStartOf="@id/shortcut_bookmark"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_menu_pocket_query" />
+
+    <TextView
+        style="@style/shortcutbar_text"
+        app:layout_constraintTop_toBottomOf="@id/shortcut_pocket"
+        app:layout_constraintStart_toStartOf="@+id/shortcut_pocket"
+        app:layout_constraintEnd_toEndOf="@+id/shortcut_pocket"
+        android:text="@string/menu_lists_pocket_queries" />
+
+    <ImageView
+        android:id="@+id/shortcut_bookmark"
+        style="@style/shortcutbar_image"
+        app:layout_constraintStart_toEndOf="@id/shortcut_pocket"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_menu_bookmarks" />
+
+    <TextView
+        style="@style/shortcutbar_text"
+        app:layout_constraintTop_toBottomOf="@id/shortcut_bookmark"
+        app:layout_constraintStart_toStartOf="@+id/shortcut_bookmark"
+        app:layout_constraintEnd_toEndOf="@+id/shortcut_bookmark"
+        android:text="@string/menu_lists_bookmarklists" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

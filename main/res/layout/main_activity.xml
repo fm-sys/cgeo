@@ -53,7 +53,7 @@
         android:id="@+id/connectorstatus_area"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/location_area"
+        android:layout_above="@id/shortcut_bar"
         android:layout_below="@id/info_notloggedin"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="16dp"
@@ -61,6 +61,13 @@
         android:orientation="vertical"
         android:scrollbars="none"
         tools:listitem="@layout/main_activity_connectorstatus" />
+
+    <include
+        android:id="@+id/shortcut_bar"
+        layout="@layout/shortcut_bar"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_above="@id/location_area" />
 
     <LinearLayout
         android:id="@+id/location_area"

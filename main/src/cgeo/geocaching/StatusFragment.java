@@ -2,9 +2,7 @@ package cgeo.geocaching;
 
 import cgeo.geocaching.databinding.StatusBinding;
 import cgeo.geocaching.network.StatusUpdater;
-import cgeo.geocaching.network.StatusUpdater.Status;
 import cgeo.geocaching.utils.AndroidRxUtils;
-import cgeo.geocaching.utils.Log;
 
 import android.content.Intent;
 import android.content.res.Resources;
