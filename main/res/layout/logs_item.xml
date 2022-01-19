@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/author"
-        style="@style/logitem_author"/>
+        style="@style/logitem_author"
+        tools:text="The Author" />
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -19,26 +22,29 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_gravity="left|top"
-            android:orientation="horizontal" >
+            android:orientation="horizontal">
 
             <LinearLayout
                 android:layout_width="100dip"
                 android:layout_height="wrap_content"
                 android:layout_gravity="right|top"
                 android:orientation="vertical"
-                android:padding="3dip" >
+                android:padding="3dip">
 
                 <TextView
                     android:id="@+id/added"
-                    style="@style/logitem_property"/>
+                    style="@style/logitem_property"
+                    tools:text="01.01.2000" />
 
                 <TextView
                     android:id="@+id/type"
-                    style="@style/logitem_property" />
+                    style="@style/logitem_property"
+                    tools:text="Found" />
 
                 <TextView
                     android:id="@+id/count_or_location"
-                    style="@style/logitem_property"/>
+                    style="@style/logitem_property"
+                    tools:text="123 Caches" />
 
             </LinearLayout>
 
@@ -53,16 +59,16 @@
             android:layout_height="wrap_content"
             android:layout_toRightOf="@id/detail_box"
             android:orientation="vertical"
-            android:paddingTop="3dip"
-            android:paddingLeft="3dip">
+            android:paddingLeft="3dip"
+            android:paddingTop="3dip">
 
             <TextView
                 android:id="@+id/gcinfo"
                 style="@style/logitem_property"
-                android:visibility="gone"
-                android:gravity="left"
                 android:layout_gravity="left"
-                android:textSize="@dimen/textSize_detailsPrimary" />
+                android:gravity="left"
+                android:textSize="@dimen/textSize_detailsPrimary"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/log"
@@ -70,8 +76,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="left"
                 android:gravity="left"
+                android:textColor="@color/colorText"
                 android:textSize="@dimen/textSize_detailsPrimary"
-                android:textColor="@color/colorText"/>
+                tools:text="This log text can get very long...\nLine2\nLine3\nLine4\nLine5" />
 
             <TextView
                 android:id="@+id/log_images"
