@@ -70,7 +70,7 @@
                 android:textSize="@dimen/textSize_detailsPrimary"
                 android:visibility="gone" />
 
-            <TextView
+            <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/log"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
@@ -78,7 +78,10 @@
                 android:gravity="left"
                 android:textColor="@color/colorText"
                 android:textSize="@dimen/textSize_detailsPrimary"
-                tools:text="This log text can get very long...\nLine2\nLine3\nLine4\nLine5" />
+                tools:text="This log text can get very long...\nLine2\nLine3\nLine4\nLine5"
+
+                android:textIsSelectable="true" />
+                <!--  Unfortunately not working: see https://issuetracker.google.com/issues/36984016 -->
 
             <TextView
                 android:id="@+id/log_images"
