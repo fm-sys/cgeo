@@ -8,6 +8,7 @@ import cgeo.geocaching.storage.Folder;
 import cgeo.geocaching.storage.LocalStorage;
 import cgeo.geocaching.storage.PersistableFolder;
 import cgeo.geocaching.ui.ImageGalleryView;
+import cgeo.geocaching.ui.ViewUtils;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -243,6 +244,10 @@ public final class ImageUtils {
         width = (int) Math.ceil(width * ratio);
         height = (int) Math.ceil(height * ratio);
         return new ImmutableTriple<>(width, height, true);
+    }
+
+    public static Drawable resizeDrawable(final Drawable drawable, final int width, final int height) {
+        return new BitmapDrawable(CgeoApplication.getInstance().getResources(), Bitmap.createScaledBitmap(ViewUtils.drawableToBitmap(drawable), width, height, true));
     }
 
     /**

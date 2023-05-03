@@ -16,6 +16,7 @@ import cgeo.geocaching.models.Waypoint;
 import cgeo.geocaching.service.CacheDownloaderService;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.ui.ViewUtils;
 import cgeo.geocaching.utils.builders.InsetBuilder;
 import cgeo.geocaching.utils.builders.InsetsBuilder;
 import static cgeo.geocaching.utils.DisplayUtils.SIZE_CACHE_MARKER_DP;
@@ -178,8 +179,13 @@ public final class MapMarkerUtils {
             }
         }
         // bottom-right: user modified coords / final waypoint defined
-        if (cache.hasUserModifiedCoords() && mainMarkerId != R.drawable.marker_usermodifiedcoords) {
-            insetsBuilder.withInset(new InsetBuilder(R.drawable.marker_usermodifiedcoords, Gravity.BOTTOM | Gravity.RIGHT));
+        if (cache.hasUserModifiedCoords()) {
+            if (mainMarkerId != R.drawable.marker_usermodifiedcoords) {
+                insetsBuilder.withInset(new InsetBuilder(R.drawable.marker_usermodifiedcoords, Gravity.BOTTOM | Gravity.RIGHT));
+            } else {
+                Drawable smallCacheTypeMarker = ImageUtils.resizeDrawable(getCacheTypeMarker(res, cache.getType()), ViewUtils.dpToPixel(13), ViewUtils.dpToPixel(13));
+                insetsBuilder.withInset(new InsetBuilder(smallCacheTypeMarker, Gravity.BOTTOM | Gravity.RIGHT));
+            }
         } else if (cache.hasFinalDefined() && !cache.hasUserModifiedCoords()) {
             insetsBuilder.withInset(new InsetBuilder(R.drawable.marker_hasfinal, Gravity.BOTTOM | Gravity.RIGHT));
         }
