@@ -21,12 +21,12 @@ import org.oscim.tiling.source.mapfile.IMapFileTileSource;
 import org.oscim.tiling.source.mapfile.MapFileTileSource;
 import org.oscim.tiling.source.mapfile.MapInfo;
 
-public class AbstractMapsforgeOfflineTileProvider extends AbstractMapsforgeTileProvider {
+public class AbstractMapsforgeOfflineVtmTileProvider extends AbstractMapsforgeVtmTileProvider {
 
     IMapFileTileSource tileSource;
     private BuildingLayer buildingLayer;
 
-    AbstractMapsforgeOfflineTileProvider(final String name, final Uri uri, final int zoomMin, final int zoomMax) {
+    AbstractMapsforgeOfflineVtmTileProvider(final String name, final Uri uri, final int zoomMin, final int zoomMax) {
         super(name, uri, zoomMin, zoomMax, new Pair<>("", false));
         supportsThemes = true;
         supportsThemeOptions = true; // rule of thumb, not all themes support options
@@ -64,7 +64,7 @@ public class AbstractMapsforgeOfflineTileProvider extends AbstractMapsforgeTileP
         if (tileSource != null) {
             tileSource.setPreferredLanguage(language);
         } else {
-            Log.w("AbstractMapsforgeOfflineTileProvider.setPreferredLanguage: tilesource is null");
+            Log.w("AbstractMapsforgeOfflineVtmTileProvider.setPreferredLanguage: tilesource is null");
         }
     }
 

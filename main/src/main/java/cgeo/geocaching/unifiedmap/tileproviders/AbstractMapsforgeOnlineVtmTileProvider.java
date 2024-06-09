@@ -18,11 +18,11 @@ import org.oscim.map.Map;
 import org.oscim.tiling.source.OkHttpEngine;
 import org.oscim.tiling.source.bitmap.BitmapTileSource;
 
-class AbstractMapsforgeOnlineTileProvider extends AbstractMapsforgeTileProvider {
+class AbstractMapsforgeOnlineVtmTileProvider extends AbstractMapsforgeVtmTileProvider {
 
     private final String tilePath;
 
-    AbstractMapsforgeOnlineTileProvider(final String name, final Uri uri, final String tilePath, final int zoomMin, final int zoomMax, final Pair<String, Boolean> mapAttribution) {
+    AbstractMapsforgeOnlineVtmTileProvider(final String name, final Uri uri, final String tilePath, final int zoomMin, final int zoomMax, final Pair<String, Boolean> mapAttribution) {
         super(name, uri, zoomMin, zoomMax, mapAttribution);
         this.tilePath = tilePath;
     }

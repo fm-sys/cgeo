@@ -89,7 +89,7 @@ public class TileProviderFactory {
         // build list of available offline map sources except currently active one
         final List<Pair<String, Integer>> list = new ArrayList<>();
         for (AbstractTileProvider tileProvider : tileProviders.values()) {
-            if (tileProvider instanceof AbstractMapsforgeOfflineTileProvider && tileProvider.getNumericalId() != currentSource && !(tileProvider instanceof MapsforgeMultiOfflineTileProvider)) {
+            if (tileProvider instanceof AbstractMapsforgeOfflineVtmTileProvider && tileProvider.getNumericalId() != currentSource && !(tileProvider instanceof MapsforgeMultiOfflineVtmTileProvider)) {
                 list.add(new Pair<>(tileProvider.getTileProviderName(), tileProvider.getNumericalId()));
             }
         }
@@ -106,7 +106,7 @@ public class TileProviderFactory {
 
         SimpleDialog.of(activity).setTitle(TextParam.id(R.string.delete_offlinemap_title))
                 .selectSingle(model, (l) -> {
-            final AbstractMapsforgeOfflineTileProvider tileProvider = (AbstractMapsforgeOfflineTileProvider) getTileProvider(l.second);
+            final AbstractMapsforgeOfflineVtmTileProvider tileProvider = (AbstractMapsforgeOfflineVtmTileProvider) getTileProvider(l.second);
             if (tileProvider != null) {
                 final ContentStorage cs = ContentStorage.get();
                 final ContentStorage.FileInformation fi = cs.getFileInfo(tileProvider.getMapUri());
@@ -158,14 +158,17 @@ public class TileProviderFactory {
                         .map(fi -> new ImmutablePair<>(StringUtils.capitalize(StringUtils.substringBeforeLast(fi.name, ".")), fi.uri)).toList();
         Collections.sort(offlineMaps, (o1, o2) -> TextUtils.COLLATOR.compare(o1.left, o2.left));
         if (offlineMaps.size() > 1) {
-            registerTileProvider(new MapsforgeMultiOfflineTileProvider(offlineMaps));
+            registerTileProvider(new MapsforgeMultiOfflineVtmTileProvider(offlineMaps));
         }
-        if (UserDefinedMapsforgeOnlineSource.isConfigured()) {
-            registerTileProvider(new UserDefinedMapsforgeOnlineSource());
+        if (UserDefinedMapsforgeOnlineSourceVtm.isConfigured()) {
+            registerTileProvider(new UserDefinedMapsforgeOnlineSourceVtm());
         }
         for (ImmutablePair<String, Uri> data : offlineMaps) {
-            registerTileProvider(new AbstractMapsforgeOfflineTileProvider(data.left, data.right, 0, 18));   // @todo: get actual values for zoomMin/zoomMax
+            registerTileProvider(new AbstractMapsforgeOfflineVtmTileProvider(data.left, data.right, 0, 18));   // @todo: get actual values for zoomMin/zoomMax
         }
+
+        // TODO: MapsforgeV6 Tile Layers
+        registerTileProvider(new ExampleMapsforgeV6TileProvider());
     }
 
     private static boolean isGoogleMapsInstalled() {

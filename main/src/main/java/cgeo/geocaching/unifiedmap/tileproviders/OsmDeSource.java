@@ -9,7 +9,7 @@ import androidx.core.util.Pair;
 
 import static org.oscim.map.Viewport.MIN_ZOOM_LEVEL;
 
-class OsmDeSource extends AbstractMapsforgeOnlineTileProvider {
+class OsmDeSource extends AbstractMapsforgeOnlineVtmTileProvider {
     OsmDeSource() {
         super("OSM.de", Uri.parse("https://tile.openstreetmap.de"), "/{Z}/{X}/{Y}.png", MIN_ZOOM_LEVEL, 18, new Pair<>(CgeoApplication.getInstance().getString(R.string.map_attribution_openstreetmapde_html), true));
     }

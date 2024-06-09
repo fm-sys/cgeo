@@ -11,11 +11,11 @@ import androidx.core.util.Pair;
 
 import org.oscim.map.Map;
 
-public abstract class AbstractMapsforgeTileProvider extends AbstractTileProvider {
+public abstract class AbstractMapsforgeVtmTileProvider extends AbstractTileProvider {
 
     protected final Uri mapUri;
 
-    public AbstractMapsforgeTileProvider(final String name, final Uri uri, final int zoomMin, final int zoomMax, final Pair<String, Boolean> mapAttribution) {
+    public AbstractMapsforgeVtmTileProvider(final String name, final Uri uri, final int zoomMin, final int zoomMax, final Pair<String, Boolean> mapAttribution) {
         super(zoomMin, zoomMax, mapAttribution);
         this.tileProviderName = name;
         this.mapUri = uri;
